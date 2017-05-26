@@ -1,3 +1,4 @@
+[![speckle](https://speckle.works/img/spke.png)](https://speckle.works)
 # speckle-viewer
 
 > A simple Speckle.Works stream viewer. For more, check [speckle.works](https://speckle.works).
