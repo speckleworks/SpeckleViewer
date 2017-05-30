@@ -40,7 +40,9 @@ export default {
       this.createReceivers( ) 
     },
     createReceivers() {
+      // let urlSecondPart = window.location.href.split( '?' )[ 1 ]
       let streamIds = window.location.href.split('/')[ window.location.href.split('/').length - 1 ].split(',')
+      streamIds[ 0 ] = streamIds[ 0 ].substr( 1 )
       console.log( 'streamIds:', streamIds)
       
 

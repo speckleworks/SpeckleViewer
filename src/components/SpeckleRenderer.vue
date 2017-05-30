@@ -135,7 +135,7 @@ export default {
           this.isRotatingStuff = false
         }
         else {
-          // console.log('rotating')
+          this.deselectObjects( )
           this.isRotatingStuff = true
         }
         this.frameSkipper = 0
@@ -154,15 +154,17 @@ export default {
       this.camera.updateProjectionMatrix()
       this.renderer.setSize( window.innerWidth, window.innerHeight )
     },
-    canvasHovered( event ) {
-      if( this.isRotatingStuff ) return
-      this.selectionBoxes.forEach( box => scene.remove( box ) )
+    deselectObjects( ) {
       this.hoveredObjects.forEach( myObject => {
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
         myObject.material = layer.threeMeshMaterial
       })
       this.hoveredObject = ''
       this.selectionBoxes = []
+    },
+    canvasHovered( event ) {
+      if( this.isRotatingStuff ) return
+      this.deselectObjects()
 
       // preselect object
       let mouse = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 )
@@ -328,7 +330,7 @@ export default {
   top:0;left:0;
   width:100%;
   height: 100%;
-  z-index: 10;
+  /*z-index: 10;*/
 }
 .object-info {
   position: fixed;

@@ -2,10 +2,9 @@ import * as THREE from 'three'
 
 import md5        from 'md5'
 
-var meshDefaultMaterial = new THREE.MeshPhongMaterial( { color: new THREE.Color('#C0C0C0'), specular: new THREE.Color('#FFECB3'), shininess: 0 } )    
-meshDefaultMaterial.side = THREE.DoubleSide
-meshDefaultMaterial.shading = THREE.FlatShading
-meshDefaultMaterial.transparent = true
+function argbToRGB( color ) {
+  return '#' + ( '000000' + ( color & 0xFFFFFF ).toString( 16 ) ).slice( -6 )
+}
 
 export default { 
   heavyTypes: [ 'Polyline', 'Curve', 'Brep', 'Mesh' ],
@@ -83,6 +82,17 @@ export default {
         k += 4
       }
     }
+
+    if( args.obj.colors ) {
+      geometry.faces.forEach( face => {
+        let colorA = new THREE.Color( argbToRGB( args.obj.colors[ face.a ] ) )
+        face.vertexColors.push( colorA )
+        let colorB = new THREE.Color( argbToRGB( args.obj.colors[ face.b ] ) )
+        face.vertexColors.push( colorB )
+        let colorC = new THREE.Color( argbToRGB( args.obj.colors[ face.c ] ) )
+        face.vertexColors.push( colorC )
+      })
+    }
     
     geometry.computeFaceNormals() 
     geometry.computeVertexNormals()
@@ -91,10 +101,15 @@ export default {
     let line = new THREE.LineSegments( edges, args.layer.threeEdgesMaterial )
 
     let mesh = new THREE.Mesh( geometry, args.layer.threeMeshMaterial )
+
+    if( args.obj.colors ) {
+      mesh.material.vertexColors = true
+    }
     mesh.add( line )
     mesh.hash = obj.hash
     return cb( null, mesh ) 
   }, 
+
   Brep( args, cb ) {
     this.Mesh( { layer: args.layer, obj: args.obj.displayValue } , ( err, obj ) => {
       if( err ) return cb ( err, null )  

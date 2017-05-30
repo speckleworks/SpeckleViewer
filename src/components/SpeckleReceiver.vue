@@ -27,7 +27,7 @@
 </template>
 
 <script>
-import ReceiverClient             from 'specklebrowser'
+import ReceiverClient             from '../receiver/SpeckleReceiver' // temporary solution to fix uglify error on build.
 import SpeckleReceiverLayer       from './SpeckleReceiverLayer.vue'
 import SpeckleReceiverComments    from './SpeckleReceiverComments.vue'
 

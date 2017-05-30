@@ -5,7 +5,7 @@
       {{ spklayer.name }} ({{spklayer.objectCount}} objs)
     </span>
     <span class="layer-buttons"> 
-      <md-icon @click.native='showColorPicker' :style='colorStyle'>color_lens</md-icon>
+      <md-icon xxxv-show='showPicker' @click.native='showColorPicker' :style='colorStyle'>color_lens</md-icon>
       <!-- <md-icon>all_out</md-icon> -->
       <md-icon @click.native='toggleLayer'>{{ visible ? "visibility" : "visibility_off" }}</md-icon>
     </span>
@@ -16,7 +16,12 @@
 <script>
 export default {
   name: 'SpkReceiverLayer',
-  props: [ 'spklayer', 'streamid' ],
+  // props: {[ 'spklayer', 'streamid' ]},
+  props: { 
+    spklayer: { type: Object },
+    streamid: { type: String },
+    // showColorPicker: { type: Boolean, default: true }
+  },
   components: {
   },
   computed: {
@@ -27,6 +32,9 @@ export default {
       if( this.layerMaterial )
         return 'color:' + this.layerMaterial.color.hex
       return 'color:gray'
+    },
+    showPicker() {
+      return this.showColorPicker
     }
   },
   data() {

@@ -18,6 +18,7 @@ export default new Vuex.Store( {
     receiverById: state => ( streamId ) => {
       return state.receivers.find( rec => rec.streamId === streamId )
     },
+    allComments: state => state.comments,
     receiverComments: state => ( streamId ) => {
       return state.comments.filter( comment => comment.streamId === streamId ).reverse()
     },
