@@ -48,7 +48,8 @@ export default {
       hoveredObject: '',
       showInfoBox: false,
       expandInfoBox: false,
-      isRotatingStuff: false
+      isRotatingStuff: false,
+      enableDo: false
     }
   },
   watch: {
@@ -129,9 +130,8 @@ export default {
       this.animationId = requestAnimationFrame( this.render )
       this.renderer.render( this.scene, this.camera )
 
-      if( ++this.frameSkipper == 30 ) {        
+      if( ++this.frameSkipper == 20 ) {        
         if( this.oldQuaternion._x === this.camera.quaternion._x && this.oldQuaternion._y === this.camera.quaternion._y && this.oldQuaternion._z === this.camera.quaternion._z && this.oldQuaternion._w === this.camera.quaternion._w) {
-          // console.log('stopped')
           this.isRotatingStuff = false
         }
         else {
@@ -141,11 +141,10 @@ export default {
         this.frameSkipper = 0
       }
       this.oldQuaternion = new THREE.Quaternion().copy( this.camera.quaternion )
-
       window.camLoc = {
         position: [ this.camera.position.x, this.camera.position.y, this.camera.position.z ],
         rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
-        target: [ this.controls.target.x, this.controls.target.y, this.controls.target.z ]
+        target: [ this.orbitControls.target.x, this.orbitControls.target.y, this.orbitControls.target.z ]
       }
 
     },
@@ -271,14 +270,14 @@ export default {
     this.scene = new THREE.Scene()
 
     this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
-    this.camera.position.z = 1000;
     this.camera.up.set( 0, 0, 1 )
+    this.camera.position.z = 1000
     this.camera.isCurrent = true
     this.camera.name = 'my super camera'
     this.oldQuaternion = new THREE.Quaternion().copy( this.camera.quaternion )
 
     this.OrbitControls = OrbitControlsDef( THREE )
-    this.controls = new this.OrbitControls( this.camera, this.renderer.domElement)
+    this.orbitControls = new this.OrbitControls( this.camera, this.renderer.domElement)
     
     this.render() 
     window.addEventListener( 'resize', this.resizeCanvas )
@@ -297,8 +296,7 @@ export default {
     this.camera.add( flashlight )
 
     this.raycaster = new THREE.Raycaster()
-    // this.$refs.mycanvas.onmousemove = debounce( this.canvasHovered, 200 )
-    // this.$refs.mycanvas.onmousemove = this.canvasHovered
+
     this.$refs.mycanvas.onmousedown = this.canvasClickedEvent
     document.onkeydown = ( event ) => {
       if( event.keyCode !== 27 ) return
@@ -319,7 +317,10 @@ export default {
     bus.$on( 'renderer-update',  debounce( this.update, 300 ) )
     bus.$on( 'renderer-setview',  this.setCamera )
 
-    console.log( this.controls )
+    bus.$on( 'renderer-toggle-do', () => {
+      // TODO
+    } )
+
   }
 }
 </script>
