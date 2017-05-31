@@ -144,7 +144,7 @@ export default {
       window.camLoc = {
         position: [ this.camera.position.x, this.camera.position.y, this.camera.position.z ],
         rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
-        target: [ this.orbitControls.target.x, this.orbitControls.target.y, this.orbitControls.target.z ]
+        target: [ this.controls.target.x, this.controls.target.y, this.controls.target.z ]
       }
 
     },
@@ -277,7 +277,7 @@ export default {
     this.oldQuaternion = new THREE.Quaternion().copy( this.camera.quaternion )
 
     this.OrbitControls = OrbitControlsDef( THREE )
-    this.orbitControls = new this.OrbitControls( this.camera, this.renderer.domElement)
+    this.controls = new this.OrbitControls( this.camera, this.renderer.domElement)
     
     this.render() 
     window.addEventListener( 'resize', this.resizeCanvas )

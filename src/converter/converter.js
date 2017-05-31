@@ -47,6 +47,7 @@ export default {
   // 
   Polyline( args, cb ) {
     let geometry = new THREE.Geometry()
+    if( !args.obj.value ) return console.warn( 'Strange polyline.' )
     for(let i = 2; i < args.obj.value.length; i += 3 )
       geometry.vertices.push( new THREE.Vector3( args.obj.value[ i - 2 ], args.obj.value[ i - 1 ], args.obj.value[ i ] ) )
 

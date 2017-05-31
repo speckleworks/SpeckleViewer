@@ -73,7 +73,7 @@ export default {
       window.SpkAppConfig.serverDetails = response.data
     })
     .catch( err => {
-      console.warn( err )
+      alert('Server ' + window.SpkAppConfig.serverUrl + ' seems to be not responding.')
     })
 
     var account = localStorage.getItem('userAccount')
@@ -82,8 +82,7 @@ export default {
     // 
     // TODO: check jwt for age and force login if expired
     // 
-    if( account && jwtToken ) this.loggedIn( { guest: false } )
-    else console.log( 'User needs to login.' )
+    this.loggedIn( { guest: false } )
   }
 }
 </script>
