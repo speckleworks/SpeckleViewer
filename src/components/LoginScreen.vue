@@ -49,22 +49,20 @@ export default {
       this.$http.post( window.SpkAppConfig.serverDetails.restApi + '/accounts/login' , { email: this.email, password: this.password })
       .then( response => {
         if( response.data.success == false ) throw new Error( 'Failed to login.' )
-          console.log(response.data)
-
         localStorage.setItem( 'userJwtToken', JSON.stringify( response.data.token ) )
-      
         return this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/accounts', { headers: { 'Authorization' : response.data.token } } )
       })
       .then( response => {
         localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
-        this.$emit('success', { guest: false } )
+        let args = { guest: false }
+        this.$emit( 'success', { guest: false, account: response.data } )
       })
       .catch( err => {
         this.loginError = true
       })
     },
     guestLogin() {
-      this.$emit('success', { guest: true } )
+      this.$emit( 'success', { guest: true } )
     }
   },
   created() {
@@ -77,6 +75,7 @@ export default {
 .login-card{
   width: 400px;
   text-align: center;
+  pointer-events: auto;
 }
 .login-screen {
   display: flex;
@@ -88,6 +87,8 @@ export default {
   width: 100%;
   height: 100%;
   z-index: 1000;
+  pointer-events: none;
+  background-color: rgba(0,0,255,0.5)
 }
 .login-error {
   color: #FF0000 !important;

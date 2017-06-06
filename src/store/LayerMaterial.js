@@ -14,6 +14,7 @@ export default ( args ) => {
     streamId: args.streamId,
     showEdges: true,
     wireframe: false,
+    vertexColors: false,
     threeMeshMaterial: new THREE.MeshPhongMaterial( {
       color: new THREE.Color('#B4B8B9'),
       specular: new THREE.Color('#FFECB3'),
@@ -21,7 +22,18 @@ export default ( args ) => {
       side: THREE.DoubleSide,
       transparent: true,
       shading: THREE.SmoothShading,
-      wireframe: false
+      wireframe: false,
+      vertexColors: false
+    } ),
+    threeMeshVertexColorsMaterial: new THREE.MeshPhongMaterial( {
+      color: new THREE.Color('#B4B8B9'),
+      specular: new THREE.Color('#FFECB3'),
+      shininess: 30,
+      side: THREE.DoubleSide,
+      transparent: true,
+      shading: THREE.SmoothShading,
+      wireframe: false,
+      vertexColors: true
     } ),
     threeLineMaterial: new THREE.LineBasicMaterial( { 
       color : new THREE.Color("#B4B8B9"), 

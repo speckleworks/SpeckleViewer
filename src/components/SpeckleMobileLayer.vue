@@ -43,6 +43,7 @@ export default {
     toggleLayer() {
       this.visible = ! this.visible
       this.layerMaterial.threeMeshMaterial.visible = this.visible
+      this.layerMaterial.threeMeshVertexColorsMaterial.visible = this.visible
       this.layerMaterial.threeLineMaterial.visible = this.visible
       this.layerMaterial.threeEdgesMaterial.visible = this.layerMaterial.showEdges ? this.visible : this.layerMaterial.threeEdgesMaterial.visible
       this.layerMaterial.threePointMaterial.visible = this.visible

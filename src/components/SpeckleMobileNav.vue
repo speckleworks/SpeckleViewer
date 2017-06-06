@@ -1,10 +1,11 @@
 <template>
     <div id='mobile-nav'>
       <md-bottom-bar md-shiftxxx id='buttons'>
+        <md-bottom-bar-item md-icon="add" @click.native='openTheAdder' style='color: red'></md-bottom-bar-item>
         <md-bottom-bar-item :md-icon="currentView==='layers' ? 'close' : 'layers'" @click.native='currentView = currentView === "layers" ? "3d" : "layers"'></md-bottom-bar-item>
-        <md-bottom-bar-item :md-icon="currentView==='comments' ? 'close' : 'chat_bubble'" @click.native='currentView = currentView === "comments" ? "3d" : "comments"'></md-bottom-bar-item>
+        <md-bottom-bar-item :md-icon="currentView==='comments' ? 'close' : 'camera_alt'" @click.native='currentView = currentView === "comments" ? "3d" : "comments"'></md-bottom-bar-item>
 <!--         <md-bottom-bar-item md-icon="zoom_out_map" @click.native='' style='color: #FF0000 !important'></md-bottom-bar-item> -->
-        <md-bottom-bar-item :md-icon="currentView==='more_vert' ? 'close' : 'help_outline'" @click.native='currentView = currentView === "settings" ? "3d" : "settings"'></md-bottom-bar-item>
+        <md-bottom-bar-item :md-icon="currentView==='settings' ? 'close' : 'help_outline'" @click.native='currentView = currentView === "settings" ? "3d" : "settings"'></md-bottom-bar-item>
 
       </md-bottom-bar>
     <transition name="fade">
@@ -45,7 +46,21 @@ export default {
   components: {
     SpeckleReceiverLayer
   },
+  watch: {
+    'currentView': {
+      handler( newValue, oldValue ) {
+        if( !this.isMobile ) return
+        if( newValue === oldValue ) return
+        if( newValue === '3d' ) bus.$emit('renderer-unpop')
+        else if(oldValue === '3d')
+          bus.$emit('renderer-pop')
+      }
+    }
+  },
   computed: {
+    isMobile() {
+      return this.$store.getters.isMobile
+    },
     layersButtonIcon() {
       if( this.currentView === 'layers') return 'close'
       else return 'layers'
@@ -69,6 +84,9 @@ export default {
     }
   },
   methods: {
+    openTheAdder() {
+      this.$emit('addstream')
+    },
     setView( where ) {
       bus.$emit( 'renderer-setview', where )
     },

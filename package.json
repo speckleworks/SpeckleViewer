@@ -12,7 +12,6 @@
     "axios": "^0.16.1",
     "debounce": "^1.0.2",
     "event-emitter-es6": "^1.1.5",
-    "md5": "^2.2.1",
     "specklebrowser": "0.0.5",
     "three": "^0.85.2",
     "three-orbit-controls": "^82.1.0",

@@ -11,9 +11,12 @@
         zoom_in
         </md-icon>
       </md-button>
-      <md-button class="md-icon-button md-raised md-primary md-dense expand-button" style='color:white !important;' @click.native='expandInfoBox=!expandInfoBox'>
-        <md-icon>
-        {{expandInfoBox ? 'keyboard_arrow_left' : 'keyboard_arrow_right' }}
+      <md-button class="md-icon-button md-raised xxxmd-primary md-dense expand-button" style='background-color:white;color:black !important;' @click.native='expandInfoBox=!expandInfoBox'>
+        <md-icon v-if='!isMobile'>
+        {{ expandInfoBox ? 'keyboard_arrow_left' : 'keyboard_arrow_right' }}
+        </md-icon>
+        <md-icon v-else>
+        {{ expandInfoBox ? 'close' : 'info_outline' }}
         </md-icon>
       </md-button>
     </div>
@@ -31,6 +34,9 @@ import Converter            from '../converter/converter'
 export default {
   name: 'SpeckleRenderer',
   computed: {
+    isMobile() {
+      return this.$store.getters.isMobile
+    },
     allObjects() {
       return this.$store.getters.allObjects
     },
@@ -155,9 +161,24 @@ export default {
     },
     deselectObjects( ) {
       this.hoveredObjects.forEach( myObject => {
+        console.log( myObject.geometry.type )
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-        myObject.material = layer.threeMeshMaterial
+        switch( myObject.type ) {
+          case 'Line':
+          myObject.material = layer.threeLineMaterial
+          break
+          case 'Mesh':
+          if( myObject.hasVertexColors )
+            myObject.material = layer.threeMeshVertexColorsMaterial
+          else
+            myObject.material = layer.threeMeshMaterial
+          break
+          case 'Point':
+          myObject.material = layer.threePointMaterial
+          break
+        }
       })
+      this.hoveredObjects = []
       this.hoveredObject = ''
       this.selectionBoxes = []
     },
@@ -298,15 +319,10 @@ export default {
     this.raycaster = new THREE.Raycaster()
 
     this.$refs.mycanvas.onmousedown = this.canvasClickedEvent
+    
     document.onkeydown = ( event ) => {
       if( event.keyCode !== 27 ) return
-      this.selectionBoxes.forEach( box => scene.remove( box ) )
-      this.hoveredObjects.forEach( myObject => {
-        let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-        myObject.material = layer.threeMeshMaterial
-      })
-      this.hoveredObject = ''
-      this.selectionBoxes = []
+      this.deselectObjects( )
       this.showInfoBox = false
       this.expandInfoBox = false
     }
@@ -317,10 +333,24 @@ export default {
     bus.$on( 'renderer-update',  debounce( this.update, 300 ) )
     bus.$on( 'renderer-setview',  this.setCamera )
 
+    bus.$on( 'renderer-layer-update-colors', args => {
+      //set colorsNeedUpdate flag to true on all geoms in args.layerguid and args.streamid
+    } )
+
     bus.$on( 'renderer-toggle-do', () => {
       // TODO
     } )
 
+    bus.$on( 'renderer-pop', () => {
+      console.log("POP")
+      this.$refs.mycanvas.classList.toggle('pop')
+      this.showInfoBox = false
+      this.expandInfoBox = false
+    })
+    bus.$on( 'renderer-unpop', () => {
+      console.log("UNPOP")
+      this.$refs.mycanvas.classList.toggle('pop')
+    })
   }
 }
 </script>
@@ -332,7 +362,13 @@ export default {
   width:100%;
   height: 100%;
   /*z-index: 10;*/
+  transition: all .2s ease;
 }
+
+#render-window.pop{
+  top: -15%;
+}
+
 .object-info {
   position: fixed;
   top:10px;right:10px;
@@ -362,7 +398,20 @@ export default {
   overflow-x: hidden;
   overflow-y: auto; 
 }
-
+@media ( max-width: 768px ) {
+  .expanded-info-box{
+    position: fixed;
+    top: auto;
+    bottom: 50px;
+    left: 2%;
+    width:96%;
+    max-width: 96%;
+    height: 30%;
+    background-color: white;
+    z-index: 44;
+    overflow-x: auto;
+  }
+}
 .tree-view-wrapper {
   font-family: auto;
   overflow: hidden !important;

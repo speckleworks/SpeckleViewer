@@ -8,12 +8,14 @@ Vue.use( Vuex )
 
 export default new Vuex.Store( {
   state: { 
+    mobile: false,
     receivers: [],
     comments: [],
     user: {},
     jwtToken: ''
   },
   getters: {
+    isMobile: state => state.mobile,
     user: state => state.user,
     authToken: state => state.jwtToken,
     allReceivers: state => state.receivers,
@@ -42,6 +44,9 @@ export default new Vuex.Store( {
   actions: {
   },
   mutations: {
+    MOBILE_VIEW( state ) {
+      state.mobile = true
+    },
     SET_JWT( state , { jwtToken } ) { 
       state.jwtToken = jwtToken
     },
@@ -93,10 +98,17 @@ export default new Vuex.Store( {
           else {
             // recreate the materials for mr. threejs because fuck you too
             myLMat.threeMeshMaterial = new THREE.MeshPhongMaterial( { ...myLMat.threeMeshMaterial } ) 
+            myLMat.threeMeshMaterial.vertexColors = false
             myLMat.threeLineMaterial = new THREE.LineBasicMaterial( { ...myLMat.threeLineMaterial } )
             myLMat.threeEdgesMaterial = new THREE.LineBasicMaterial( { ...myLMat.threeEdgesMaterial } )
             myLMat.threeEdgesMaterial.visible = myLMat.showEdges
             myLMat.threePointMaterial = new THREE.PointsMaterial( { ...myLMat.threePointMaterial } )
+
+            //backwards compatibility hack for colored meshes
+            if( myLMat.threeMeshVertexColorsMaterial )
+              myLMat.threeMeshVertexColorsMaterial = new THREE.MeshPhongMaterial( { ...myLMat.threeMeshVertexColorsMaterial } ) 
+            else 
+              myLMat.threeMeshVertexColorsMaterial = new LMat({ guid: layer.guid, streamId: target.streamId }).threeMeshVertexColorsMaterial
           }
         } ) 
       }

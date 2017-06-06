@@ -1,7 +1,5 @@
 import * as THREE from 'three'
 
-import md5        from 'md5'
-
 function argbToRGB( color ) {
   return '#' + ( '000000' + ( color & 0xFFFFFF ).toString( 16 ) ).slice( -6 )
 }
@@ -102,12 +100,15 @@ export default {
     let line = new THREE.LineSegments( edges, args.layer.threeEdgesMaterial )
 
     let mesh = new THREE.Mesh( geometry, args.layer.threeMeshMaterial )
-
-    if( args.obj.colors ) {
-      mesh.material.vertexColors = true
+    mesh.hasVertexColors = false
+    
+    if( args.obj.colors.length > 0 ) {
+      mesh.hasVertexColors = true
+      mesh.material = args.layer.threeMeshVertexColorsMaterial
     }
     mesh.add( line )
     mesh.hash = obj.hash
+
     return cb( null, mesh ) 
   }, 
 
