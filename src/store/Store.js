@@ -62,17 +62,16 @@ export default new Vuex.Store( {
     },
 
     ADD_COMMENT( state, { payload } ) {
-      console.log( payload )
       state.comments.push( payload )
     },
 
     ADD_COMMENTS( state, { payload } ) {
-      console.log()
       state.comments.push( ...payload.comments )
     },
 
     INIT_RECEIVER_DATA( state, { payload } ) {
       let target = state.receivers.find( rec => rec.streamId === payload.streamId )
+      console.log( target )
       target.name = payload.name
       target.layers = payload.layers
       

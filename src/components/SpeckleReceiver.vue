@@ -82,7 +82,6 @@ export default {
       })
     },
     receiverReady( name, layers, objects, history, layerMaterials ) {
-      console.info( 'ready event for ' )
       this.getComments() 
       
       this.showProgressBar = false

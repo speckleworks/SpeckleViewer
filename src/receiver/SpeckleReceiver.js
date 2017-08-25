@@ -163,19 +163,20 @@ export default class SpeckleReceiver extends EventEmitter {
       throw new Error('no obj provided')
       return
     }
-    if( ! obj.hash )
-      return callback( obj )
 
-    axios.get( this.restEndpoint + '/geometry/' + obj.hash  )
-      .then( response => { 
-        let myObject = response.data.data
-        // reattach props
-        myObject.properties = obj.properties
-        return callback( myObject )
-      } )
-      .catch( err => {
-        throw new Error( err )
-      })
+    if( obj.type === 'Curve' || obj.type ==='Polyline' || obj.type === 'Mesh' || obj.type === 'Brep' )
+      axios.get( this.restEndpoint + '/geometry/' + obj.hash  )
+        .then( response => { 
+          let myObject = response.data.data
+          // reattach props
+          myObject.properties = obj.properties
+          return callback( myObject )
+        } )
+        .catch( err => {
+          throw new Error( err )
+        })
+    else 
+      return callback( obj )
   }
 
   broadcast( message ) {

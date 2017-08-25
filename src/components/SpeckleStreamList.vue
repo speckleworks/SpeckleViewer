@@ -6,7 +6,7 @@
     </md-button>
     <md-button class="md-icon-button md-primary" @click.native='toggleStreamList'>
       <md-icon>{{ showStreamList ? 'keyboard_arrow_left':'keyboard_arrow_right' }}</md-icon>
-      <md-tooltip> {{ showStreamList ? 'Hide' : 'Show' }} the stream list.capti</md-tooltip>
+      <md-tooltip> {{ showStreamList ? 'Hide' : 'Show' }} the stream list.</md-tooltip>
     </md-button>
   </div>
   <div id='stream-list' class='' ref='thestreamlist'>
