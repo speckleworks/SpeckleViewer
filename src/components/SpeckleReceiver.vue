@@ -33,7 +33,8 @@
 </template>
 
 <script>
-import ReceiverClient             from '../receiver/SpeckleReceiver' // temporary solution to fix uglify error on build.
+// import ReceiverClient             from '../receiver/SpeckleReceiver'
+import ReceiverClient             from '../receiver/ClientReceiver'
 import SpeckleReceiverLayer       from './SpeckleReceiverLayer.vue'
 import SpeckleReceiverComments    from './SpeckleReceiverComments.vue'
 
@@ -69,6 +70,7 @@ export default {
     receiverError( err ) {
       this.errror = err
     },
+
     getComments( ) {
       this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/comments/' + this.spkreceiver.streamId )
       .then( response => {
@@ -81,6 +83,7 @@ export default {
         console.warn( err )
       })
     },
+
     receiverReady( name, layers, objects, history, layerMaterials ) {
       this.getComments() 
       
@@ -92,6 +95,7 @@ export default {
       bus.$emit('renderer-update')
       this.isStale = true
     },
+
     liveUpdate( name, layers, objects, history ) {
       console.info( 'live update event' )
       this.showProgressBar = false
@@ -103,13 +107,16 @@ export default {
       bus.$emit('renderer-update')
       this.isStale = true
     },
+
     metadataUpdate( name, layers ) {
       let payload = { streamId: this.spkreceiver.streamId, name: name, layers: layers }
       this.$store.commit( 'SET_RECEIVER_METADATA',  { payload } )
     },
+
     objLoadProgressEv( loaded ) {
       this.objLoadProgress = ( loaded + 1 ) / this.objects.length * 100
     },
+
     commentSubmit( comment ) {
       let payload = comment
       payload.streamId = this.spkreceiver.streamId
@@ -124,6 +131,7 @@ export default {
         console.log( err ) 
       })
     },
+    
     broadcastReceived( message ) {
       console.log( message )
       let parsedMessage = JSON.parse( message.args )
@@ -137,10 +145,12 @@ export default {
     console.log( 'Receiver mounted: ' + this.spkreceiver.streamId )
     this.name = 'loading ' + this.spkreceiver.streamId
     this.mySpkReceiver = new ReceiverClient({
-      serverUrl: this.spkreceiver.serverUrl,
+      baseUrl: this.spkreceiver.serverUrl,
       streamId: this.spkreceiver.streamId,
       token: this.spkreceiver.token
     })
+
+    this.mySpkReceiver.setupClient() 
 
     this.mySpkReceiver.on( 'error', this.receiverError )
     this.mySpkReceiver.on( 'ready', this.receiverReady )

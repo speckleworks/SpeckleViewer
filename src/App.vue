@@ -1,4 +1,3 @@
-
 <template>
   <div id="app">
     <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen>
@@ -8,7 +7,6 @@
 </template>
 
 <script>
-
 import LoginScreen      from './components/LoginScreen.vue'
 import SpeckleViewer    from './components/SpeckleViewer.vue'
 
@@ -78,7 +76,7 @@ export default {
       var account = localStorage.getItem('userAccount')
       var jwtToken = localStorage.getItem('userJwtToken')
 
-      return this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/accounts', { 
+      return this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/accounts/profile', { 
         headers: 
         {
           Authorization: JSON.parse( jwtToken )

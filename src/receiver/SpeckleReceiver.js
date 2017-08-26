@@ -78,7 +78,7 @@ export default class SpeckleReceiver extends EventEmitter {
   }
 
   wsConnect() {
-    this.ws = new WebSocket( this.wsEndpoint + '/?access_token=' + this.token )
+    this.ws = new WebSocket( this.wsEndpoint + '/?access_token=' + this.token + '&stream_id' + this.streamId )
 
     this.ws.onopen = () => {
       this.wsReconnectionAttempts = 0

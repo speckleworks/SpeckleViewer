@@ -78,7 +78,7 @@ export default {
             console.warn( 'Renderer: non convertable object: ' + myObject.type )
           else {
             let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId })
-            
+            console.log( myObject )
             if( Converter.heavyTypes.indexOf( myObject.type ) < 0 ) {
               Converter[ myObject.type ]( { obj: myObject, layer: layer, camera: this.camera } , ( err, threeObj ) => {
                 threeObj.hash = myObject.hash
@@ -91,9 +91,9 @@ export default {
                 this.scene.add( threeObj )
               })
             } else {
-              this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/geometry/' + myObject.hash )
+              this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/objects/' + myObject._id )
               .then( res => { 
-                Converter[ res.data.data.type ]( { obj: res.data.data, layer: layer, camera: this.camera }, ( err, threeObj ) => {
+                Converter[ res.data.speckleObject.type ]( { obj: res.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj ) => {
                   threeObj.hash = myObject.hash
                   threeObj.streamId = myObject.streamId
                   threeObj.layerGuid = myObject.layerGuid

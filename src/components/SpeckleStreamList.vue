@@ -49,7 +49,6 @@ export default {
     },
     toggleStreamList() {
       this.showStreamList = ! this.showStreamList
-      console.log(this.$refs.thestreamlist  )
       this.$refs.thestreamlist.classList.toggle('hidden')
     }
   },

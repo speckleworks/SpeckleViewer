@@ -50,7 +50,7 @@ export default {
       .then( response => {
         if( response.data.success == false ) throw new Error( 'Failed to login.' )
         localStorage.setItem( 'userJwtToken', JSON.stringify( response.data.token ) )
-        return this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/accounts', { headers: { 'Authorization' : response.data.token } } )
+        return this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/accounts/profile', { headers: { 'Authorization' : response.data.token } } )
       })
       .then( response => {
         localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
