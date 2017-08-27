@@ -45,7 +45,6 @@ export default {
     },
     propertiesToDisplay() {
       return this.selectedObjectsProperties.properties 
-      // return this.selectedObjectsProperties.properties ? this.selectedObjectsProperties.properties : { properties: 'none'}
     }
   },
   data() {
@@ -70,45 +69,29 @@ export default {
   methods: {
     update( ) {
       if( this.updateInProgress ) return console.warn( 'Scene update was already in progress, cancelling.' )
-      this.updateInProgress = true
+      this.updateInProgress = true 
       for( let myObject of this.allObjects ) {
-        let sceneObj = this.scene.children.find( obj => { return obj.hash === myObject.hash && obj.streamId === myObject.streamId } )
+        let sceneObj = this.scene.children.find( obj => { return obj._id === myObject._id && obj.streamId === myObject.streamId } )
+        let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId })
         if( !sceneObj ) {
-          if( ! Converter.hasOwnProperty( myObject.type ) ) 
-            console.warn( 'Renderer: non convertable object: ' + myObject.type )
-          else {
-            let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId })
-            console.log( myObject )
-            if( Converter.heavyTypes.indexOf( myObject.type ) < 0 ) {
-              Converter[ myObject.type ]( { obj: myObject, layer: layer, camera: this.camera } , ( err, threeObj ) => {
-                threeObj.hash = myObject.hash
+          this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/objects/' + myObject._id + '?format=speckle' )
+          .then( result => {
+            if( ! Converter.hasOwnProperty( result.data.speckleObject.type )) throw new Error('Cannot convert this object: ' + result.data.speckleObject.type + ','+ myObject._id )
+            Converter[ result.data.speckleObject.type ]( { obj: result.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj )=>{
+                threeObj.hash = result.data.speckleObject.hash
                 threeObj.streamId = myObject.streamId
                 threeObj.layerGuid = myObject.layerGuid
                 threeObj.visible = layer.visible
                 threeObj.isCurrent = true
-                threeObj.spkProperties = myObject.properties
-                threeObj.name = myObject.streamId + '::' + myObject.hash
+                threeObj.spkProperties = result.data.speckleObject.properties
+                threeObj.name = myObject.streamId + '::' + result.data.speckleObject.hash
+                // console.log( threeObj )
                 this.scene.add( threeObj )
-              })
-            } else {
-              this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/objects/' + myObject._id )
-              .then( res => { 
-                Converter[ res.data.speckleObject.type ]( { obj: res.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj ) => {
-                  threeObj.hash = myObject.hash
-                  threeObj.streamId = myObject.streamId
-                  threeObj.layerGuid = myObject.layerGuid
-                  threeObj.visible = layer.visible
-                  threeObj.isCurrent = true
-                  threeObj.spkProperties = myObject.properties
-                  threeObj.name = myObject.streamId + '::' + myObject.hash
-                  this.scene.add( threeObj )
-                })
-              })
-              .catch( err => { 
-                console.error( err )
-              })
-            }
-          }
+            } )
+          })
+          .catch( err=> {
+            // console.error( err )
+          } )
         } else {
           if( sceneObj.visible === false ) {
             sceneObj.visible = true
@@ -161,7 +144,6 @@ export default {
     },
     deselectObjects( ) {
       this.hoveredObjects.forEach( myObject => {
-        console.log( myObject.geometry.type )
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
         switch( myObject.type ) {
           case 'Line':

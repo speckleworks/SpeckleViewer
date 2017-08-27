@@ -20,7 +20,6 @@ export default class SpeckleReceiver extends EventEmitter {
     this.wsReconnectionAttempts = 0
     
     this.setupClient( cb => this.setupWebsockets( cb => this.getStream( cb => {
-      console.log( this.stream )
       this.emit( 'ready', this.stream.name, this.stream.layers, this.stream.objects, [], [] )
       this.setupWsReconnecter()
     } ) ) )
@@ -44,10 +43,21 @@ export default class SpeckleReceiver extends EventEmitter {
     }
 
     this.ws.onmessage = message => {
-      console.log( message )
       if ( message.data === 'ping' ) return this.ws.send( 'alive' )
       let parsedMessage = JSON.parse( message.data )
-      console.log( message.data )
+      switch( parsedMessage.args.eventType ) {
+        case 'update-global':
+          this.emit( 'update-global' )
+          console.log( 'GLOBAL UPDATE YO' )
+          break
+        case 'update-meta':
+          this.emit( 'update-meta' )
+          console.log( 'METAMETA UPDATE YO')
+          break
+        default: 
+          console.log( 'Custom event received:', parsedMessage.args.eventType )
+          break;
+      }
     }
 
     this.ws.onclose = reason => {
@@ -67,8 +77,9 @@ export default class SpeckleReceiver extends EventEmitter {
   }
 
   getStream( cb ) {
-    axios.get( this.baseUrl + '/streams/' + this.streamId + '', { headers: { 'Auth': this.auth } } )
+    axios.get( this.baseUrl + '/streams/' + this.streamId + '/meta', { headers: { 'Auth': this.auth } } )
       .then( response => {
+        console.log( response.data )
         this.stream = response.data.stream
         cb() 
       } )
@@ -77,16 +88,50 @@ export default class SpeckleReceiver extends EventEmitter {
       } )
   }
 
-  getStreamName( ) {
+  getStreamNameAndLayers( cb ) {
+    // TODO: Promise.all()
+    let responseName = {}
+    axios.get( this.baseUrl + '/streams/' + this.streamId + '/name', { headers: { 'Auth': this.auth } } )
+    .then( response => {
+      responseName = response
+      return axios.get( this.baseUrl + '/streams/' + this.streamId + '/layers', { headers: { 'Auth': this.auth } } )
+    })
+    .then( response => {
+      cb( responseName.data.name, response.data.layers )
+    })
+    .catch( err => {
+      console.error( err )
+    }) 
+  }
 
+
+  getStreamName( ) {
+    axios.get( this.baseUrl + '/streams/' + this.streamId + '/name', { headers: { 'Auth': this.auth } } )
+    .then( response => {
+
+    })
+    .catch( err => {
+      console.log( err )
+    })
   }
 
   getStreamLayers( ) {
+    axios.get( this.baseUrl + '/streams/' + this.streamId + '/layers', { headers: { 'Auth': this.auth } } )
+    .then( response => {
 
+    })
+    .catch( err => {
+
+    })
   }
 
-  getObject( ) {}
+  getObject( objectId ) {
+    axios.get( this.baseUrl + '/objects/' + objectId )
+    .then( response => {
 
-
-
+    })
+    .catch( err => {
+      console.log( err )
+    })
+  }
 }
