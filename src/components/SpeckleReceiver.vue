@@ -10,7 +10,10 @@
       <span class="md-caption"><code style="user-select:all">{{ spkreceiver.streamId }}</code></span>
       <br>
       <md-progress md-indeterminate v-show='showProgressBar' style='margin-bottom:20px;margin-top:20px;'></md-progress>
-      <!-- <div class="md-caption"><br>ID: <code>{{ spkreceiver.streamId }}</code></div> -->
+      <md-button v-show='expired' class='md-densexx md-warn md-raised md-icon-button' id='refresh-button' @click.native='getAndSetStream()'>
+        <md-icon>refresh</md-icon>
+        <md-tooltip>Update available. Click to refresh.</md-tooltip>
+      </md-button>
     </md-card-header>
     <md-card-content v-show='expanded'>
 <!--       <md-tabs md-fixedXXX class='md-transparent'>
@@ -62,8 +65,8 @@ export default {
       showProgressBar: true,
       objLoadProgress: 100,
       comments: 'Hello World. How Are you? Testing testing 123.',
-      isStale: false,
-      expanded: true
+      expanded: true, 
+      expired: false
     }
   },
   methods: {
@@ -79,19 +82,31 @@ export default {
       this.$store.commit( 'INIT_RECEIVER_DATA',  { payload } )
       
       bus.$emit('renderer-update')
-      this.isStale = true
     },
 
-    liveUpdate( name, layers, objects, history ) {
+    updateGlobal( ) {
       console.info( 'live update event' )
-      this.showProgressBar = false
-      this.objLoadProgress = 0
+      this.expired = true
+      // this.showProgressBar = false
+      // this.objLoadProgress = 0
 
-      let payload = { streamId: this.spkreceiver.streamId, name: name, layers: layers, objects: objects }
-      this.$store.commit( 'SET_RECEIVER_DATA',  { payload } )
+      // let payload = { streamId: this.spkreceiver.streamId, name: name, layers: layers, objects: objects }
+      // this.$store.commit( 'SET_RECEIVER_DATA',  { payload } )
       
-      bus.$emit('renderer-update')
-      this.isStale = true
+      // bus.$emit('renderer-update')
+      // this.isStale = true
+    },
+
+    getAndSetStream( ) {
+      this.showProgressBar = true
+      this.expired = false
+      this.mySpkReceiver.getStream( stream => {
+        let payload = { streamId: this.spkreceiver.streamId, name: stream.name, layers: stream.layers, objects: stream.objects }
+        this.$store.commit( 'SET_RECEIVER_DATA',  { payload } )
+        this.showProgressBar = false
+        bus.$emit('renderer-update')
+      } )
+
     },
 
     updateMeta( ) {
@@ -129,11 +144,17 @@ export default {
     this.mySpkReceiver.on( 'error', this.receiverError )
     this.mySpkReceiver.on( 'ready', this.receiverReady )
     this.mySpkReceiver.on( 'update-meta', this.updateMeta )
+    this.mySpkReceiver.on( 'update-global', this.updateGlobal )
   }
 }
 </script>
 
 <style>
+#refresh-button {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+}
 .line-height-adjustment{
   line-height: 30px;
 }

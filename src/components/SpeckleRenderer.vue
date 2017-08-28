@@ -71,8 +71,11 @@ export default {
       if( this.updateInProgress ) return console.warn( 'Scene update was already in progress, cancelling.' )
       this.updateInProgress = true 
       for( let myObject of this.allObjects ) {
-        let sceneObj = this.scene.children.find( obj => { return obj._id === myObject._id && obj.streamId === myObject.streamId } )
+        
+        let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
+        
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId })
+        
         if( !sceneObj ) {
           this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/objects/' + myObject._id + '?format=speckle' )
           .then( result => {
@@ -84,8 +87,8 @@ export default {
                 threeObj.visible = layer.visible
                 threeObj.isCurrent = true
                 threeObj.spkProperties = result.data.speckleObject.properties
-                threeObj.name = myObject.streamId + '::' + result.data.speckleObject.hash
-                // console.log( threeObj )
+                threeObj.name = myObject.streamId + '::' + result.data.speckleObject._id
+                threeObj._id = myObject._id
                 this.scene.add( threeObj )
             } )
           })
@@ -102,8 +105,8 @@ export default {
       }
 
       for( let myObject of this.scene.children ) {
-        if( myObject.hasOwnProperty( 'hash' ) ) {
-          let found = this.allObjects.find( o => { return o.hash === myObject.hash && o.streamId === myObject.streamId } )
+        if( myObject.hasOwnProperty( '_id' ) ) {
+          let found = this.allObjects.find( o => { return o._id === myObject._id && o.streamId === myObject.streamId } )
           if( !found ) {
             myObject.isCurrent = false
             myObject.visible = false

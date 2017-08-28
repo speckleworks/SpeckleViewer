@@ -92,6 +92,7 @@ export default new Vuex.Store( {
       let target = state.receivers.find( rec => rec.streamId === payload.streamId )
       target.name = payload.name
 
+      // set objects
       target.objects = payload.objects.map( ( obj, index ) => {
         return {
           streamId: payload.streamId,
@@ -101,8 +102,6 @@ export default new Vuex.Store( {
           _id: obj
         }
       } )
-
-
 
       target.layers = payload.layers.map( layer => {
         if( layer.properties === undefined ) {
@@ -140,22 +139,36 @@ export default new Vuex.Store( {
 
     SET_RECEIVER_DATA( state, { payload } ) {
       let target = state.receivers.find( rec => rec.streamId === payload.streamId )
+
       target.name = payload.name
-      target.layers = payload.layers
+      
+      let layersToRemove = [], layersToAdd = []
 
-      payload.objects.forEach( ( obj, index ) => {
-        obj.streamId = payload.streamId
-        obj.layerGuid = payload.layers.find( layer => {
-          return index >= layer.startIndex && index < layer.startIndex + layer.objectCount
-        } ).guid
-      } )
-      target.objects = payload.objects
+      target.layers.forEach( l => {
+        let match = payload.layers.find( la => la.guid == l.guid )
+        if( match )
+        {
+          l.name = match.name
+        } else {
+          layersToRemove.push( l )
+        }
+      })
 
-      //check for layermaterials completion
-      target.layers.forEach( layer => {
-        if ( !target.layerMaterials.find( obj => { return layer.guid === obj.guid } ) )
-          console.warn( 'missing layer.' )
-        target.layerMaterials.push( new LMat( { guid: layer.guid, streamId: target.streamId } ) )
+      payload.layers.forEach( l => {
+        let match = target.layers.find( la => la.guid == l.guid )
+        if( !match )
+          layersToAdd.push( l )
+      })
+      
+      // set objects
+      target.objects = payload.objects.map( ( obj, index ) => {
+        return {
+          streamId: payload.streamId,
+          layerGuid: payload.layers.find( layer => {
+            return index >= layer.startIndex && index < layer.startIndex + layer.objectCount
+          } ).guid,
+          _id: obj
+        }
       } )
     }
   }

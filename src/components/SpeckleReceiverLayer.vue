@@ -67,6 +67,9 @@ export default {
   position: relative;
   user-select: none;
 }
+.spk-layer:last-of-type{
+  border-bottom: 0;
+}
 .layer-details {
   line-height: 50px;
   font-size: 12px;

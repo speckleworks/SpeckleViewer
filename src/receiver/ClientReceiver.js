@@ -81,7 +81,7 @@ export default class SpeckleReceiver extends EventEmitter {
       .then( response => {
         console.log( response.data )
         this.stream = response.data.stream
-        cb() 
+        cb( this.stream ) 
       } )
       .catch( err => {
         console.log( err )
