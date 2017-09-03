@@ -1,6 +1,6 @@
 <template>
 <div>
-  <md-card class="receiver paddedcard">  
+  <md-card class="receiver xxxpaddedcard">  
     <md-card-header style='line-heigth:30px' class='line-height-adjustment'>
       <span class="md-body-2">
         <md-button class='md-icon-button md-dense xxxmd-accent xxxmd-raised' @click.native='expanded = ! expanded'>
@@ -15,21 +15,18 @@
         <md-tooltip>Update available. Click to refresh.</md-tooltip>
       </md-button>
     </md-card-header>
-    <md-card-content v-show='expanded'>
-<!--       <md-tabs md-fixedXXX class='md-transparent'>
-        <md-tab id="layers" md-label="layers" class='receiver-tabs'>
- -->            <speckle-receiver-layer v-for='layer in layers' :key='layer.guid' :spklayer='layer' :streamid='spkreceiver.streamId'></speckle-receiver-layer>
-<!--         </md-tab>
-        <md-tab id='comments' md-label='views' class='receiver-tabs'>
-          <speckle-receiver-comments :streamid='spkreceiver.streamId' v-on:comment-submit='commentSubmit' ></speckle-receiver-comments>
-        </md-tab>
-        <md-tab id='versions' md-label='versions' class='receiver-tabs'>
-        <br>
-        <div class="md-subhead">Todo.</div>
-          <speckle-receiver-comments :streamid='spkreceiver.streamId' v-on:comment-submit='commentSubmit' ></speckle-receiver-comments>
-        </md-tab>
-      </md-tabs> -->
-      
+    <md-card-content>
+      <md-button @click.native='getControllers()' class='md-accent'>
+        Get Sldiers
+      </md-button>
+      <br>
+      <div v-for='controller in controllers'> {{ controller.Name }} :: {{ controller.Value }} :: {{ controller.Type }} </div>
+      <br>
+      <div v-for='slider in sliders'>
+      <vue-slider v-model="slider.Value" :min='slider.Min' :max='slider.Max' :piecewise='false' :interval='slider.Step' :lazy='true'></vue-slider>
+      <br>
+      </div>
+
     </md-card-content>
   </md-card>
 </div>
@@ -38,18 +35,14 @@
 <script>
 // import ReceiverClient             from '../receiver/SpeckleReceiver'
 import ReceiverClient             from '../receiver/ClientReceiver'
-import SpeckleReceiverLayer       from './SpeckleReceiverLayer.vue'
-import SpeckleReceiverComments    from './SpeckleReceiverComments.vue'
+import VueSlider                  from 'vue-slider-component'
 
-import Converter                  from '../converter/converter'
-import * as THREE                 from 'three'
 import debounce                   from 'debounce'
 
 export default {
   name: 'SpeckleReceiver',
   components: {
-    SpeckleReceiverLayer,
-    SpeckleReceiverComments
+    VueSlider
   },
   props: ['spkreceiver'],
   computed: {
@@ -58,6 +51,9 @@ export default {
     },
     layers() {
       return this.spkreceiver.layers
+    },
+    sliders() {
+      return this.controllers.filter( c => c.Type === 'Slider' )
     }
   },
   data () {
@@ -66,14 +62,39 @@ export default {
       objLoadProgress: 100,
       comments: 'Hello World. How Are you? Testing testing 123.',
       expanded: true, 
-      expired: false
+      expired: false,
+      controllers: [],
+      responses: [],
+      showControllers: false
     }
   },
   methods: {
     receiverError( err ) {
       this.errror = err
     },
-    
+
+    getControllers() {
+      // this.responses = []
+      // this.controllers = []
+      this.showProgressBar = true
+      this.mySpkReceiver.broadcast( { eventType: 'get-defintion-io' } )
+      setTimeout( this.finaliseIo, 1000 )
+    },
+
+    collateResponses( wsMessage ) {
+      this.responses.push( wsMessage )
+    },
+
+    finaliseIo() {
+      this.showControllers = true
+      this.showProgressBar = false
+      let controllerList = this.responses[0].controllers
+      controllerList.forEach( c => { 
+        c.pieceWise = Math.abs(c.Max - c.Min) * c.Step < 20 ? true : false
+        this.controllers.push( c ) 
+      })
+    },
+
     receiverReady( name, layers, objects, history, layerMaterials ) {
       this.showProgressBar = false
       this.objLoadProgress = 0
@@ -106,7 +127,6 @@ export default {
         this.showProgressBar = false
         bus.$emit('renderer-update')
       } )
-
     },
 
     updateMeta( ) {
@@ -143,6 +163,7 @@ export default {
     this.mySpkReceiver.on( 'ready', this.receiverReady )
     this.mySpkReceiver.on( 'update-meta', this.updateMeta )
     this.mySpkReceiver.on( 'update-global', this.updateGlobal )
+    this.mySpkReceiver.on( 'get-def-io-response', this.collateResponses )
   }
 }
 </script>
