@@ -6,7 +6,6 @@
     </span>
     <span class="layer-buttons"> 
       <md-icon xxxv-show='showPicker' @click.native='showColorPicker' :style='colorStyle'>color_lens</md-icon>
-      <!-- <md-icon>all_out</md-icon> -->
       <md-icon @click.native='toggleLayer'>{{ visible ? "visibility" : "visibility_off" }}</md-icon>
     </span>
     </div>

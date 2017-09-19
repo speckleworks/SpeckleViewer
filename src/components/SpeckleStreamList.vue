@@ -1,6 +1,6 @@
 <template>
 <div id="stream-list-cover">
-  <div class='list-menu'>
+<!--   <div class='list-menu'>
     <md-button class="md-icon-button md-warn" @click.native='showNewStreamDialgue = true'>
       <md-icon>add</md-icon>
     </md-button>
@@ -8,7 +8,7 @@
       <md-icon>{{ showStreamList ? 'keyboard_arrow_left':'keyboard_arrow_right' }}</md-icon>
       <md-tooltip> {{ showStreamList ? 'Hide' : 'Show' }} the stream list.</md-tooltip>
     </md-button>
-  </div>
+  </div> -->
   <div id='stream-list' class='' ref='thestreamlist'>
     <speckle-receiver v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
     <div class='paddedcard' style='position:relative;' v-show='receivers.length === 0'>

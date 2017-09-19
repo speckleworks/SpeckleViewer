@@ -9,7 +9,7 @@ export default class SpeckleReceiver extends EventEmitter {
     if ( !args.streamId ) throw new Error( 'No stream id provided' )
     if ( !args.baseUrl ) throw new Error( 'No stream id provided' )
 
-    this.baseUrl = args.baseUrl + '/api'
+    this.baseUrl = args.baseUrl
     this.auth = args.auth
     this.streamId = args.streamId
 
@@ -90,7 +90,7 @@ export default class SpeckleReceiver extends EventEmitter {
   }
 
   getStream( cb ) {
-    axios.get( this.baseUrl + '/streams/' + this.streamId + '/meta', { headers: { 'Auth': this.auth } } )
+    axios.get( this.baseUrl + '/streams/' + this.streamId, { headers: { 'Auth': this.auth } } )
       .then( response => {
         console.log( response.data )
         this.stream = response.data.stream

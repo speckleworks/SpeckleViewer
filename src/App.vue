@@ -1,7 +1,6 @@
 <template>
   <div id="app">
     <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen>
-    <!-- <speckle-viewer v-if='!showLogin'></speckle-viewer> -->
     <speckle-viewer></speckle-viewer>
   </div>
 </template>
@@ -23,6 +22,22 @@ export default {
     }
   },
   methods: {
+    toggleLeftSidenav() {
+      this.$refs.leftSidenav.toggle();
+    },
+    toggleRightSidenav() {
+      this.$refs.rightSidenav.toggle();
+    },
+    closeRightSidenav() {
+      this.$refs.rightSidenav.close();
+    },
+    open(ref) {
+      console.log('Opened: ' + ref);
+    },
+    close(ref) {
+      console.log('Closed: ' + ref);
+    },
+
     loggedIn( args ) {
       console.log( args )
       if( args.guest === false ) {
