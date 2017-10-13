@@ -22,6 +22,7 @@
     "vue-dragging": "^1.0.6",
     "vue-json-tree-view": "^2.0.7",
     "vue-material": "^0.7.1",
+    "vue-slider-component": "^2.3.9",
     "vuex": "^2.3.1"
   },
   "devDependencies": {

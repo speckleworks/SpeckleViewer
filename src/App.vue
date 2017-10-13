@@ -1,14 +1,11 @@
-
 <template>
   <div id="app">
     <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen>
-    <!-- <speckle-viewer v-if='!showLogin'></speckle-viewer> -->
     <speckle-viewer></speckle-viewer>
   </div>
 </template>
 
 <script>
-
 import LoginScreen      from './components/LoginScreen.vue'
 import SpeckleViewer    from './components/SpeckleViewer.vue'
 
@@ -25,6 +22,22 @@ export default {
     }
   },
   methods: {
+    toggleLeftSidenav() {
+      this.$refs.leftSidenav.toggle();
+    },
+    toggleRightSidenav() {
+      this.$refs.rightSidenav.toggle();
+    },
+    closeRightSidenav() {
+      this.$refs.rightSidenav.close();
+    },
+    open(ref) {
+      console.log('Opened: ' + ref);
+    },
+    close(ref) {
+      console.log('Closed: ' + ref);
+    },
+
     loggedIn( args ) {
       console.log( args )
       if( args.guest === false ) {
@@ -78,7 +91,7 @@ export default {
       var account = localStorage.getItem('userAccount')
       var jwtToken = localStorage.getItem('userJwtToken')
 
-      return this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/accounts', { 
+      return this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/accounts/profile', { 
         headers: 
         {
           Authorization: JSON.parse( jwtToken )

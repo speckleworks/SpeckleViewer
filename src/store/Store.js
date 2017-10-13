@@ -1,16 +1,16 @@
-import Vue                    from 'vue'
-import Vuex                   from 'vuex'
-import LMat                   from './LayerMaterial'
+import Vue from 'vue'
+import Vuex from 'vuex'
+import LMat from './LayerMaterial'
 
-import * as THREE           from 'three'
+import * as THREE from 'three'
 
 Vue.use( Vuex )
 
 export default new Vuex.Store( {
-  state: { 
+  state: {
     mobile: false,
-    receivers: [],
-    comments: [],
+    receivers: [ ],
+    comments: [ ],
     user: {},
     jwtToken: ''
   },
@@ -24,37 +24,42 @@ export default new Vuex.Store( {
     },
     allComments: state => state.comments,
     receiverComments: state => ( streamId ) => {
-      return state.comments.filter( comment => comment.streamId === streamId ).reverse()
+      return state.comments.filter( comment => comment.streamId === streamId ).reverse( )
     },
     receiverLayers: state => ( streamId ) => {
       return state.receivers.find( rec => rec.streamId === streamId ).layers
     },
     layerMaterial: ( state, getters ) => ( streamId, layerGuid ) => {
-      return getters.receiverById( streamId ).layerMaterials.find( item => item.guid === layerGuid )
+      return getters.receiverById( streamId ).layers.find( item => item.guid === layerGuid ).properties
     },
     allObjects: state => {
-      return state.receivers.reduce( ( p, c ) => { return [ ...p, ...c.objects ] }, [] )
+      return state.receivers.reduce( ( p, c ) => { return [ ...p, ...c.objects ] }, [ ] )
     },
     allLayerMaterials: ( state ) => {
-      let arr = []
-      state.receivers.forEach( rec => arr.push( rec.layerMaterials ) )
-      return arr.concat.apply( [], arr )
+      let arr = [ ]
+      state.receivers.forEach( rec => {
+        rec.layers.forEach( layer => {
+          arr.push( layer.properties )
+        })
+      } )
+      // console.log( arr )
+      return arr
+      // return arr.concat.apply( [ ], arr )
     }
   },
-  actions: {
-  },
+  actions: {},
   mutations: {
     MOBILE_VIEW( state ) {
       state.mobile = true
     },
-    SET_JWT( state , { jwtToken } ) { 
+    SET_JWT( state, { jwtToken } ) {
       state.jwtToken = jwtToken
     },
     SET_USER( state, { account } ) {
       state.user = account
     },
 
-    ADD_RECEIVERS( state, { receivers } ) { 
+    ADD_RECEIVERS( state, { receivers } ) {
       state.receivers = receivers
     },
     ADD_RECEIVER( state, { receiver } ) {
@@ -69,81 +74,102 @@ export default new Vuex.Store( {
       state.comments.push( ...payload.comments )
     },
 
+    UPDATE_LAYER_PROPS( state, { payload } ) {
+      console.log( payload )
+      let l = state.receivers.find( rec => rec.streamId === payload.streamId ).layers.find( l => l.guid == payload.guid ).properties
+      console.log( l )
+      l.color.hex = payload.hex
+      l.threeMeshMaterial.color = new THREE.Color( payload.hex )
+      l.threeLineMaterial.color = new THREE.Color( payload.hex )
+      l.threePointMaterial.color = new THREE.Color( payload.hex )
+      l.threeMeshMaterial.opacity = payload.a
+      l.threeLineMaterial.opacity = payload.a
+      l.threePointMaterial.opacity = payload.a
+
+    },
+
     INIT_RECEIVER_DATA( state, { payload } ) {
       let target = state.receivers.find( rec => rec.streamId === payload.streamId )
-      console.log( target )
       target.name = payload.name
-      target.layers = payload.layers
-      
-      payload.objects.forEach( ( obj, index )=> { 
-        obj.streamId = payload.streamId 
-        obj.layerGuid = payload.layers.find( layer => {
-          return index >= layer.startIndex && index < layer.startIndex + layer.objectCount
-        }).guid
-      } )
-      target.objects = payload.objects
-      
-      if( !payload.layerMaterials ) { // create layerMaterials
-        target.layerMaterials = []
-        target.layers.forEach( layer => {
-          target.layerMaterials.push( new LMat( { guid: layer.guid, streamId: target.streamId } ) )
-        })
-      } else {  // check completion
-        target.layerMaterials = payload.layerMaterials
-        target.layers.forEach( layer => { 
-          let myLMat = target.layerMaterials.find( obj => { return layer.guid === obj.guid } )
-          if( ! myLMat )
-            target.layerMaterials.push( new LMat( { guid: layer.guid, streamId: target.streamId } ) )
-          else {
-            // recreate the materials for mr. threejs because fuck you too
-            myLMat.threeMeshMaterial = new THREE.MeshPhongMaterial( { ...myLMat.threeMeshMaterial } ) 
-            myLMat.threeMeshMaterial.vertexColors = false
-            myLMat.threeLineMaterial = new THREE.LineBasicMaterial( { ...myLMat.threeLineMaterial } )
-            myLMat.threeEdgesMaterial = new THREE.LineBasicMaterial( { ...myLMat.threeEdgesMaterial } )
-            myLMat.threeEdgesMaterial.visible = myLMat.showEdges
-            myLMat.threePointMaterial = new THREE.PointsMaterial( { ...myLMat.threePointMaterial } )
 
-            //backwards compatibility hack for colored meshes
-            if( myLMat.threeMeshVertexColorsMaterial )
-              myLMat.threeMeshVertexColorsMaterial = new THREE.MeshPhongMaterial( { ...myLMat.threeMeshVertexColorsMaterial } ) 
-            else 
-              myLMat.threeMeshVertexColorsMaterial = new LMat({ guid: layer.guid, streamId: target.streamId }).threeMeshVertexColorsMaterial
-          }
-        } ) 
-      }
+      // set objects
+      target.objects = payload.objects.map( ( obj, index ) => {
+        return {
+          streamId: payload.streamId,
+          layerGuid: payload.layers.find( layer => {
+            return index >= layer.startIndex && index < layer.startIndex + layer.objectCount
+          } ).guid,
+          _id: obj
+        }
+      } )
+
+      target.layers = payload.layers.map( layer => {
+        if( layer.properties === undefined ) {
+          layer.properties = new LMat( { guid: layer.guid, streamId: target.streamId } ) 
+          return layer
+        } else {
+          layer.properties.threeMeshMaterial = new THREE.MeshPhongMaterial( { ...layer.properties.threeMeshMaterial } )
+          layer.properties.threeLineMaterial = new THREE.LineBasicMaterial( { ...layer.properties.threeLineMaterial } )
+          layer.properties.threeEdgesMaterial = new THREE.LineBasicMaterial( { ...layer.properties.threeEdgesMaterial } )
+          layer.properties.threeEdgesMaterial.visible = layer.properties.showEdges
+          layer.properties.threePointMaterial = new THREE.PointsMaterial( { ...layer.properties.threePointMaterial } )
+          if ( layer.properties.threeMeshVertexColorsMaterial )
+              layer.properties.threeMeshVertexColorsMaterial = new THREE.MeshPhongMaterial( { ...layer.properties.threeMeshVertexColorsMaterial } )
+            else
+              layer.properties.threeMeshVertexColorsMaterial = new LMat( { guid: layer.properties.guid, streamId: target.streamId } ).threeMeshVertexColorsMaterial
+          return layer
+        }
+      })
     },
 
     SET_RECEIVER_METADATA( state, { payload } ) {
       let target = state.receivers.find( rec => rec.streamId === payload.streamId )
       target.name = payload.name
-      target.layers = payload.layers
-      
-      //check for layermaterials completion
-      target.layers.forEach( layer => { 
-        if( ! target.layerMaterials.find( obj => { return layer.guid === obj.guid } ) )
-          target.layerMaterials.push( new LMat( { guid: layer.guid, streamId: target.streamId } ) )
-      } ) 
+      target.layers.forEach( l => {
+        let match = payload.layers.find( la => la.guid == l.guid )
+        if( match )
+        {
+          l.name = match.name
+        } else {
+          // REMOVE LAYER
+        }
+      })
+      // TODO: iterate through new list and add if required
     },
 
     SET_RECEIVER_DATA( state, { payload } ) {
       let target = state.receivers.find( rec => rec.streamId === payload.streamId )
+
       target.name = payload.name
-      target.layers = payload.layers
       
-      payload.objects.forEach( ( obj, index )=> { 
-        obj.streamId = payload.streamId 
-        obj.layerGuid = payload.layers.find( layer => {
-          return index >= layer.startIndex && index < layer.startIndex + layer.objectCount
-        }).guid
+      let layersToRemove = [], layersToAdd = []
+
+      target.layers.forEach( l => {
+        let match = payload.layers.find( la => la.guid == l.guid )
+        if( match )
+        {
+          l.name = match.name
+        } else {
+          layersToRemove.push( l )
+        }
+      })
+
+      payload.layers.forEach( l => {
+        let match = target.layers.find( la => la.guid == l.guid )
+        if( !match )
+          layersToAdd.push( l )
+      })
+      
+      // set objects
+      target.objects = payload.objects.map( ( obj, index ) => {
+        return {
+          streamId: payload.streamId,
+          layerGuid: payload.layers.find( layer => {
+            return index >= layer.startIndex && index < layer.startIndex + layer.objectCount
+          } ).guid,
+          _id: obj
+        }
       } )
-      target.objects = payload.objects
-      
-      //check for layermaterials completion
-      target.layers.forEach( layer => { 
-        if( ! target.layerMaterials.find( obj => { return layer.guid === obj.guid } ) )
-          console.warn('missing layer.')
-          target.layerMaterials.push( new LMat( { guid: layer.guid, streamId: target.streamId } ) )
-      } ) 
     }
   }
-})
+} )

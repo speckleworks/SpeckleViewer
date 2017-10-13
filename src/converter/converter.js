@@ -98,7 +98,6 @@ export default {
     
     let edges = new THREE.EdgesGeometry( geometry )
     let line = new THREE.LineSegments( edges, args.layer.threeEdgesMaterial )
-
     let mesh = new THREE.Mesh( geometry, args.layer.threeMeshMaterial )
     mesh.hasVertexColors = false
     

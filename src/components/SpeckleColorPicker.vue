@@ -1,7 +1,6 @@
 <template>
   <div id='color-picker' v-drag:dragable v-show='visible'>
     <div id="dragable">
-      <!-- <span> {{layerGuid}} </span> -->
       <md-button class="md-icon-button md-dense md-warn" v-if='isGuestUser' style='margin:0;' >
         <md-icon style='font-size:20px;'>warning</md-icon>
         <md-tooltip md-direction="bottom">You are not logged in, changes will not be saved.</md-tooltip>
@@ -10,11 +9,9 @@
         <md-icon style='font-size:20px;'>close</md-icon>
         <md-tooltip md-direction="bottom">Close</md-tooltip>
       </md-button>
-      <!-- <span @click='visible = false'><md-icon>close</md-icon></span> -->
     </div>
     <div class="content">
       <div class="other-options">
-        <!-- <div class="md-caption" v-if='isGuestUser'><md-icon>warning</md-icon>Changes will not be saved.</div> -->
         <div style='cursor:pointer; height: 30px; line-height: 30px;' @click='showExtra = !showExtra'>Extra options
         <md-icon>{{ showExtra ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}}</md-icon></div>
         <div v-show='showExtra'>
@@ -23,8 +20,6 @@
           <md-input type="number" v-model='layerMaterial.shininess'></md-input>
         </md-input-container>
         <md-checkbox class='md-primary' style='margin-top: 5px;' v-model='layerMaterial.showEdges'><small>Edges</small></md-checkbox><md-checkbox class='md-primary' style='margin-top: 5px;' v-model='layerMaterial.wireframe'><small>Wireframe</small></md-checkbox>
-       <!--  <br>
-        <md-checkbox class='md-primary' style='margin-top: 5px;' v-model='layerMaterial.vertexColors'><small>Vertex Colors</small></md-checkbox> -->
         </div>
       </div>
       <color-picker v-model='layerMaterial.color'></color-picker>
@@ -50,16 +45,15 @@ export default {
     },
     layerMaterial() {
       if( this.layerGuid != '' )
-        return this.$store.getters.layerMaterial( this.streamId, this.layerGuid )
+        return this.$store.getters.layerMaterial( this.streamId, this.layerGuid)
       return this.temp
-    },
-    threeMeshMaterial() {
-      return this.layerMaterial.threeMeshMaterial
     }
   },
   watch: {
     'layerMaterial.color': {
       handler( newValue ) {
+        this.layerMaterial.color.hex = newValue.hex
+        this.layerMaterial.color.a = newValue.a
         this.layerMaterial.threeMeshMaterial.color = new THREE.Color( newValue.hex )
         this.layerMaterial.threeLineMaterial.color = new THREE.Color( newValue.hex )
         this.layerMaterial.threePointMaterial.color = new THREE.Color( newValue.hex )
@@ -88,13 +82,6 @@ export default {
         this.layerMaterial.threeMeshVertexColorsMaterial.wireframe = newValue
       }
     },
-    // 'layerMaterial.vertexColors': {
-    //   handler( newValue ) {
-    //     this.layerMaterial.threeMeshMaterial.vertexColors = newValue
-    //     bus.$emit('renderer-layer-update-colors', { layerGuid: this.layerGuid, streamId: this.streamId } )
-    //     // this.layerMaterial.threeMeshMaterial.
-    //   }
-    // },
     'visible': {
       handler( nval ) {
         if( !nval ) this.commitUpdates( )
@@ -106,7 +93,9 @@ export default {
       temp: {
         color: { hex: '#B3B3B3', a: 1 },
         smooth: true,
-        shiny: 0
+        shiny: 0,
+        showEdges: true,
+        wireframe: false
       },
       layerGuid:'',
       streamId: '',
@@ -117,10 +106,10 @@ export default {
   methods: {
     commitUpdates () {
       console.log( 'updating db with colors and stuffs.' )
-      if( this.$store.getters.user.guest === true ) return console.warn('not authorised')
-      this.$http.post( window.SpkAppConfig.serverDetails.restApi + '/streams/' + this.streamId + '/visuals',
+      if( this.$store.getters.user.guest === true ) return console.warn('User not logged in, will not commit updates.')
+      this.$http.put( window.SpkAppConfig.serverDetails.restApi + '/streams/' + this.streamId + '/layers',
         { 
-          layerMaterials: this.$store.getters.receiverById( this.streamId ).layerMaterials 
+          layers: this.$store.getters.receiverById( this.streamId ).layers 
         },
         { 
           headers: { Authorization : this.$store.getters.authToken }
@@ -135,8 +124,10 @@ export default {
   mounted () {
     bus.$on( 'show-color-picker', args => {
       this.visible = ! this.visible
-      this.layerGuid = args.layerGuid
-      this.streamId = args.streamId
+      if( this.visible ) {
+        this.layerGuid = args.layerGuid
+        this.streamId = args.streamId
+      }
     } )
   }
 }
