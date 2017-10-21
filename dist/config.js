@@ -1,5 +1,5 @@
 var SpkAppConfig = {
-  serverUrl: 'http://localhost:8080/api',
+  serverUrl: 'https://s003.speckle.works/api',
   allowGuestAccess: true,
   // serverUrl: 'https://server.speckle.works',
   // logoUrl: 'dist/logo.png'
