@@ -40,7 +40,7 @@ export default new Vuex.Store( {
       state.receivers.forEach( rec => {
         rec.layers.forEach( layer => {
           arr.push( layer.properties )
-        })
+        } )
       } )
       // console.log( arr )
       return arr
@@ -102,10 +102,10 @@ export default new Vuex.Store( {
           _id: obj
         }
       } )
-
+      console.log( payload.layers )
       target.layers = payload.layers.map( layer => {
-        if( layer.properties === undefined ) {
-          layer.properties = new LMat( { guid: layer.guid, streamId: target.streamId } ) 
+        if ( layer.properties === undefined || layer.properties.threeMeshMaterial === undefined ) {
+          layer.properties = new LMat( { guid: layer.guid, streamId: target.streamId, color: layer.properties ? layer.properties.color.hex : null } )
           return layer
         } else {
           layer.properties.threeMeshMaterial = new THREE.MeshPhongMaterial( { ...layer.properties.threeMeshMaterial } )
@@ -114,12 +114,12 @@ export default new Vuex.Store( {
           layer.properties.threeEdgesMaterial.visible = layer.properties.showEdges
           layer.properties.threePointMaterial = new THREE.PointsMaterial( { ...layer.properties.threePointMaterial } )
           if ( layer.properties.threeMeshVertexColorsMaterial )
-              layer.properties.threeMeshVertexColorsMaterial = new THREE.MeshPhongMaterial( { ...layer.properties.threeMeshVertexColorsMaterial } )
-            else
-              layer.properties.threeMeshVertexColorsMaterial = new LMat( { guid: layer.properties.guid, streamId: target.streamId } ).threeMeshVertexColorsMaterial
+            layer.properties.threeMeshVertexColorsMaterial = new THREE.MeshPhongMaterial( { ...layer.properties.threeMeshVertexColorsMaterial } )
+          else
+            layer.properties.threeMeshVertexColorsMaterial = new LMat( { guid: layer.properties.guid, streamId: target.streamId } ).threeMeshVertexColorsMaterial
           return layer
         }
-      })
+      } )
     },
 
     SET_RECEIVER_METADATA( state, { payload } ) {
@@ -127,13 +127,12 @@ export default new Vuex.Store( {
       target.name = payload.name
       target.layers.forEach( l => {
         let match = payload.layers.find( la => la.guid == l.guid )
-        if( match )
-        {
+        if ( match ) {
           l.name = match.name
         } else {
           // REMOVE LAYER
         }
-      })
+      } )
       // TODO: iterate through new list and add if required
     },
 
@@ -141,25 +140,25 @@ export default new Vuex.Store( {
       let target = state.receivers.find( rec => rec.streamId === payload.streamId )
 
       target.name = payload.name
-      
-      let layersToRemove = [], layersToAdd = []
+
+      let layersToRemove = [ ],
+        layersToAdd = [ ]
 
       target.layers.forEach( l => {
         let match = payload.layers.find( la => la.guid == l.guid )
-        if( match )
-        {
+        if ( match ) {
           l.name = match.name
         } else {
           layersToRemove.push( l )
         }
-      })
+      } )
 
       payload.layers.forEach( l => {
         let match = target.layers.find( la => la.guid == l.guid )
-        if( !match )
+        if ( !match )
           layersToAdd.push( l )
-      })
-      
+      } )
+
       // set objects
       target.objects = payload.objects.map( ( obj, index ) => {
         return {

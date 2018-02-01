@@ -8,48 +8,47 @@
       </md-whiteframe>
       <md-button class="md-icon-button md-raised md-accent md-dense expand-button" style='color:white !important;' @click.native='zoomToObject'>
         <md-icon>
-        zoom_in
+          zoom_in
         </md-icon>
       </md-button>
       <md-button class="md-icon-button md-raised xxxmd-primary md-dense expand-button" style='background-color:white;color:black !important;' @click.native='expandInfoBox=!expandInfoBox'>
         <md-icon v-if='!isMobile'>
-        {{ expandInfoBox ? 'keyboard_arrow_left' : 'keyboard_arrow_right' }}
+          {{ expandInfoBox ? 'keyboard_arrow_left' : 'keyboard_arrow_right' }}
         </md-icon>
         <md-icon v-else>
-        {{ expandInfoBox ? 'close' : 'info_outline' }}
+          {{ expandInfoBox ? 'close' : 'info_outline' }}
         </md-icon>
       </md-button>
     </div>
   </div>
 </template>
-
 <script>
-import * as THREE           from 'three'
-import OrbitControlsDef     from 'three-orbit-controls'
-import TWEEN                from 'tween.js'
-import debounce             from 'debounce'
+import * as THREE from 'three'
+import OrbitControlsDef from 'three-orbit-controls'
+import TWEEN from 'tween.js'
+import debounce from 'debounce'
 
-import Converter            from '../converter/converter'
+import Converter from '../converter/converter'
 
 export default {
   name: 'SpeckleRenderer',
   computed: {
-    isMobile() {
+    isMobile( ) {
       return this.$store.getters.isMobile
     },
-    allObjects() {
+    allObjects( ) {
       return this.$store.getters.allObjects
     },
-    layerMaterials() {
+    layerMaterials( ) {
       return this.$store.getters.allLayerMaterials
     },
-    propertiesToDisplay() {
-      return this.selectedObjectsProperties.properties 
+    propertiesToDisplay( ) {
+      return this.selectedObjectsProperties.properties
     }
   },
-  data() {
+  data( ) {
     return {
-      selectedObjectsProperties:[ { hash: null, properties: {} } ],
+      selectedObjectsProperties: [ { hash: null, properties: {} } ],
       hoveredObject: '',
       showInfoBox: false,
       expandInfoBox: false,
@@ -60,27 +59,27 @@ export default {
   watch: {
     'isRotatingStuff': {
       handler( newValue ) {
-        if( newValue )
+        if ( newValue )
           this.showInfoBox = false
-          this.expandInfoBox = false
+        this.expandInfoBox = false
       }
     }
   },
   methods: {
     update( ) {
-      if( this.updateInProgress ) return console.warn( 'Scene update was already in progress, cancelling.' )
-      this.updateInProgress = true 
-      for( let myObject of this.allObjects ) {
-        
+      if ( this.updateInProgress ) return console.warn( 'Scene update was already in progress, cancelling.' )
+      this.updateInProgress = true
+      for ( let myObject of this.allObjects ) {
+
         let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
-        
-        let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId })
-        
-        if( !sceneObj ) {
-          this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/objects/' + myObject._id + '?omit=base64' )
-          .then( result => {
-            if( ! Converter.hasOwnProperty( result.data.speckleObject.type )) throw new Error('Cannot convert this object: ' + result.data.speckleObject.type + ','+ myObject._id )
-            Converter[ result.data.speckleObject.type ]( { obj: result.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj )=>{
+
+        let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
+
+        if ( !sceneObj ) {
+          this.$http.get( window.SpkAppConfig.serverUrl + '/objects/' + myObject._id + '?omit=base64' )
+            .then( result => {
+              if ( !Converter.hasOwnProperty( result.data.speckleObject.type ) ) throw new Error( 'Cannot convert this object: ' + result.data.speckleObject.type + ',' + myObject._id )
+              Converter[ result.data.speckleObject.type ]( { obj: result.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj ) => {
                 threeObj.hash = result.data.speckleObject.hash
                 threeObj.streamId = myObject.streamId
                 threeObj.layerGuid = myObject.layerGuid
@@ -90,13 +89,13 @@ export default {
                 threeObj.name = myObject.streamId + '::' + result.data.speckleObject._id
                 threeObj._id = myObject._id
                 this.scene.add( threeObj )
+              } )
             } )
-          })
-          .catch( err=> {
-            // console.error( err )
-          } )
+            .catch( err => {
+              // console.error( err )
+            } )
         } else {
-          if( sceneObj.visible === false ) {
+          if ( sceneObj.visible === false ) {
             sceneObj.visible = true
             sceneObj.isCurrent = true
             sceneObj.spkProperties = myObject.properties
@@ -104,35 +103,34 @@ export default {
         }
       }
 
-      for( let myObject of this.scene.children ) {
-        if( myObject.hasOwnProperty( '_id' ) ) {
+      for ( let myObject of this.scene.children ) {
+        if ( myObject.hasOwnProperty( '_id' ) ) {
           let found = this.allObjects.find( o => { return o._id === myObject._id && o.streamId === myObject.streamId } )
-          if( !found ) {
+          if ( !found ) {
             myObject.isCurrent = false
             myObject.visible = false
           }
-          if( this.scene.children.length > 4242 ) // arbitrary number, needs battle testing 
+          if ( this.scene.children.length > 4242 ) // arbitrary number, needs battle testing 
             this.scene.remove( myObject )
         }
       }
       this.updateInProgress = false
     },
     render( ) {
-      TWEEN.update() 
+      TWEEN.update( )
       this.animationId = requestAnimationFrame( this.render )
       this.renderer.render( this.scene, this.camera )
 
-      if( ++this.frameSkipper == 20 ) {        
-        if( this.oldQuaternion._x === this.camera.quaternion._x && this.oldQuaternion._y === this.camera.quaternion._y && this.oldQuaternion._z === this.camera.quaternion._z && this.oldQuaternion._w === this.camera.quaternion._w) {
+      if ( ++this.frameSkipper == 20 ) {
+        if ( this.oldQuaternion._x === this.camera.quaternion._x && this.oldQuaternion._y === this.camera.quaternion._y && this.oldQuaternion._z === this.camera.quaternion._z && this.oldQuaternion._w === this.camera.quaternion._w ) {
           this.isRotatingStuff = false
-        }
-        else {
+        } else {
           this.deselectObjects( )
           this.isRotatingStuff = true
         }
         this.frameSkipper = 0
       }
-      this.oldQuaternion = new THREE.Quaternion().copy( this.camera.quaternion )
+      this.oldQuaternion = new THREE.Quaternion( ).copy( this.camera.quaternion )
       window.camLoc = {
         position: [ this.camera.position.x, this.camera.position.y, this.camera.position.z ],
         rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
@@ -140,55 +138,55 @@ export default {
       }
 
     },
-    resizeCanvas () {
+    resizeCanvas( ) {
       this.camera.aspect = window.innerWidth / window.innerHeight
-      this.camera.updateProjectionMatrix()
+      this.camera.updateProjectionMatrix( )
       this.renderer.setSize( window.innerWidth, window.innerHeight )
     },
     deselectObjects( ) {
       this.hoveredObjects.forEach( myObject => {
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-        switch( myObject.type ) {
+        switch ( myObject.type ) {
           case 'Line':
-          myObject.material = layer.threeLineMaterial
-          break
+            myObject.material = layer.threeLineMaterial
+            break
           case 'Mesh':
-          if( myObject.hasVertexColors )
-            myObject.material = layer.threeMeshVertexColorsMaterial
-          else
-            myObject.material = layer.threeMeshMaterial
-          break
+            if ( myObject.hasVertexColors )
+              myObject.material = layer.threeMeshVertexColorsMaterial
+            else
+              myObject.material = layer.threeMeshMaterial
+            break
           case 'Point':
-          myObject.material = layer.threePointMaterial
-          break
+            myObject.material = layer.threePointMaterial
+            break
         }
-      })
-      this.hoveredObjects = []
+      } )
+      this.hoveredObjects = [ ]
       this.hoveredObject = ''
-      this.selectionBoxes = []
+      this.selectionBoxes = [ ]
     },
     canvasHovered( event ) {
-      if( this.isRotatingStuff ) return
-      this.deselectObjects()
+      if ( this.isRotatingStuff ) return
+      this.deselectObjects( )
 
       // preselect object
-      let mouse = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1, - ( event.clientY / window.innerHeight ) * 2 + 1 )
+      let mouse = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1 )
       this.raycaster.setFromCamera( mouse, this.camera )
 
-      let intersects  = this.raycaster.intersectObjects( scene.children )
+      let intersects = this.raycaster.intersectObjects( scene.children )
       // console.log( intersects )
-      if( intersects.length <= 0 ) {
+      if ( intersects.length <= 0 ) {
         this.showInfoBox = false
         this.expandInfoBox = false
         return
       }
 
       let selectedObject = null
-      intersects.reverse().forEach( obj => {
-        if( obj.object.material.visible ) selectedObject = obj.object
-      })
+      intersects.reverse( ).forEach( obj => {
+        if ( obj.object.material.visible ) selectedObject = obj.object
+      } )
 
-      if( !selectedObject ) {
+      if ( !selectedObject ) {
         this.showInfoBox = false
         this.expandInfoBox = false
         return
@@ -200,20 +198,20 @@ export default {
       this.selectedObjectsProperties = {
         hash: selectedObject.hash,
         streamId: selectedObject.streamId,
-        properties: selectedObject.spkProperties 
+        properties: selectedObject.spkProperties
       }
     },
     canvasClickedEvent( event ) {
-      if( event.which === 3 ) {
+      if ( event.which === 3 ) {
         this.showInfoBox = false
         this.expandInfoBox = false
         return
       }
       this.canvasHovered( event )
-      if( this.hoveredObject != '' ) {
+      if ( this.hoveredObject != '' ) {
         this.showInfoBox = true
         this.$refs.infobox.style.left = event.clientX - 20 + 'px'
-        this.$refs.infobox.style.top = event.clientY - 20  + 'px'
+        this.$refs.infobox.style.top = event.clientY - 20 + 'px'
       } else {
         this.showInfoBox = false
         this.expandInfoBox = false
@@ -222,11 +220,12 @@ export default {
     zoomToObject( ) {
       let myObject = this.scene.children.find( ch => { return ch.hash === this.selectedObjectsProperties.hash } )
 
-      if( ! myObject ) return console.warn('no object selected')
-      myObject.geometry.computeBoundingSphere()
+      if ( !myObject )
+        return console.warn( 'no object selected' )
+      myObject.geometry.computeBoundingSphere( )
       let bsphere = myObject.geometry.boundingSphere
       let r = bsphere.radius
-      
+
       let offset = r / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
       let vector = new THREE.Vector3( 0, 0, 1 )
       let dir = vector.applyQuaternion( this.controls.object.quaternion );
@@ -236,77 +235,103 @@ export default {
       this.setCamera( {
         position: [ newPos.x, newPos.y, newPos.z ],
         rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
-        target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ] 
-      }, 200 )
+        target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
+      }, 100 )
       // this.controls.object.position.set( newPos.x, newPos.y, newPos.z )
       // this.controls.target.set( bsphere.center.x, bsphere.center.y, bsphere.center.z )
     },
+
+    zoomExtents( ) {
+      let geometry = new THREE.Geometry( )
+      this.scene.children.forEach( child => {
+        if ( child.geometry )
+          geometry.merge( child.geometry )
+      } )
+      geometry.computeBoundingSphere( )
+      console.log( geometry )
+
+      let bsphere = geometry.boundingSphere
+      let r = bsphere.radius
+
+      let offset = r / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
+      let vector = new THREE.Vector3( 0, 0, 1 )
+      let dir = vector.applyQuaternion( this.controls.object.quaternion );
+      let newPos = new THREE.Vector3( )
+      dir.multiplyScalar( offset * 1.25 )
+      newPos.addVectors( bsphere.center, dir )
+      this.setCamera( {
+        position: [ newPos.x, newPos.y, newPos.z ],
+        rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
+        target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
+      }, 100 )
+    },
+
     setCamera( where, time ) {
       let self = this
       let duration = time ? time : 350
       //position
-      new TWEEN.Tween( self.camera.position ).to( { x: where.position[ 0 ], y: where.position[ 1 ], z: where.position[ 2 ] }, duration ).easing( TWEEN.Easing.Quadratic.InOut ).start()
+      new TWEEN.Tween( self.camera.position ).to( { x: where.position[ 0 ], y: where.position[ 1 ], z: where.position[ 2 ] }, duration ).easing( TWEEN.Easing.Quadratic.InOut ).start( )
       // rotation
-      new TWEEN.Tween( self.camera.rotation ).to( { x: where.rotation[ 0 ], y: where.rotation[ 1 ], z: where.rotation[ 2 ] }, duration ).easing( TWEEN.Easing.Quadratic.InOut ).start()
+      new TWEEN.Tween( self.camera.rotation ).to( { x: where.rotation[ 0 ], y: where.rotation[ 1 ], z: where.rotation[ 2 ] }, duration ).easing( TWEEN.Easing.Quadratic.InOut ).start( )
       // controls center
-      new TWEEN.Tween( self.controls.target ).to( { x: where.target[ 0 ], y: where.target[ 1 ], z: where.target[ 2 ] }, duration ).onUpdate(()=>{ 
-          self.controls.update();
-          if( this.x === where.target[ 0 ] )
-            console.log('camera finished stuff')
-        }).easing( TWEEN.Easing.Quadratic.InOut ).start()
+      new TWEEN.Tween( self.controls.target ).to( { x: where.target[ 0 ], y: where.target[ 1 ], z: where.target[ 2 ] }, duration ).onUpdate( ( ) => {
+        self.controls.update( );
+        if ( this.x === where.target[ 0 ] )
+          console.log( 'camera finished stuff' )
+      } ).easing( TWEEN.Easing.Quadratic.InOut ).start( )
     }
   },
-  mounted() {
+  mounted( ) {
     this.oldQuaternion = null
     this.frameSkipper = 0
     this.animationId = null
-    this.selectionBoxes = []
-    this.hoveredObjects = []
+    this.selectionBoxes = [ ]
+    this.hoveredObjects = [ ]
 
     this.updateInProgress = false
 
-    this.hoverMaterial = new THREE.MeshPhongMaterial( { color: new THREE.Color('#FFFF66'), specular: new THREE.Color('#FFECB3'), shininess: 0, side: THREE.DoubleSide, transparent: true, opacity: 1 } ) 
+    this.hoverMaterial = new THREE.MeshPhongMaterial( { color: new THREE.Color( '#FFFF66' ), specular: new THREE.Color( '#FFECB3' ), shininess: 0, side: THREE.DoubleSide, transparent: true, opacity: 1 } )
 
 
     this.renderer = new THREE.WebGLRenderer( { alpha: true, antialias: true } )
     this.renderer.setSize( window.innerWidth, window.innerHeight )
-    this.renderer.setClearColor(new THREE.Color('#FFFFFF'), 0)
+    this.renderer.setClearColor( new THREE.Color( '#FFFFFF' ), 0 )
     this.$refs.mycanvas.appendChild( this.renderer.domElement )
 
-    this.scene = new THREE.Scene()
+    this.scene = new THREE.Scene( )
 
     this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
     this.camera.up.set( 0, 0, 1 )
     this.camera.position.z = 1000
     this.camera.isCurrent = true
     this.camera.name = 'my super camera'
-    this.oldQuaternion = new THREE.Quaternion().copy( this.camera.quaternion )
+    this.oldQuaternion = new THREE.Quaternion( ).copy( this.camera.quaternion )
 
     this.OrbitControls = OrbitControlsDef( THREE )
-    this.controls = new this.OrbitControls( this.camera, this.renderer.domElement)
-    
-    this.render() 
+    this.controls = new this.OrbitControls( this.camera, this.renderer.domElement )
+
+    this.render( )
     window.addEventListener( 'resize', this.resizeCanvas )
 
     let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 1 );
-    hemiLight.color = new THREE.Color('#FFFFFF')
-    hemiLight.groundColor = new THREE.Color('#959595')
+    hemiLight.color = new THREE.Color( '#FFFFFF' )
+    hemiLight.groundColor = new THREE.Color( '#959595' )
     hemiLight.position.set( 0, 500, 0 );
     hemiLight.isCurrent = true
     hemiLight.name = 'world lighting'
     this.scene.add( hemiLight );
 
-    let flashlight = new THREE.PointLight( new THREE.Color('#FFFFFF'), 0.32, 0, 1 )
+    let flashlight = new THREE.PointLight( new THREE.Color( '#FFFFFF' ), 0.32, 0, 1 )
     flashlight.name = 'camera light'
     this.scene.add( this.camera )
     this.camera.add( flashlight )
 
-    this.raycaster = new THREE.Raycaster()
+    this.raycaster = new THREE.Raycaster( )
 
     this.$refs.mycanvas.onmousedown = this.canvasClickedEvent
-    
+
     document.onkeydown = ( event ) => {
-      if( event.keyCode !== 27 ) return
+      if ( event.keyCode !== 27 ) return
       this.deselectObjects( )
       this.showInfoBox = false
       this.expandInfoBox = false
@@ -315,53 +340,59 @@ export default {
     window.THREE = THREE
     window.scene = this.scene
 
-    bus.$on( 'renderer-update',  debounce( this.update, 300 ) )
-    bus.$on( 'renderer-setview',  this.setCamera )
+    bus.$on( 'renderer-update', debounce( this.update, 300 ) )
+    bus.$on( 'renderer-setview', this.setCamera )
 
     bus.$on( 'renderer-layer-update-colors', args => {
       //set colorsNeedUpdate flag to true on all geoms in args.layerguid and args.streamid
     } )
 
-    bus.$on( 'renderer-toggle-do', () => {
+    bus.$on( 'renderer-toggle-do', ( ) => {
       // TODO
     } )
 
-    bus.$on( 'renderer-pop', () => {
-      console.log("POP")
-      this.$refs.mycanvas.classList.toggle('pop')
+    bus.$on( 'renderer-pop', ( ) => {
+      console.log( "POP" )
+      this.$refs.mycanvas.classList.toggle( 'pop' )
       this.showInfoBox = false
       this.expandInfoBox = false
-    })
-    bus.$on( 'renderer-unpop', () => {
-      console.log("UNPOP")
-      this.$refs.mycanvas.classList.toggle('pop')
-    })
+    } )
+    bus.$on( 'renderer-unpop', ( ) => {
+      console.log( "UNPOP" )
+      this.$refs.mycanvas.classList.toggle( 'pop' )
+    } )
+
+    document.addEventListener( 'keydown', ( event ) => {
+      const keyName = event.key;
+      if ( keyName == ' ' ) this.zoomExtents( )
+    } )
   }
 }
 </script>
-
 <style scoped>
 #render-window {
   position: fixed;
-  top:0;left:0;
-  width:100%;
+  top: 0;
+  left: 0;
+  width: 100%;
   height: 100%;
   /*z-index: 10;*/
   transition: all .2s ease;
 }
 
-#render-window.pop{
+#render-window.pop {
   top: -15%;
 }
 
 .object-info {
   position: fixed;
-  top:10px;right:10px;
+  top: 10px;
+  right: 10px;
   z-index: 10;
   user-select: none;
 }
 
-.expand-button{
+.expand-button {
   z-index: 42;
   margin: 0px !important;
 }
@@ -374,22 +405,23 @@ export default {
   max-width: 350px;
   max-height: 300px;
   border-top-left-radius: 16px;
-  border-bottom-left-radius: 16px;  
+  border-bottom-left-radius: 16px;
   border-top-right-radius: 16px;
   border-bottom-right-radius: 16px;
   user-select: auto;
   z-index: 40;
   box-sizing: border-box;
   overflow-x: hidden;
-  overflow-y: auto; 
+  overflow-y: auto;
 }
-@media ( max-width: 768px ) {
-  .expanded-info-box{
+
+@media ( max-width: 768px) {
+  .expanded-info-box {
     position: fixed;
     top: auto;
     bottom: 50px;
     left: 2%;
-    width:96%;
+    width: 96%;
     max-width: 96%;
     height: 30%;
     background-color: white;
@@ -397,6 +429,7 @@ export default {
     overflow-x: auto;
   }
 }
+
 .tree-view-wrapper {
   font-family: auto;
   overflow: hidden !important;

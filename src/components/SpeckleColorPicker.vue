@@ -107,7 +107,7 @@ export default {
     commitUpdates () {
       console.log( 'updating db with colors and stuffs.' )
       if( this.$store.getters.user.guest === true ) return console.warn('User not logged in, will not commit updates.')
-      this.$http.put( window.SpkAppConfig.serverDetails.restApi + '/streams/' + this.streamId + '/layers',
+      this.$http.put( window.SpkAppConfig.serverUrl + '/streams/' + this.streamId + '/layers',
         { 
           layers: this.$store.getters.receiverById( this.streamId ).layers 
         },

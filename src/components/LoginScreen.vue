@@ -46,11 +46,11 @@ export default {
     login() {
       if( this.email === '' ) return
       if( this.password === '' ) return
-      this.$http.post( window.SpkAppConfig.serverDetails.restApi + '/accounts/login' , { email: this.email, password: this.password })
+      this.$http.post( window.SpkAppConfig.serverUrl + '/accounts/login' , { email: this.email, password: this.password })
       .then( response => {
         if( response.data.success == false ) throw new Error( 'Failed to login.' )
         localStorage.setItem( 'userJwtToken', JSON.stringify( response.data.token ) )
-        return this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/accounts/profile', { headers: { 'Authorization' : response.data.token } } )
+        return this.$http.get( window.SpkAppConfig.serverUrl + '/accounts/profile', { headers: { 'Authorization' : response.data.token } } )
       })
       .then( response => {
         localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
