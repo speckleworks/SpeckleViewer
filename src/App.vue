@@ -86,12 +86,14 @@ export default {
   created() {
     this.$http.get( window.SpkAppConfig.serverUrl )
     .then( response => {
-      window.SpkAppConfig.serverDetails = response.data
+      
 
       var account = localStorage.getItem('userAccount')
       var jwtToken = localStorage.getItem('userJwtToken')
 
-      return this.$http.get( window.SpkAppConfig.serverDetails.restApi + '/accounts/profile', { 
+      if( !jwtToken || jwtToken == '') 
+        throw new Error('no login details found')
+      return this.$http.get( window.SpkAppConfig.serverUrl + '/accounts/profile', { 
         headers: 
         {
           Authorization: JSON.parse( jwtToken )
