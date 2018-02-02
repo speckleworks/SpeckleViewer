@@ -59,6 +59,7 @@ export default {
       let streamIds = window.location.href.split( '/' )[ window.location.href.split( '/' ).length - 1 ].split( ',' )
       streamIds[ 0 ] = streamIds[ 0 ].substr( 1 )
 
+      // make sure we ignore 'dev'
       streamIds = streamIds.filter( ( obj, index, self ) => { return self.indexOf( obj ) === index && obj !== 'dev' } )
       
       console.log( 'streamIds:', streamIds )
@@ -84,11 +85,6 @@ export default {
     }
   },
   created( ) {
-    // If there's no "dev" keyword in the url, set the serverUrl from window.location.origin 
-    if ( ! window.location.href.includes( 'dev' ) )
-      window.SpkAppConfig.serverUrl = window.location.origin + '/api'
-    // ELSE
-    // we will go forward and use the one provided in the dist/config.js file.
     this.$http.get( window.SpkAppConfig.serverUrl )
       .then( response => {
 

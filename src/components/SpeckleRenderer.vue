@@ -346,7 +346,7 @@ export default {
 
     bus.$on( 'renderer-update', debounce( this.update, 300 ) )
     bus.$on( 'renderer-setview', this.setCamera )
-
+    bus.$on('zext', this.zoomExtents )
     bus.$on( 'renderer-layer-update-colors', args => {
       //set colorsNeedUpdate flag to true on all geoms in args.layerguid and args.streamid
     } )

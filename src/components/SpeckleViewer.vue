@@ -5,15 +5,17 @@
     <speckle-color-picker v-if='!isMobileView'></speckle-color-picker>
     <speckle-mobile-nav v-if='isMobileView' v-on:addstream='showNewStreamDialgue = true'></speckle-mobile-nav>
     <speckle-new-stream-dialog v-on:close='showNewStreamDialgue = false' v-show='showNewStreamDialgue'></speckle-new-stream-dialog>
+    <md-button class="md-fab md-fab-bottom-right md-mini" @click.native='zoomExt'>
+      <md-icon>zoom_out_map</md-icon>
+    </md-button>
   </div>
 </template>
-
 <script>
-import SpeckleStreamList  from './SpeckleStreamList.vue'
-import SpeckleRenderer    from './SpeckleRenderer.vue'
+import SpeckleStreamList from './SpeckleStreamList.vue'
+import SpeckleRenderer from './SpeckleRenderer.vue'
 import SpeckleColorPicker from './SpeckleColorPicker.vue'
-import SpeckleMobileNav   from './SpeckleMobileNav.vue'
-import SpeckleNewStreamDialog     from './SpeckleNewStreamDialog.vue'
+import SpeckleMobileNav from './SpeckleMobileNav.vue'
+import SpeckleNewStreamDialog from './SpeckleNewStreamDialog.vue'
 
 export default {
   name: 'SpeckleViewer',
@@ -25,29 +27,29 @@ export default {
     SpeckleNewStreamDialog
   },
   computed: {
-    receivers() {
+    receivers( ) {
       return this.$store.getters.allReceivers
     },
-    isMobileView() {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent) && window.innerWidth < 768
+    isMobileView( ) {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test( navigator.userAgent ) && window.innerWidth < 768
     }
   },
-  data() {
+  data( ) {
     return {
       showNewStreamDialgue: false
     }
   },
   methods: {
-    showStreamAdd() {
+    showStreamAdd( ) {},
+    zoomExt() {
+      bus.$emit('zext')
     }
   },
-  mounted() {
-    if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test(navigator.userAgent) && window.innerWidth < 768 )
-      this.$store.commit('MOBILE_VIEW')
+  mounted( ) {
+    if ( /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test( navigator.userAgent ) && window.innerWidth < 768 )
+      this.$store.commit( 'MOBILE_VIEW' )
   }
 }
 </script>
-
 <style scoped>
-
 </style>

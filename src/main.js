@@ -1,10 +1,10 @@
-import Vue              from 'vue'
-import App              from './App.vue'
-import VueMaterial      from 'vue-material'
-import Axios            from 'axios'
-import Store            from './store/Store'
-import TreeView         from 'vue-json-tree-view'
-import vueDrag          from 'vue-dragging'
+import Vue from 'vue'
+import App from './App.vue'
+import VueMaterial from 'vue-material'
+import Axios from 'axios'
+import Store from './store/Store'
+import TreeView from 'vue-json-tree-view'
+import vueDrag from 'vue-dragging'
 
 Vue.prototype.$http = Axios
 
@@ -17,16 +17,22 @@ window.bus = new Vue( )
 //hacky
 window.camLoc = {}
 
-Vue.material.registerTheme('default', {
+// If there's no "dev" keyword in the url, set the serverUrl from window.location.origin 
+if ( !window.location.href.includes( 'dev' ) )
+  window.SpkAppConfig.serverUrl = window.location.origin + '/api'
+// ELSE
+// we will go forward and use the one provided in the dist/config.js file.
+
+Vue.material.registerTheme( 'default', {
   primary: 'black',
   accent: 'light-blue',
   warn: 'red',
   background: 'white'
-})
+} )
 
 
-new Vue({
+new Vue( {
   el: '#app',
   store: Store,
-  render: h => h(App)
-})
+  render: h => h( App )
+} )
