@@ -17,7 +17,6 @@ window.bus = new Vue( )
 //hacky
 window.camLoc = {}
 
-
 Vue.material.registerTheme('default', {
   primary: 'black',
   accent: 'light-blue',

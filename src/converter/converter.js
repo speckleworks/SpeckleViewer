@@ -112,7 +112,6 @@ export default {
   }, 
 
   Brep( args, cb ) {
-    console.log( args )
     this.Mesh( { layer: args.layer, obj: args.obj.displayValue } , ( err, obj ) => {
       if( err ) return cb ( err, null )  
       return cb( null, obj )
