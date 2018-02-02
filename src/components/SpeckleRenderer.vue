@@ -237,11 +237,10 @@ export default {
         rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
         target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
       }, 100 )
-      // this.controls.object.position.set( newPos.x, newPos.y, newPos.z )
-      // this.controls.target.set( bsphere.center.x, bsphere.center.y, bsphere.center.z )
     },
+    computeSceneBoundingSpehere( cb ) {
+      let minX, minY, minZ, maxX, maxY, maxZ
 
-    zoomExtents( ) {
       let geometry = new THREE.Geometry( )
       this.scene.children.forEach( child => {
         if ( child.geometry )
@@ -249,7 +248,11 @@ export default {
       } )
       geometry.computeBoundingSphere( )
       console.log( geometry )
+      cb( geometry )
+    },
 
+    zoomExtents( ) {
+      this.computeSceneBoundingSpehere( geometry => {
       let bsphere = geometry.boundingSphere
       let r = bsphere.radius
 
@@ -264,6 +267,7 @@ export default {
         rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
         target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
       }, 100 )
+      })
     },
 
     setCamera( where, time ) {
@@ -300,7 +304,7 @@ export default {
 
     this.scene = new THREE.Scene( )
 
-    this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+    this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 100000 );
     this.camera.up.set( 0, 0, 1 )
     this.camera.position.z = 1000
     this.camera.isCurrent = true
@@ -342,7 +346,7 @@ export default {
 
     bus.$on( 'renderer-update', debounce( this.update, 300 ) )
     bus.$on( 'renderer-setview', this.setCamera )
-
+    bus.$on('zext', this.zoomExtents )
     bus.$on( 'renderer-layer-update-colors', args => {
       //set colorsNeedUpdate flag to true on all geoms in args.layerguid and args.streamid
     } )

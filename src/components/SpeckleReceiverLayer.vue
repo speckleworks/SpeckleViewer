@@ -64,20 +64,20 @@ export default {
 .spk-layer{
   border-bottom: 1px solid #E6E6E6;
   position: relative;
-  user-select: none;
+  /*user-select: none;*/
 }
 .spk-layer:last-of-type{
   border-bottom: 0;
 }
 .layer-details {
-  line-height: 50px;
+  position: relative;
+  display: inline-block;
   font-size: 12px;
-  height: 50px;
 }
 .layer-name {
   float: left;
   display: inline-block;
-  width: 50%;
+  width: 70%;
   overflow: hidden;
 }
 .layer-buttons {
@@ -85,7 +85,7 @@ export default {
   text-align: right;
   float: left;
   display: inline-block;
-  width: 50%;
+  width: 30%;
   box-sizing: border-box;
   color: #666666;
   /*cursor: pointer;*/

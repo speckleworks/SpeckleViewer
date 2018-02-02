@@ -4,10 +4,9 @@
     <speckle-viewer></speckle-viewer>
   </div>
 </template>
-
 <script>
-import LoginScreen      from './components/LoginScreen.vue'
-import SpeckleViewer    from './components/SpeckleViewer.vue'
+import LoginScreen from './components/LoginScreen.vue'
+import SpeckleViewer from './components/SpeckleViewer.vue'
 
 export default {
   name: 'app',
@@ -15,114 +14,114 @@ export default {
     LoginScreen,
     SpeckleViewer
   },
-  data () {
+  data( ) {
     return {
       showLogin: true,
       receiversCreated: false,
     }
   },
   methods: {
-    toggleLeftSidenav() {
-      this.$refs.leftSidenav.toggle();
+    toggleLeftSidenav( ) {
+      this.$refs.leftSidenav.toggle( );
     },
-    toggleRightSidenav() {
-      this.$refs.rightSidenav.toggle();
+    toggleRightSidenav( ) {
+      this.$refs.rightSidenav.toggle( );
     },
-    closeRightSidenav() {
-      this.$refs.rightSidenav.close();
+    closeRightSidenav( ) {
+      this.$refs.rightSidenav.close( );
     },
-    open(ref) {
-      console.log('Opened: ' + ref);
+    open( ref ) {
+      console.log( 'Opened: ' + ref );
     },
-    close(ref) {
-      console.log('Closed: ' + ref);
+    close( ref ) {
+      console.log( 'Closed: ' + ref );
     },
 
     loggedIn( args ) {
       console.log( args )
-      if( args.guest === false ) {
+      if ( args.guest === false ) {
         this.showLogin = false
         var account = args.account
         account.guest = false
         var jwtToken = JSON.parse( localStorage.getItem( 'userJwtToken' ) )
         this.$store.commit( 'SET_JWT', { jwtToken } )
         this.$store.commit( 'SET_USER', { account } )
-        this.$http.defaults.headers.common['Autorization'] = jwtToken
-      } else if( args.guest === true ) {
+        this.$http.defaults.headers.common[ 'Autorization' ] = jwtToken
+      } else if ( args.guest === true ) {
         let account = { apitoken: '', name: 'Anonymous', guest: true }
         this.$store.commit( 'SET_USER', { account } )
         this.showLogin = false
       }
-      this.createReceivers( ) 
+      this.createReceivers( )
     },
-    createReceivers() {
-      if( this.receiversCreated ) return
-      let streamIds = window.location.href.split('/')[ window.location.href.split('/').length - 1 ].split(',')
+    createReceivers( ) {
+      if ( this.receiversCreated ) return
+      let streamIds = window.location.href.split( '/' )[ window.location.href.split( '/' ).length - 1 ].split( ',' )
       streamIds[ 0 ] = streamIds[ 0 ].substr( 1 )
-      console.log( 'streamIds:', streamIds)
+
+      // make sure we ignore 'dev'
+      streamIds = streamIds.filter( ( obj, index, self ) => { return self.indexOf( obj ) === index && obj !== 'dev' } )
       
-      streamIds = streamIds.filter( ( obj, index, self ) => { return self.indexOf( obj ) === index } )
+      console.log( 'streamIds:', streamIds )
       
-      if( streamIds.length == 0 || streamIds[0] === '' )
-        return console.warn('no streams provided in url.')
-      
+      if ( streamIds.length == 0 || streamIds[ 0 ] === '' )
+        return console.warn( 'no streams provided in url.' )
+
       let receivers = streamIds.map( id => {
         return {
           serverUrl: window.SpkAppConfig.serverUrl,
           streamId: id,
           token: this.$store.getters.user.apitoken,
-          objects: [],
-          layers: [],
-          history: [],
+          objects: [ ],
+          layers: [ ],
+          history: [ ],
           name: 'Loading ' + id + '...',
-          layerMaterials: []
+          layerMaterials: [ ]
         }
-      })
+      } )
 
       this.$store.commit( 'ADD_RECEIVERS', { receivers } )
       this.receiversCreated = true
     }
   },
-  created() {
-    window.SpkAppConfig.serverUrl = window.location.protocol + '//' + window.location.hostname + ':3000/api'
+  created( ) {
     this.$http.get( window.SpkAppConfig.serverUrl )
-    .then( response => {
+      .then( response => {
 
-      var account = localStorage.getItem('userAccount')
-      var jwtToken = localStorage.getItem('userJwtToken')
+        var account = localStorage.getItem( 'userAccount' )
+        var jwtToken = localStorage.getItem( 'userJwtToken' )
 
-      if( !jwtToken || jwtToken == '') 
-        throw new Error('no login details found')
-      return this.$http.get( window.SpkAppConfig.serverUrl + '/accounts/profile', { 
-        headers: 
-        {
-          Authorization: JSON.parse( jwtToken )
-        }
+        if ( !jwtToken || jwtToken == '' )
+          throw new Error( 'no login details found' )
+        return this.$http.get( window.SpkAppConfig.serverUrl + '/accounts/profile', {
+          headers: {
+            Authorization: JSON.parse( jwtToken )
+          }
+        } )
       } )
-    })
-    .then( response => { 
-      if( response.status != 200 ) throw new Error( response )
-      let args = {
-        guest: false,
-        account: response.data
-      }
-      localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
-      this.loggedIn( args )
-    })
-    .catch( err => {
-      console.warn( err )
-    })
-    bus.$on('app-show-login', () => {
+      .then( response => {
+        if ( response.status != 200 ) throw new Error( response )
+        let args = {
+          guest: false,
+          account: response.data
+        }
+        localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
+        this.loggedIn( args )
+      } )
+      .catch( err => {
+        console.warn( err )
+      } )
+    bus.$on( 'app-show-login', ( ) => {
       this.showLogin = true
-    })
+    } )
   }
 }
 </script>
-
 <style>
 body {
   background-color: #E6E6E6;
 }
+
 #app {
   position: fixed;
   top: 0;
