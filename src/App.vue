@@ -84,9 +84,9 @@ export default {
     }
   },
   created() {
+    window.SpkAppConfig.serverUrl = window.location.protocol + '//' + window.location.hostname + ':3000/api'
     this.$http.get( window.SpkAppConfig.serverUrl )
     .then( response => {
-      
 
       var account = localStorage.getItem('userAccount')
       var jwtToken = localStorage.getItem('userJwtToken')
