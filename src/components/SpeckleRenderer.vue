@@ -3,9 +3,9 @@
     <div id='render-window' ref='mycanvas'>
     </div>
     <div v-show='showInfoBox' id='info-box' class='object-info' ref='infobox'>
-      <md-whiteframe md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'>
+      <md-content md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'>
         <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view>
-      </md-whiteframe>
+      </md-content>
       <md-button class="md-icon-button md-raised md-accent md-dense expand-button" style='color:white !important;' @click.native='zoomToObject'>
         <md-icon>
           zoom_in

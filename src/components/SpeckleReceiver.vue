@@ -3,13 +3,14 @@
   <md-card class="receiver paddedcard">  
     <md-card-header style='line-heigth:30px' class='line-height-adjustment'>
       <span class="md-body-2">
+        <!-- <md-button class='md-icon-button md-dense xxxmd-accent xxxmd-raised' @click.native='expanded = ! expanded'> -->
         <md-button class='md-icon-button md-dense xxxmd-accent xxxmd-raised' @click.native='expanded = ! expanded'>
           <md-icon>{{ expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
         </md-button>{{ spkreceiver.name }} 
       </span>
       <span class="md-caption"><code style="user-select:all">{{ spkreceiver.streamId }}</code></span>
       <br>
-      <md-progress md-indeterminate v-show='showProgressBar' style='margin-bottom:20px;margin-top:20px;'></md-progress>
+      <md-progress-bar md-mode="indeterminate" v-show='showProgressBar' style='margin-bottom:20px;margin-top:20px;'></md-progress-bar>
       <md-button v-show='expired' class='md-densexx md-warn md-raised md-icon-button' id='refresh-button' @click.native='getAndSetStream()'>
         <md-icon>refresh</md-icon>
         <md-tooltip>Update available. Click to refresh.</md-tooltip>

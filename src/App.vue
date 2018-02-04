@@ -1,16 +1,18 @@
 <template>
   <div id="app">
     <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen>
+    <!-- <user-menu></user-menu> -->
     <speckle-viewer></speckle-viewer>
   </div>
 </template>
 <script>
 import LoginScreen from './components/LoginScreen.vue'
 import SpeckleViewer from './components/SpeckleViewer.vue'
-
+import UserMenu from './components/UserMenu.vue'
 export default {
   name: 'app',
   components: {
+    UserMenu,
     LoginScreen,
     SpeckleViewer
   },
@@ -119,7 +121,7 @@ export default {
 </script>
 <style>
 body {
-  background-color: #E6E6E6;
+ /* background-color: #E6E6E6;*/
 }
 
 #app {
@@ -128,7 +130,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #E6E6E6;
+  /*background-color: #E6E6E6;*/
   /*background: -webkit-linear-gradient(to top, #666666, #808080);
   background: linear-gradient(to top, #666666, #808080);*/
 }

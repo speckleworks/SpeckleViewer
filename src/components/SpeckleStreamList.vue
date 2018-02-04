@@ -9,7 +9,7 @@
       <md-tooltip> {{ showStreamList ? 'Hide' : 'Show' }} the stream list.</md-tooltip>
     </md-button>
   </div> -->
-  <div id='stream-list' class='' ref='thestreamlist'>
+  <div id='stream-list' class='md-alignment-top-right' ref='thestreamlist'>
     <speckle-receiver v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
     <div class='paddedcard' style='position:relative;' v-show='receivers.length === 0'>
       <div class="md-title">There are no clients to show.</div>
