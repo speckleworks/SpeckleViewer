@@ -52,7 +52,7 @@ export default {
 
 <style scoped>
 .login-card{
-  width: 200px;
+//  width: 200px;
   height: 200px;
   text-align: center;
   pointer-events: auto;

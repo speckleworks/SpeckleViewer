@@ -1,23 +1,23 @@
 <template>
-<div id="stream-list-cover">
-<!--   <div class='list-menu'>
-    <md-button class="md-icon-button md-warn" @click.native='showNewStreamDialgue = true'>
+  <div id="stream-list-cover">
+    <!--   <div class='list-menu'>
+      <md-button class="md-icon-button md-warn" @click.native='showNewStreamDialgue = true'>
       <md-icon>add</md-icon>
-    </md-button>
-    <md-button class="md-icon-button md-primary" @click.native='toggleStreamList'>
+      </md-button>
+      <md-button class="md-icon-button md-primary" @click.native='toggleStreamList'>
       <md-icon>{{ showStreamList ? 'keyboard_arrow_left':'keyboard_arrow_right' }}</md-icon>
       <md-tooltip> {{ showStreamList ? 'Hide' : 'Show' }} the stream list.</md-tooltip>
-    </md-button>
-  </div> -->
-  <div id='stream-list' class='md-alignment-top-right' ref='thestreamlist'>
-    <speckle-receiver v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
-    <div class='paddedcard' style='position:relative;' v-show='receivers.length === 0'>
-      <div class="md-title">There are no clients to show.</div>
-      <p>You can add a new client by click on the add button above.</p>
-    </div>
+      </md-button>
+      </div> -->
+      <div id='stream-list' ref='thestreamlist'>
+        <speckle-receiver v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
+        <div class='paddedcard' style='position:relative;' v-show='receivers.length === 0'>
+          <div class="md-title">There are no clients to show.</div>
+          <p>You can add a new client by click on the add button above.</p>
+        </div>
+      </div>
+      <!-- <speckle-new-stream-dialog v-on:close='showNewStreamDialgue = false' v-show='showNewStreamDialgue'></speckle-new-stream-dialog> -->
   </div>
-  <speckle-new-stream-dialog v-on:close='showNewStreamDialgue = false' v-show='showNewStreamDialgue'></speckle-new-stream-dialog>
-</div>
 </template>
 
 <script>
@@ -61,6 +61,7 @@ export default {
 </script>
 
 <style scoped>
+/*
 #stream-list-cover{
   position: fixed;
   padding-top: 10px;
@@ -99,6 +100,7 @@ export default {
   left: -500px;
   opacity: 0;
 }
+*/
 
 #stream-list div {
 }

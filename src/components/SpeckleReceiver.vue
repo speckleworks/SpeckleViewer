@@ -6,6 +6,7 @@
         <!-- <md-button class='md-icon-button md-dense xxxmd-accent xxxmd-raised' @click.native='expanded = ! expanded'> -->
         <md-button class='md-icon-button md-dense xxxmd-accent xxxmd-raised' @click.native='expanded = ! expanded'>
           <md-icon>{{ expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
+
         </md-button>{{ spkreceiver.name }} 
       </span>
       <span class="md-caption"><code style="user-select:all">{{ spkreceiver.streamId }}</code></span>
@@ -37,7 +38,6 @@
 </template>
 
 <script>
-// import ReceiverClient             from '../receiver/SpeckleReceiver'
 import ReceiverClient             from '../receiver/ClientReceiver'
 import SpeckleReceiverLayer       from './SpeckleReceiverLayer.vue'
 import SpeckleReceiverComments    from './SpeckleReceiverComments.vue'
@@ -149,6 +149,7 @@ export default {
 </script>
 
 <style>
+
 #refresh-button {
   position: absolute;
   right: 12px;

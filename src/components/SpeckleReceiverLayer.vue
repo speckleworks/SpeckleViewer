@@ -61,10 +61,10 @@ export default {
 
 <style scoped>
 
+/*
 .spk-layer{
   border-bottom: 1px solid #E6E6E6;
   position: relative;
-  /*user-select: none;*/
 }
 .spk-layer:last-of-type{
   border-bottom: 0;
@@ -81,18 +81,16 @@ export default {
   overflow: hidden;
 }
 .layer-buttons {
-  /*padding-top: 5px;*/
   text-align: right;
   float: left;
   display: inline-block;
   width: 30%;
   box-sizing: border-box;
   color: #666666;
-  /*cursor: pointer;*/
 }
 
 .layer-buttons .md-icon {
   cursor: pointer;
 }
-
+*/
 </style>
