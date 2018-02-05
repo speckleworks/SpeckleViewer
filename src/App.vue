@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <!-- <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen> -->
+    <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen>
     <div id='main' class="md-layout md-gutter">
       <div class='md-layout-item md-size-10'>
         <user-menu></user-menu>
@@ -16,9 +16,6 @@
       <div class='md-layout md-alignment-center-center'>
         <div class='md-layout-item md-size-5'>
           <bottom-bar></bottom-bar>
-          <!-- <md-button @click.native='zoomExt'> -->
-          <!--   <md-icon>zoom_out_map</md-icon> -->
-          <!-- </md-button> -->
         </div>
       </div>
     </div>
