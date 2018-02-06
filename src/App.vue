@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-    <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen>
     <div id='main' class="md-layout md-gutter">
       <div class='md-layout-item md-size-10'>
         <user-menu></user-menu>
