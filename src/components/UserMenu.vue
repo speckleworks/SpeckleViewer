@@ -41,11 +41,11 @@ export default {
     }
   },
   methods: {
-    user() {return this.$store.getters.user.user},
+    user() {return this.$store.getters.user},
     toggleMenu() {
       console.log(this.user())
-      if (this.user().apitoken) {this.menuVisible = !this.menuVisible}
-      else {this.showLogin = true}
+      if (this.user().user) {this.menuVisible = !this.menuVisible}
+      else {this.showLogin = !this.showLogin}
     },
     loggedIn( args ) {
       console.log( args )
@@ -64,8 +64,31 @@ export default {
       }
     }
   },
-  created() {
-
+  created () {
+    this.$http.get( window.SpkAppConfig.serverUrl )
+      .then( response => {
+        var account = localStorage.getItem( 'userAccount' )
+        var jwtToken = localStorage.getItem( 'userJwtToken' )
+        if ( !jwtToken || jwtToken == '' )
+          throw new Error( 'no login details found' )
+        return this.$http.get( window.SpkAppConfig.serverUrl + '/accounts/profile', {
+          headers: {
+            Authorization: JSON.parse( jwtToken )
+          }
+        } )
+      } )
+        .then( response => {
+          if ( response.status != 200 ) throw new Error( response )
+            let args = {
+              guest: false,
+          account: response.data
+            }
+          localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
+          this.loggedIn( args )
+        } )
+          .catch( err => {
+            console.warn( err )
+          } )
   }
 }
 </script>

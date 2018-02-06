@@ -39,28 +39,9 @@ export default {
   },
   data( ) {
     return {
-      showLogin: true,
-      receiversCreated: false,
     }
   },
   methods: {
-    loggedIn( args ) {
-      console.log( args )
-      if ( args.guest === false ) {
-        this.showLogin = false
-        var account = args.account
-        account.guest = false
-        var jwtToken = JSON.parse( localStorage.getItem( 'userJwtToken' ) )
-        this.$store.commit( 'SET_JWT', { jwtToken } )
-        this.$store.commit( 'SET_USER', { account } )
-        this.$http.defaults.headers.common[ 'Autorization' ] = jwtToken
-      } else if ( args.guest === true ) {
-        let account = { apitoken: '', name: 'Anonymous', guest: true }
-        this.$store.commit( 'SET_USER', { account } )
-        this.showLogin = false
-      }
-      this.createReceivers( )
-    },
     createReceivers( ) {
       if ( this.receiversCreated ) return
         let streamIds = window.location.href.split( '/' )[ window.location.href.split( '/' ).length - 1 ].split( ',' )
@@ -86,39 +67,11 @@ export default {
           layerMaterials: [ ]
         }
       } )
-
       this.$store.commit( 'ADD_RECEIVERS', { receivers } )
-      this.receiversCreated = true
     }
   },
   created( ) {
-    this.$http.get( window.SpkAppConfig.serverUrl )
-      .then( response => {
-        var account = localStorage.getItem( 'userAccount' )
-        var jwtToken = localStorage.getItem( 'userJwtToken' )
-        if ( !jwtToken || jwtToken == '' )
-          throw new Error( 'no login details found' )
-        return this.$http.get( window.SpkAppConfig.serverUrl + '/accounts/profile', {
-          headers: {
-            Authorization: JSON.parse( jwtToken )
-          }
-        } )
-      } )
-        .then( response => {
-          if ( response.status != 200 ) throw new Error( response )
-            let args = {
-              guest: false,
-          account: response.data
-            }
-          localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
-          this.loggedIn( args )
-        } )
-          .catch( err => {
-            console.warn( err )
-          } )
-    bus.$on( 'app-show-login', ( ) => {
-      this.showLogin = true
-    } )
+    this.createReceivers( )
   },
   computed: {
     isMobileView( ) {
