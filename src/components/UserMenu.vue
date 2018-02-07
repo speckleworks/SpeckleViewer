@@ -10,13 +10,37 @@
           <md-icon>keyboard_arrow_left</md-icon>
         </md-button>
         <md-list>
-          <md-list-item>
+          <md-list-item md-expand>
+            <md-icon>person</md-icon>
+            <span class="md-list-item-text">My Account</span>
+            <md-list class='md-triple-line md-dense'slot='md-expand'>
+              <md-list-item class='md-inset'>                
+                <div class="md-list-item-text">
+                  <span>{{user.name}} {{user.surname}}</span>
+                  <span>{{user.email}}</span>
+                  <p>{{user.createdAt}}</p>
+                </div>
+              </md-list-item>
+            </md-list>
+          </md-list-item>
+          <md-list-item md-expand>
             <md-icon>import_export</md-icon>
             <span class="md-list-item-text">My Streams</span>
+            <md-list class='md-double-line md-dense' slot='md-expand'>
+              <md-list-item v-for='stream in streams':key='stream.id' class='md-inset'>
+                <div class="md-list-item-text">
+                  <span>{{stream.name}}</span>
+                  <span>{{stream.streamId}}</span>
+                </div>
+              </md-list-item>
+            </md-list>
           </md-list-item>
-          <md-list-item>
+          <md-list-item md-expand>
             <md-icon>history</md-icon>
             <span class="md-list-item-text">Recent</span>
+            <md-list slot='md-expand'>
+              <md-list-item class='md-inset'>History placeholder</md-list-item>
+            </md-list>
           </md-list-item>
         </md-list>
       </md-drawer>
@@ -37,18 +61,18 @@ export default {
       email: '',
       password: '',
       loginError: false,
-      menuVisible: false
+      menuVisible: false,
+      user: '',
+      streams: ''
     }
   },
   methods: {
-    user() {return this.$store.getters.user},
+    getUser() {return this.$store.getters.user},
     toggleMenu() {
-      console.log(this.user())
-      if (this.user().user) {this.menuVisible = !this.menuVisible}
+      if (this.getUser().user) {this.menuVisible = !this.menuVisible}
       else {this.showLogin = !this.showLogin}
     },
     loggedIn( args ) {
-      console.log( args )
       if ( args.guest === false ) {
         this.showLogin = false
         var account = args.account
@@ -62,6 +86,16 @@ export default {
         this.$store.commit( 'SET_USER', { account } )
         this.showLogin = false
       }
+    },
+    getStreams(){
+      var jwtToken = localStorage.getItem( 'userJwtToken' )
+      this.$http.get(window.SpkAppConfig.serverUrl + '/accounts/streams',{
+        headers: {
+          Authorization: JSON.parse( jwtToken )
+        }})
+          .then( response => {
+            this.streams = response.data.streams
+          } )
     }
   },
   created () {
@@ -85,6 +119,8 @@ export default {
             }
           localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
           this.loggedIn( args )
+          this.user = this.getUser().user
+          this.getStreams()
         } )
           .catch( err => {
             console.warn( err )
