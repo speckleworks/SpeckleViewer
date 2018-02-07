@@ -69,7 +69,10 @@ export default {
   methods: {
     getUser() {return this.$store.getters.user},
     toggleMenu() {
-      if (this.getUser().user) {this.menuVisible = !this.menuVisible}
+      if (this.getUser().user) {
+        this.getStreams()
+        this.user = this.getUser().user
+        this.menuVisible = !this.menuVisible}
       else {this.showLogin = !this.showLogin}
     },
     loggedIn( args ) {
@@ -81,6 +84,7 @@ export default {
         this.$store.commit( 'SET_JWT', { jwtToken } )
         this.$store.commit( 'SET_USER', { account } )
         this.$http.defaults.headers.common[ 'Autorization' ] = jwtToken
+        this.toggleMenu()
       } else if ( args.guest === true ) {
         let account = { apitoken: '', name: 'Anonymous', guest: true }
         this.$store.commit( 'SET_USER', { account } )
@@ -119,8 +123,6 @@ export default {
             }
           localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
           this.loggedIn( args )
-          this.user = this.getUser().user
-          this.getStreams()
         } )
           .catch( err => {
             console.warn( err )
