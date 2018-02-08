@@ -2,7 +2,7 @@
   <div id="app">
     <div id='main' class="md-layout md-gutter">
       <div class='md-layout-item md-size-10'>
-        <user-menu></user-menu>
+        <user-menu v-on:add="addReceiver"></user-menu>
       </div>
       <div class='md-layout-item'>
         <speckle-renderer></speckle-renderer>
@@ -68,10 +68,50 @@ export default {
         }
       } )
       this.$store.commit( 'ADD_RECEIVERS', { receivers } )
+    },
+    addReceiver(streamId){
+      console.log('Adding a receiver', streamId)
+      if( this.$store.getters.receiverById( streamId ) )
+        return alert( 'This stream is already there.' )
+      let receiver = {
+        serverUrl: window.SpkAppConfig.serverUrl,
+        streamId: streamId,
+        token: this.$store.getters.user.apitoken,
+        objects: [],
+        layers: [],
+        history: [],
+        name: 'Loading ' + streamId + '...',
+        layerMaterials: []
+      }
+      this.$store.commit( 'ADD_RECEIVER', { receiver } )
     }
   },
   created( ) {
     this.createReceivers( )
+    this.$http.get( window.SpkAppConfig.serverUrl )
+      .then( response => {
+        var account = localStorage.getItem( 'userAccount' )
+        var jwtToken = localStorage.getItem( 'userJwtToken' )
+        if ( !jwtToken || jwtToken == '' )
+          throw new Error( 'no login details found' )
+        return this.$http.get( window.SpkAppConfig.serverUrl + '/accounts/profile', {
+          headers: {
+            Authorization: JSON.parse( jwtToken )
+          }
+        } )
+      } )
+        .then( response => {
+          if ( response.status != 200 ) throw new Error( response )
+            let args = {
+              guest: false,
+          account: response.data
+            }
+          localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
+          this.loggedIn( args )
+        } )
+          .catch( err => {
+            console.warn( err )
+          } )
   },
   computed: {
     isMobileView( ) {

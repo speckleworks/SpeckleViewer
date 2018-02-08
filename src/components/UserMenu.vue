@@ -2,8 +2,9 @@
   <div>
     <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen>
     <div class="user-menu">
-      <md-button class="md-icon-button" @click="toggleMenu" v-if="!menuVisible">
-        <md-icon>person</md-icon>
+      <md-button class="md-icon-button md-raised" @click="toggleMenu" v-if="!menuVisible">
+        <md-icon v-if='user'>person</md-icon>
+        <md-icon v-else>person_outline</md-icon>
       </md-button>
       <md-drawer :md-active.sync="menuVisible" md-persistent="full">
         <md-button class="md-icon-button" @click="toggleMenu" v-if="menuVisible">
@@ -32,6 +33,12 @@
                   <span>{{stream.name}}</span>
                   <span>{{stream.streamId}}</span>
                 </div>
+                <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(stream.streamId)'>
+                  <md-icon>add</md-icon>
+                </md-button>
+                <md-button class="md-icon-button md-list-action md-dense">
+                  <md-icon>remove</md-icon>
+                </md-button>
               </md-list-item>
             </md-list>
           </md-list-item>
@@ -71,7 +78,6 @@ export default {
     toggleMenu() {
       if (this.getUser().user) {
         this.getStreams()
-        this.user = this.getUser().user
         this.menuVisible = !this.menuVisible}
       else {this.showLogin = !this.showLogin}
     },
@@ -84,7 +90,7 @@ export default {
         this.$store.commit( 'SET_JWT', { jwtToken } )
         this.$store.commit( 'SET_USER', { account } )
         this.$http.defaults.headers.common[ 'Autorization' ] = jwtToken
-        this.toggleMenu()
+        this.user = this.getUser().user
       } else if ( args.guest === true ) {
         let account = { apitoken: '', name: 'Anonymous', guest: true }
         this.$store.commit( 'SET_USER', { account } )
@@ -100,7 +106,11 @@ export default {
           .then( response => {
             this.streams = response.data.streams
           } )
+    },
+    addStream(stream){
+      this.$emit('add', stream)
     }
+
   },
   created () {
     this.$http.get( window.SpkAppConfig.serverUrl )
