@@ -1,7 +1,8 @@
 <a href="url"><img src="https://speckle.works/img/logos/2xlogo-white.png" align="left" height="128" ></a>
 # speckle-viewer
 
-> A simple Speckle.Works stream viewer. For more, check [speckle.works](https://speckle.works).
+> A simple Speckle.Works stream viewer, built with [VueJS](https://vuejs.org/). For more, check [speckle.works](https://speckle.works/doc/onlineviewer/).
+
 ![Image of Speckle Viewer](https://speckle.works/img/onlineviewer/headerimg4c.png)
 
 More info to come. 
