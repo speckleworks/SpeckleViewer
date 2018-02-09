@@ -6,18 +6,37 @@
           <md-icon>refresh</md-icon>
           <md-tooltip>Update available. Click to refresh.</md-tooltip>
         </md-button>
-        <md-button class="md-icon-button md-dense" @click.native='expanded = ! expanded'>
-          <md-icon>{{ expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
+        <md-button class="md-icon-button md-dense" @click.native='receiverExpanded = ! receiverExpanded'>
+          <md-icon>{{ receiverExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
         </md-button>
       </span>
       <span>{{spkreceiver.name}}</span>
     </md-toolbar>
     <md-progress-bar md-mode="indeterminate" v-show='showProgressBar'></md-progress-bar>
-    <md-list class='md-dense' v-show='expanded'>
-      <md-list-item class='md-inset' v-for='layer in layers' :key='layer.guid'>
+    <md-list class='md-dense' v-show='receiverExpanded'>
+      <md-subheader class='md-inset'>
+        Layers
+        <md-button class="md-icon-button md-dense" @click.native='layersExpanded = ! layersExpanded'>
+          <md-icon>{{ layersExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
+        </md-button>
+      </md-subheader>
+      <md-list-item v-show='layersExpanded' class='md-inset' v-for='layer in layers' :key='layer.guid'>
         <speckle-receiver-layer :spklayer='layer' :streamid='spkreceiver.streamId'></speckle-receiver-layer>
       </md-list-item>
-      <!-- <speckle-receiver-layer v-show="expanded" v-for='layer in layers' :key='layer.guid' :spklayer='layer' :streamid='spkreceiver.streamId'></speckle-receiver-layer> -->
+      <md-subheader class='md-inset'>
+        Comments
+        <md-button class="md-icon-button md-dense" @click.native='commentsExpanded = ! commentsExpanded'>
+          <md-icon>{{ commentsExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
+        </md-button>
+      </md-subheader>
+      <md-list-item v-show='commentsExpanded' class='md-inset'>Soon™</md-list-item>
+      <md-subheader class='md-inset'>
+        History
+        <md-button class="md-icon-button md-dense" @click.native='historyExpanded = ! historyExpanded'>
+          <md-icon>{{ historyExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
+        </md-button>
+      </md-subheader>
+      <md-list-item v-show='historyExpanded' class='md-inset'>Soon™</md-list-item>
     </md-list>
 
     <!-- <md-card class="receiver paddedcard"> -->  
@@ -87,7 +106,10 @@ export default {
       showProgressBar: true,
       objLoadProgress: 100,
       comments: 'Hello World. How Are you? Testing testing 123.',
-      expanded: true, 
+      receiverExpanded: true, 
+      layersExpanded: false, 
+      commentsExpanded: false, 
+      historyExpanded: false, 
       expired: false
     }
   },
@@ -170,6 +192,9 @@ export default {
 </script>
 
 <style>
+.md-list .md-subheader.md-inset{
+  padding-left:32px;
+}
 
 .line-height-adjustment{
   line-height: 30px;
