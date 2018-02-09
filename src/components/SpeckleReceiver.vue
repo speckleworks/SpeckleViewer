@@ -38,42 +38,6 @@
       </md-subheader>
       <md-list-item v-show='historyExpanded' class='md-inset'>Soon™</md-list-item>
     </md-list>
-
-    <!-- <md-card class="receiver paddedcard"> -->  
-    <!--   <md-card-header style='line-heigth:30px' class='line-height-adjustment'> -->
-    <!--     <span class="md-body-2"> -->
-    <!-- <md-button class='md-icon-button md-dense xxxmd-accent xxxmd-raised' @click.native='expanded = ! expanded'> -->
-    <!-- <md-button class='md-icon-button md-dense xxxmd-accent xxxmd-raised' @click.native='expanded = ! expanded'> -->
-    <!--   <md-icon>{{ expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon> -->
-
-    <!-- </md-button>{{ spkreceiver.name }} --> 
-    <!-- </span> -->
-    <!-- <span class="md-caption"><code style="user-select:all">{{ spkreceiver.streamId }}</code></span> -->
-    <!-- <br> -->
-    <!-- <md-progress-bar md-mode="indeterminate" v-show='showProgressBar' style='margin-bottom:20px;margin-top:20px;'></md-progress-bar> -->
-    <!-- <md-button v-show='expired' class='md-densexx md-warn md-raised md-icon-button' id='refresh-button' @click.native='getAndSetStream()'> -->
-    <!-- <md-icon>refresh</md-icon> -->
-    <!-- <md-tooltip>Update available. Click to refresh.</md-tooltip> -->
-    <!-- </md-button> -->
-    <!-- </md-card-header> -->
-    <!-- <md-card-content v-show='expanded'> -->
-    <!--       <md-tabs md-fixedXXX class='md-transparent'>
-      <md-tab id="layers" md-label="layers" class='receiver-tabs'>
-    -->
-    <!-- <speckle-receiver-layer v-for='layer in layers' :key='layer.guid' :spklayer='layer' :streamid='spkreceiver.streamId'></speckle-receiver-layer> -->
-    <!--         </md-tab>
-      <md-tab id='comments' md-label='views' class='receiver-tabs'>
-      <speckle-receiver-comments :streamid='spkreceiver.streamId' v-on:comment-submit='commentSubmit' ></speckle-receiver-comments>
-      </md-tab>
-      <md-tab id='versions' md-label='versions' class='receiver-tabs'>
-      <br>
-      <div class="md-subhead">Todo.</div>
-      <speckle-receiver-comments :streamid='spkreceiver.streamId' v-on:comment-submit='commentSubmit' ></speckle-receiver-comments>
-      </md-tab>
-      </md-tabs> -->
-
-      <!-- </md-card-content> -->
-      <!-- </md-card> -->
   </div>
 </template>
 
@@ -131,14 +95,6 @@ export default {
     updateGlobal( ) {
       console.info( 'live update event' )
       this.expired = true
-      // this.showProgressBar = false
-      // this.objLoadProgress = 0
-
-      // let payload = { streamId: this.spkreceiver.streamId, name: name, layers: layers, objects: objects }
-      // this.$store.commit( 'SET_RECEIVER_DATA',  { payload } )
-
-      // bus.$emit('renderer-update')
-      // this.isStale = true
     },
 
     getAndSetStream( ) {
