@@ -11,8 +11,8 @@
         </md-button>
       </span>
       <span>{{spkreceiver.name}}</span>
-      <md-progress-bar md-mode="indeterminate" v-show='showProgressBar' style='margin-bottom:20px;margin-top:20px;'></md-progress-bar>
     </md-toolbar>
+    <md-progress-bar md-mode="indeterminate" v-show='showProgressBar'></md-progress-bar>
     <md-list class='md-dense' v-show='expanded'>
       <md-list-item class='md-inset' v-for='layer in layers' :key='layer.guid'>
         <speckle-receiver-layer :spklayer='layer' :streamid='spkreceiver.streamId'></speckle-receiver-layer>
