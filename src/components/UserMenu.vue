@@ -5,11 +5,17 @@
       <md-button class="md-icon-button md-raised" @click="toggleMenu" v-if="!menuVisible">
         <md-icon v-if='user'>person</md-icon>
         <md-icon v-else>person_outline</md-icon>
+        <md-tooltip>Account</md-tooltip>
       </md-button>
       <md-drawer :md-active.sync="menuVisible" md-persistent="full">
-        <md-button class="md-icon-button" @click="toggleMenu" v-if="menuVisible">
-          <md-icon>keyboard_arrow_left</md-icon>
-        </md-button>
+        <md-toolbar class="md-transparent" md-elevation="0">
+          <span class="md-toolbar-section-end">
+            <md-button class="md-icon-button" @click="toggleMenu" v-if="menuVisible">
+              <md-icon>keyboard_arrow_left</md-icon>
+            </md-button>
+          </span>
+          <span class="md-title">Hello, {{user.name}}</span>
+        </md-toolbar>
         <md-list>
           <md-list-item md-expand>
             <md-icon>person</md-icon>
@@ -46,7 +52,7 @@
             <md-icon>history</md-icon>
             <span class="md-list-item-text">Recent</span>
             <md-list slot='md-expand'>
-              <md-list-item class='md-inset'>History placeholder</md-list-item>
+              <md-list-item class='md-inset'>Coming soon!</md-list-item>
             </md-list>
           </md-list-item>
         </md-list>

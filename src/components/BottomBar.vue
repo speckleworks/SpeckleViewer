@@ -2,6 +2,7 @@
   <div>
     <md-button @click.native='zoomExt'>
       <md-icon>zoom_out_map</md-icon>
+      <md-tooltip md-direction="top">Zoom Extents</md-tooltip>
     </md-button>
   </div>
 </template>

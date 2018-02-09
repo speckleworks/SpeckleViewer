@@ -7,7 +7,7 @@
       <div class='md-layout-item'>
         <speckle-renderer></speckle-renderer>
       </div>
-      <div class="md-layout-item md-size-15" >
+      <div class="md-layout-item md-size-20" >
         <speckle-stream-list v-show='!isMobileView'></speckle-stream-list>
       </div>
     </div>
@@ -133,6 +133,9 @@ export default {
 </script>
 
 <style>
+.md-layout {
+  padding:8px;
+}
 #app {
   position: fixed;
   top: 0;

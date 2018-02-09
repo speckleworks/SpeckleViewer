@@ -1,22 +1,22 @@
 <template>
-  <div id="stream-list-cover">
-    <!--   <div class='list-menu'>
-      <md-button class="md-icon-button md-warn" @click.native='showNewStreamDialgue = true'>
-      <md-icon>add</md-icon>
-      </md-button>
-      <md-button class="md-icon-button md-primary" @click.native='toggleStreamList'>
-      <md-icon>{{ showStreamList ? 'keyboard_arrow_left':'keyboard_arrow_right' }}</md-icon>
-      <md-tooltip> {{ showStreamList ? 'Hide' : 'Show' }} the stream list.</md-tooltip>
-      </md-button>
-      </div> -->
-      <div id='stream-list' ref='thestreamlist'>
+  <div id='stream-list'>
+    <md-button id='streamsButton'class="md-icon-button md-raised" @click="toggleStreamList" v-if="!showStreamList">
+      <md-icon>import_export</md-icon>
+      <md-tooltip>Streams</md-tooltip>
+    </md-button>
+    <md-drawer :md-active.sync="showStreamList" md-persistent="full" class='md-right md-dense'>
+      <md-toolbar class="md-transparent md-dense" md-elevation="0">
+        <span class="md-title">Streams</span>
+        <span class="md-toolbar-section-end">
+          <md-button class="md-icon-button" @click="toggleStreamList">
+            <md-icon>keyboard_arrow_right</md-icon>
+          </md-button>
+        </span>
+      </md-toolbar>
+      <md-list>
         <speckle-receiver v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
-        <div class='paddedcard' style='position:relative;' v-show='receivers.length === 0'>
-          <div class="md-title">There are no clients to show.</div>
-          <p>You can add a new client by click on the add button above.</p>
-        </div>
-      </div>
-      <!-- <speckle-new-stream-dialog v-on:close='showNewStreamDialgue = false' v-show='showNewStreamDialgue'></speckle-new-stream-dialog> -->
+      </md-list>
+    </md-drawer>
   </div>
 </template>
 
@@ -49,7 +49,6 @@ export default {
     },
     toggleStreamList() {
       this.showStreamList = ! this.showStreamList
-      this.$refs.thestreamlist.classList.toggle('hidden')
     }
   },
   created() {
@@ -61,19 +60,26 @@ export default {
 </script>
 
 <style scoped>
+.md-drawer {
+  width:auto;
+}
+
+#streamsButton{
+ float:right;
+}
 /*
 #stream-list-cover{
-  position: fixed;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  top:0px;
-  height: 100%;
-  left: 10px;
-  width: 340px;
-  overflow: hidden;
-  z-index: 99;
-  pointer-events: none;
-  box-sizing: border-box;
+position: fixed;
+padding-top: 10px;
+padding-bottom: 10px;
+top:0px;
+height: 100%;
+left: 10px;
+width: 340px;
+overflow: hidden;
+z-index: 99;
+pointer-events: none;
+box-sizing: border-box;
 }
 .list-menu {
   pointer-events: auto;
@@ -100,7 +106,7 @@ export default {
   left: -500px;
   opacity: 0;
 }
-*/
+ */
 
 #stream-list div {
 }
