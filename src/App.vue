@@ -2,7 +2,7 @@
   <div id="app">
     <div id='main' class="md-layout md-gutter">
       <div class='md-layout-item md-size-10'>
-        <user-menu v-on:add="addReceiver"></user-menu>
+        <user-menu v-on:add="addReceiver" v-on:drop="dropReceiver"></user-menu>
       </div>
       <div class='md-layout-item'>
         <speckle-renderer></speckle-renderer>
@@ -88,6 +88,10 @@ export default {
         layerMaterials: []
       }
       this.$store.commit( 'ADD_RECEIVER', { receiver } )
+    },
+    dropReceiver(streamId){
+      console.log('Dropping receiver:', streamId)
+      this.$store.commit( 'DROP_RECEIVER', { streamId } )
     }
   },
   created( ) {

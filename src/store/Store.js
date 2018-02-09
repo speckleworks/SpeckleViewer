@@ -74,6 +74,10 @@ export default new Vuex.Store( {
       state.comments.push( ...payload.comments )
     },
 
+    DROP_RECEIVER( state, { streamId } ) {
+      state.receivers.splice(state.receivers.findIndex( rec => rec.streamId === streamId ),1)
+    },
+
     UPDATE_LAYER_PROPS( state, { payload } ) {
       console.log( payload )
       let l = state.receivers.find( rec => rec.streamId === payload.streamId ).layers.find( l => l.guid == payload.guid ).properties

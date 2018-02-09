@@ -36,7 +36,7 @@
                 <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(stream.streamId)'>
                   <md-icon>add</md-icon>
                 </md-button>
-                <md-button class="md-icon-button md-list-action md-dense">
+                <md-button class="md-icon-button md-list-action md-dense" v-on:click='dropStream(stream.streamId)'>
                   <md-icon>remove</md-icon>
                 </md-button>
               </md-list-item>
@@ -109,6 +109,9 @@ export default {
     },
     addStream(stream){
       this.$emit('add', stream)
+    },
+    dropStream(stream){
+      this.$emit('drop', stream)
     }
 
   },
