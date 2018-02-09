@@ -2,11 +2,16 @@
   <div>
     <md-toolbar class="md-transparent md-dense" md-elevation="0">
       <span class="md-toolbar-section-end">
+        <md-button v-show='expired' class='md-icon-button md-dense md-accent' @click.native='getAndSetStream()'>
+          <md-icon>refresh</md-icon>
+          <md-tooltip>Update available. Click to refresh.</md-tooltip>
+        </md-button>
         <md-button class="md-icon-button md-dense" @click.native='expanded = ! expanded'>
           <md-icon>{{ expanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
         </md-button>
       </span>
       <span>{{spkreceiver.name}}</span>
+      <md-progress-bar md-mode="indeterminate" v-show='showProgressBar' style='margin-bottom:20px;margin-top:20px;'></md-progress-bar>
     </md-toolbar>
     <md-list class='md-dense' v-show='expanded'>
       <md-list-item class='md-inset' v-for='layer in layers' :key='layer.guid'>
@@ -166,11 +171,6 @@ export default {
 
 <style>
 
-#refresh-button {
-  position: absolute;
-  right: 12px;
-  top: 12px;
-}
 .line-height-adjustment{
   line-height: 30px;
 }
