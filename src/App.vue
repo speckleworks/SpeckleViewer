@@ -18,6 +18,9 @@
         </div>
       </div>
     </div>
+    <md-snackbar :md-active.sync="showSnackbar" md-position="center">
+      <span>That stream is already here</span>
+    </md-snackbar>
   </div>
 </template>
 <script>
@@ -39,6 +42,7 @@ export default {
   },
   data( ) {
     return {
+      showSnackbar: false
     }
   },
   methods: {
@@ -72,7 +76,7 @@ export default {
     addReceiver(streamId){
       console.log('Adding a receiver', streamId)
       if( this.$store.getters.receiverById( streamId ) )
-        return alert( 'This stream is already there.' )
+        return this.showSnackbar = true
       let receiver = {
         serverUrl: window.SpkAppConfig.serverUrl,
         streamId: streamId,
