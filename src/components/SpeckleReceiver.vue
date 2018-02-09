@@ -106,7 +106,7 @@ export default {
       showProgressBar: true,
       objLoadProgress: 100,
       comments: 'Hello World. How Are you? Testing testing 123.',
-      receiverExpanded: true, 
+      receiverExpanded: false, 
       layersExpanded: false, 
       commentsExpanded: false, 
       historyExpanded: false, 

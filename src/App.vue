@@ -92,6 +92,7 @@ export default {
     dropReceiver(streamId){
       console.log('Dropping receiver:', streamId)
       this.$store.commit( 'DROP_RECEIVER', { streamId } )
+      bus.$emit('renderer-update')
     }
   },
   created( ) {
