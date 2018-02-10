@@ -41,9 +41,11 @@
                 </div>
                 <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(stream.streamId)'>
                   <md-icon>add</md-icon>
+                  <md-tooltip  md-delay="800">Add this stream to the viewer</md-tooltip>
                 </md-button>
                 <md-button class="md-icon-button md-list-action md-dense" v-on:click='dropStream(stream.streamId)'>
                   <md-icon>remove</md-icon>
+                  <md-tooltip  md-delay="800">Remove this stream from the viewer</md-tooltip>
                 </md-button>
               </md-list-item>
             </md-list>
@@ -52,7 +54,7 @@
             <md-icon>history</md-icon>
             <span class="md-list-item-text">Recent</span>
             <md-list slot='md-expand'>
-              <md-list-item class='md-inset'>Coming soon!</md-list-item>
+              <md-list-item class='md-inset'>Soon™</md-list-item>
             </md-list>
           </md-list-item>
         </md-list>
