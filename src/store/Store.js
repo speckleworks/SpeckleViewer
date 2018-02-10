@@ -35,6 +35,10 @@ export default new Vuex.Store( {
     allObjects: state => {
       return state.receivers.reduce( ( p, c ) => { return [ ...p, ...c.objects ] }, [ ] )
     },
+    objectsByLayer: state => (layerGuid) => {
+      let objects = state.receivers.reduce( ( p, c ) => { return [ ...p, ...c.objects ] }, [ ] )
+      return objects.filter(object => object.layerGuid == layerGuid)
+    },
     allLayerMaterials: ( state ) => {
       let arr = [ ]
       state.receivers.forEach( rec => {
