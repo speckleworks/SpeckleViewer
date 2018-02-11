@@ -44,7 +44,7 @@ export default {
   },
   data() {
     return {
-      showStreamList: true,
+      showStreamList: false,
       showNewStreamDialog: false
     }
   },
