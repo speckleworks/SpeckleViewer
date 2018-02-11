@@ -8,7 +8,7 @@
         <speckle-renderer></speckle-renderer>
       </div>
       <div class="md-layout-item md-size-20" >
-        <speckle-stream-list v-show='!isMobileView'></speckle-stream-list>
+        <speckle-stream-list></speckle-stream-list>
       </div>
     </div>
     <div class='md-layout md-gutter'>
