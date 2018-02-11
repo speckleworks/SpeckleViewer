@@ -7,6 +7,10 @@
     <md-drawer :md-active.sync="showStreamList" md-persistent="full" class='md-right md-dense'>
       <md-toolbar class="md-transparent md-dense" md-elevation="0">
         <span class="md-title">Streams</span>
+        <md-button class="md-icon-button md-list-action" v-on:click='toggleShowNewStream'>
+          <md-icon>add</md-icon>
+          <md-tooltip  md-delay="800">Add a stream to the viewer</md-tooltip>
+        </md-button>
         <span class="md-toolbar-section-end">
           <md-button class="md-icon-button" @click="toggleStreamList">
             <md-icon>keyboard_arrow_right</md-icon>
@@ -14,9 +18,10 @@
         </span>
       </md-toolbar>
       <md-list>
-        <speckle-receiver v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
+        <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
       </md-list>
     </md-drawer>
+    <speckle-new-stream-dialog v-on:close='showNewStreamDialog = false' v-if='showNewStreamDialog'></speckle-new-stream-dialog>
   </div>
 </template>
 
@@ -40,7 +45,7 @@ export default {
   data() {
     return {
       showStreamList: true,
-      showNewStreamDialgue: false
+      showNewStreamDialog: false
     }
   },
   methods: {
@@ -49,6 +54,14 @@ export default {
     },
     toggleStreamList() {
       this.showStreamList = ! this.showStreamList
+    },
+    toggleShowNewStream() {
+      this.showNewStreamDialog = ! this.showNewStreamDialog
+    },
+    dropReceiver(streamId){
+      console.log('Dropping receiver:', streamId)
+      this.$store.commit( 'DROP_RECEIVER', { streamId } )
+      bus.$emit('renderer-update')
     }
   },
   created() {
@@ -65,7 +78,7 @@ export default {
 }
 
 #streamsButton{
- float:right;
+  float:right;
 }
 /*
 #stream-list-cover{

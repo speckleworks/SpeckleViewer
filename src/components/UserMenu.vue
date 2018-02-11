@@ -43,10 +43,6 @@
                   <md-icon>add</md-icon>
                   <md-tooltip  md-delay="800">Add this stream to the viewer</md-tooltip>
                 </md-button>
-                <md-button class="md-icon-button md-list-action md-dense" v-on:click='dropStream(stream.streamId)'>
-                  <md-icon>remove</md-icon>
-                  <md-tooltip  md-delay="800">Remove this stream from the viewer</md-tooltip>
-                </md-button>
               </md-list-item>
             </md-list>
           </md-list-item>
@@ -118,9 +114,6 @@ export default {
     addStream(stream){
       this.$emit('add', stream)
     },
-    dropStream(stream){
-      this.$emit('drop', stream)
-    }
 
   },
   created () {

@@ -2,13 +2,13 @@
   <div id="app">
     <div id='main' class="md-layout md-gutter">
       <div class='md-layout-item md-size-10'>
-        <user-menu v-on:add="addReceiver" v-on:drop="dropReceiver"></user-menu>
+        <user-menu v-on:add="addReceiver" ></user-menu>
       </div>
       <div class='md-layout-item'>
         <speckle-renderer></speckle-renderer>
       </div>
       <div class="md-layout-item md-size-20" >
-        <speckle-stream-list></speckle-stream-list>
+        <speckle-stream-list> </speckle-stream-list>
       </div>
     </div>
     <div class='md-layout md-gutter'>
@@ -89,12 +89,8 @@ export default {
       }
       this.$store.commit( 'ADD_RECEIVER', { receiver } )
     },
-    dropReceiver(streamId){
-      console.log('Dropping receiver:', streamId)
-      this.$store.commit( 'DROP_RECEIVER', { streamId } )
-      bus.$emit('renderer-update')
-    }
   },
+
   created( ) {
     this.createReceivers( )
     this.$http.get( window.SpkAppConfig.serverUrl )

@@ -6,6 +6,10 @@
           <md-icon>refresh</md-icon>
           <md-tooltip>Update available. Click to refresh.</md-tooltip>
         </md-button>
+        <md-button class="md-icon-button md-list-action md-dense" v-on:click='dropStream(spkreceiver.streamId)'>
+          <md-icon>remove</md-icon>
+          <md-tooltip  md-delay="800">Remove this stream from the viewer</md-tooltip>
+        </md-button>
         <md-button class="md-icon-button md-dense" @click.native='receiverExpanded = ! receiverExpanded'>
           <md-icon>{{ receiverExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
         </md-button>
@@ -127,6 +131,9 @@ export default {
       if( parsedMessage.event != 'comment-added' ) return
         let payload = parsedMessage.comment
       this.$store.commit( 'ADD_COMMENT', { payload } )
+    },
+    dropStream(stream){
+      this.$emit('drop', stream)
     }
   },
   mounted() {
