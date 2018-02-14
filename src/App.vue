@@ -1,22 +1,19 @@
 <template>
   <div id="app">
     <div id='main' class="md-layout md-gutter">
-      <div class='md-layout-item md-size-10'>
+      <div class='md-layout-item md-size-33'>
         <user-menu v-on:add="addReceiver" ></user-menu>
       </div>
       <div class='md-layout-item'>
+        <search-bar :objects="searchObjects"></search-bar>
         <speckle-renderer></speckle-renderer>
       </div>
-      <div class="md-layout-item md-size-20" >
+      <div class="md-layout-item md-size-33" >
         <speckle-stream-list> </speckle-stream-list>
       </div>
     </div>
-    <div class='md-layout md-gutter'>
-      <div class='md-layout md-alignment-center-center'>
-        <div class='md-layout-item md-size-5'>
-          <bottom-bar></bottom-bar>
-        </div>
-      </div>
+    <div class='md-layout md-alignment-center-center'>
+      <bottom-bar></bottom-bar>
     </div>
     <md-snackbar :md-active.sync="showSnackbar" md-position="center">
       <span>That stream is already here</span>
@@ -30,6 +27,7 @@ import LoginScreen from './components/LoginScreen.vue'
 import SpeckleViewer from './components/SpeckleViewer.vue'
 import UserMenu from './components/UserMenu.vue'
 import BottomBar from './components/BottomBar.vue'
+import SearchBar from './components/SearchBar.vue'
 export default {
   name: 'app',
   components: {
@@ -38,7 +36,8 @@ export default {
     LoginScreen,
     SpeckleViewer,
     SpeckleRenderer,
-    BottomBar
+    BottomBar,
+    SearchBar
   },
   data( ) {
     return {
@@ -112,7 +111,6 @@ export default {
           account: response.data
             }
           localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
-          this.loggedIn( args )
         } )
           .catch( err => {
             console.warn( err )
@@ -124,6 +122,16 @@ export default {
     },
     receivers( ) {
       return this.$store.getters.allReceivers
+    },
+    objects( ) {
+      return this.$store.getters.allObjects
+    },
+    searchObjects() {
+      //flesh this out to provide the list of objects we want to search
+      let objectIds  = this.objects.map((object, index, objects) => {
+        return object.streamId
+      })
+      return objectIds
     }
   }
 }
