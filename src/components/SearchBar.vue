@@ -1,5 +1,5 @@
 <template>
-  <span id='search-bar'>
+  <div id='search-bar'>
   <!-- <div id='search-bar'> -->
     <!-- <md-button class="md-icon-button md-raised" @click="toggleSearchBar"> -->
     <!--   <md-icon>search</md-icon> -->
@@ -15,13 +15,14 @@
         <md-autocomplete
                      class="search"
                      v-model="selection"
+                     v-on:input='select(selection)'
                      :md-options="objects"
                      md-layout="box">
           <label>Search...</label>
         </md-autocomplete>
       <!-- </div> -->
     <!-- </md-toolbar> -->
-  </span>
+  </div>
 </template>
 
 <script>
@@ -41,6 +42,9 @@ export default {
   methods: {
     toggleSearchBar() {
       this.searchVisible = ! this.searchVisible
+    },
+    select(selection) {
+      bus.$emit('select-bus', selection)
     }
   },
   created(){

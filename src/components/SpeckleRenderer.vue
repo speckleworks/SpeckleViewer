@@ -115,6 +115,7 @@ export default {
         }
       }
       this.updateInProgress = false
+      this.zoomExtents()
     },
     render( ) {
       TWEEN.update( )
@@ -164,6 +165,8 @@ export default {
       this.hoveredObjects = [ ]
       this.hoveredObject = ''
       this.selectionBoxes = [ ]
+      this.showInfoBox = false
+      this.expandInfoBox = false
     },
     canvasHovered( event ) {
       if ( this.isRotatingStuff ) return
@@ -195,6 +198,7 @@ export default {
       this.hoveredObjects.push( selectedObject )
       this.hoveredObject = selectedObject.hash
 
+
       this.selectedObjectsProperties = {
         hash: selectedObject.hash,
         streamId: selectedObject.streamId,
@@ -216,6 +220,11 @@ export default {
         this.showInfoBox = false
         this.expandInfoBox = false
       }
+    },
+    selectBus(objectId) {
+      console.log(objectId)
+      console.log(this.hoveredObject)
+      this.deselectObjects()
     },
     zoomToObject( ) {
       let myObject = this.scene.children.find( ch => { return ch.hash === this.selectedObjectsProperties.hash } )
@@ -337,8 +346,6 @@ export default {
     document.onkeydown = ( event ) => {
       if ( event.keyCode !== 27 ) return
       this.deselectObjects( )
-      this.showInfoBox = false
-      this.expandInfoBox = false
     }
 
     window.THREE = THREE
@@ -364,6 +371,9 @@ export default {
     bus.$on( 'renderer-unpop', ( ) => {
       console.log( "UNPOP" )
       this.$refs.mycanvas.classList.toggle( 'pop' )
+    } )
+    bus.$on( 'select-bus', (objectId) => {
+      this.selectBus(objectId)
     } )
 
     document.addEventListener( 'keydown', ( event ) => {

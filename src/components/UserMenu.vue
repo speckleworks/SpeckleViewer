@@ -2,7 +2,7 @@
   <div>
     <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen>
     <div class="user-menu">
-      <md-button class="md-icon-button md-raised" @click="toggleMenu" v-if="!menuVisible">
+      <md-button class="md-icon-button md-primary md-raised" @click="toggleMenu" v-if="!menuVisible">
         <md-icon v-if='user'>person</md-icon>
         <md-icon v-else>person_outline</md-icon>
         <md-tooltip>Account</md-tooltip>

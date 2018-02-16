@@ -1,6 +1,6 @@
 <template>
   <div>
-    <md-toolbar>
+    <md-toolbar class='md-primary'>
       <div class="md-toolbar-row ">
         <div>
           <md-button @click.native='zoomExt'>
@@ -39,7 +39,7 @@ export default {
     searchObjects() {
       //flesh this out to provide the list of objects we want to search
       let objectIds  = this.objects.map((object, index, objects) => {
-        return object.streamId
+        return object._id
       })
       return objectIds
     }

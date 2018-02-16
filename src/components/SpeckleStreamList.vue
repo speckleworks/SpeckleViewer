@@ -1,6 +1,6 @@
 <template>
   <div id='stream-list'>
-    <md-button id='streamsButton'class="md-icon-button md-raised" @click="toggleStreamList" v-if="!showStreamList">
+    <md-button id='streamsButton'class="md-icon-button md-primary md-raised" @click="toggleStreamList" v-if="!showStreamList">
       <md-icon>import_export</md-icon>
       <md-tooltip>Streams</md-tooltip>
     </md-button>
@@ -44,7 +44,7 @@ export default {
   },
   data() {
     return {
-      showStreamList: false,
+      showStreamList: true,
       showNewStreamDialog: false
     }
   },
