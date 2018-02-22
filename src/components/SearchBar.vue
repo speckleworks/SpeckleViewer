@@ -1,17 +1,5 @@
 <template>
   <div id='search-bar'>
-  <!-- <div id='search-bar'> -->
-    <!-- <md-button class="md-icon-button md-raised" @click="toggleSearchBar"> -->
-    <!--   <md-icon>search</md-icon> -->
-    <!--   <md-tooltip>Search</md-tooltip> -->
-    <!-- </md-button> -->
-    <!-- <md-toolbar class="md-dense"> -->
-    <!--   <div class="md-toolbar-row "> -->
-        <!-- <div class="md-toolbar-section-start"> -->
-        <!--   <md-button class="md-icon-button"> -->
-        <!--     <md-icon>search</md-icon> -->
-        <!--   </md-button> -->
-        <!-- </div> -->
         <md-autocomplete
                      class="search"
                      v-model="selection"
@@ -20,8 +8,6 @@
                      md-layout="box">
           <label>Search...</label>
         </md-autocomplete>
-      <!-- </div> -->
-    <!-- </md-toolbar> -->
   </div>
 </template>
 
@@ -48,10 +34,13 @@ export default {
     }
   },
   created(){
-    console.log(this.objects)
   }
 }
 </script>
 
 <style scoped>
+.search {
+      min-width: 300px;
+        
+}
 </style>
