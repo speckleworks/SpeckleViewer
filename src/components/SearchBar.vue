@@ -1,14 +1,12 @@
 <template>
-  <div id='search-bar'>
-        <md-autocomplete
-                     class="search"
-                     v-model="selection"
-                     v-on:input='select(selection)'
-                     :md-options="objects"
-                     md-layout="box">
-          <label>Search...</label>
-        </md-autocomplete>
-  </div>
+  <md-autocomplete v-if='objects.length>0'
+    class="search"
+    v-model="selection"
+    v-on:input='select(selection)'
+    :md-options="objects"
+    md-layout="box">
+    <label>Search...</label>
+  </md-autocomplete>
 </template>
 
 <script>
@@ -16,8 +14,6 @@ export default {
   name: 'SearchBar',
   props:{
     objects: { type: Array}
-  },
-  computed: {
   },
   data() {
     return {
@@ -33,14 +29,10 @@ export default {
       bus.$emit('select-bus', selection)
     }
   },
-  created(){
-  }
 }
 </script>
 
 <style scoped>
 .search {
-      min-width: 300px;
-        
 }
 </style>
