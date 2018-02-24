@@ -11,9 +11,11 @@
         <speckle-stream-list> </speckle-stream-list>
       </div>
     </div>
-    <div class='md-layout md-alignment-center-center'>
-      <div class="md-layout-item md-size-50" >
-        <bottom-bar></bottom-bar>
+    <div id='bottom-bar'>
+      <div class='md-layout md-alignment-bottom-center'>
+        <div class="md-layout-item md-size-50" >
+          <bottom-bar></bottom-bar>
+        </div>
       </div>
     </div>
     <md-snackbar :md-active.sync="showSnackbar" md-position="center">
@@ -141,6 +143,10 @@ export default {
   height: 100%;
 }
 #main {
-  height: 90%
+}
+#bottom-bar {
+position:absolute;
+bottom: 0;
+width: 100%;
 }
 </style>
