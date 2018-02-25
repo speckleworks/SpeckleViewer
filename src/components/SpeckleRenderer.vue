@@ -177,7 +177,6 @@ export default {
       this.raycaster.setFromCamera( mouse, this.camera )
 
       let intersects = this.raycaster.intersectObjects( scene.children )
-      // console.log( intersects )
       if ( intersects.length <= 0 ) {
         this.showInfoBox = false
         this.expandInfoBox = false
@@ -194,16 +193,21 @@ export default {
         this.expandInfoBox = false
         return
       }
+      this.selectObject(selectedObject)
+    },
+    selectObject(selectedObject) {
       selectedObject.material = this.hoverMaterial
       this.hoveredObjects.push( selectedObject )
       this.hoveredObject = selectedObject.hash
-
 
       this.selectedObjectsProperties = {
         hash: selectedObject.hash,
         streamId: selectedObject.streamId,
         properties: selectedObject.spkProperties
       }
+      this.showInfoBox = true
+      this.$refs.infobox.style.left = window.innerWidth/2 +'px'
+      this.$refs.infobox.style.top = window.innerHeight/2 +'px'
     },
     canvasClickedEvent( event ) {
       if ( event.which === 3 ) {
@@ -222,9 +226,11 @@ export default {
       }
     },
     selectBus(objectId) {
-      let hash = this.getHash(objectId)
       this.deselectObjects()
+      let selectedObject = this.scene.children.find(child => {return child.name.includes(objectId)})
+      let hash = this.getHash(objectId)
       this.zoomToObject(hash)
+      this.selectObject(selectedObject)
     },
     getHash(objectId){
       let child = this.scene.children.find(child => {return child.name.includes(objectId)})
