@@ -6,7 +6,7 @@
       <md-content md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'>
         <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view>
       </md-content>
-      <md-button class="md-icon-button md-raised md-accent md-dense expand-button" style='color:white !important;' @click.native='zoomToObject'>
+      <md-button class="md-icon-button md-raised md-accent md-dense expand-button" style='color:white !important;' @click.native='zoomToObject(selectedObjectsProperties.hash)'>
         <md-icon>
           zoom_in
         </md-icon>
@@ -68,7 +68,7 @@ export default {
   methods: {
     update( ) {
       if ( this.updateInProgress ) return console.warn( 'Scene update was already in progress, cancelling.' )
-      this.updateInProgress = true
+        this.updateInProgress = true
       for ( let myObject of this.allObjects ) {
 
         let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
@@ -79,21 +79,21 @@ export default {
           this.$http.get( window.SpkAppConfig.serverUrl + '/objects/' + myObject._id + '?omit=base64' )
             .then( result => {
               if ( !Converter.hasOwnProperty( result.data.speckleObject.type ) ) throw new Error( 'Cannot convert this object: ' + result.data.speckleObject.type + ',' + myObject._id )
-              Converter[ result.data.speckleObject.type ]( { obj: result.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj ) => {
-                threeObj.hash = result.data.speckleObject.hash
-                threeObj.streamId = myObject.streamId
-                threeObj.layerGuid = myObject.layerGuid
-                threeObj.visible = layer.visible
-                threeObj.isCurrent = true
-                threeObj.spkProperties = result.data.speckleObject.properties
-                threeObj.name = myObject.streamId + '::' + result.data.speckleObject._id
-                threeObj._id = myObject._id
-                this.scene.add( threeObj )
+                Converter[ result.data.speckleObject.type ]( { obj: result.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj ) => {
+                  threeObj.hash = result.data.speckleObject.hash
+                  threeObj.streamId = myObject.streamId
+                  threeObj.layerGuid = myObject.layerGuid
+                  threeObj.visible = layer.visible
+                  threeObj.isCurrent = true
+                  threeObj.spkProperties = result.data.speckleObject.properties
+                  threeObj.name = myObject.streamId + '::' + result.data.speckleObject._id
+                  threeObj._id = myObject._id
+                  this.scene.add( threeObj )
+                } )
+            } )
+              .catch( err => {
+                // console.error( err )
               } )
-            } )
-            .catch( err => {
-              // console.error( err )
-            } )
         } else {
           if ( sceneObj.visible === false ) {
             sceneObj.visible = true
@@ -170,7 +170,7 @@ export default {
     },
     canvasHovered( event ) {
       if ( this.isRotatingStuff ) return
-      this.deselectObjects( )
+        this.deselectObjects( )
 
       // preselect object
       let mouse = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1 )
@@ -222,13 +222,16 @@ export default {
       }
     },
     selectBus(objectId) {
-      console.log(objectId)
-      console.log(this.hoveredObject)
+      let hash = this.getHash(objectId)
       this.deselectObjects()
+      this.zoomToObject(hash)
     },
-    zoomToObject( ) {
-      let myObject = this.scene.children.find( ch => { return ch.hash === this.selectedObjectsProperties.hash } )
-
+    getHash(objectId){
+      let child = this.scene.children.find(child => {return child.name.includes(objectId)})
+      return child.hash
+    },
+    zoomToObject(hash) {
+      let myObject = this.scene.children.find( ch => { return ch.hash === hash } )
       if ( !myObject )
         return console.warn( 'no object selected' )
       myObject.geometry.computeBoundingSphere( )
@@ -256,26 +259,25 @@ export default {
           geometry.merge( child.geometry )
       } )
       geometry.computeBoundingSphere( )
-      console.log( geometry )
       cb( geometry )
     },
 
     zoomExtents( ) {
       this.computeSceneBoundingSpehere( geometry => {
-      let bsphere = geometry.boundingSphere
-      let r = bsphere.radius
+        let bsphere = geometry.boundingSphere
+        let r = bsphere.radius
 
-      let offset = r / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
-      let vector = new THREE.Vector3( 0, 0, 1 )
-      let dir = vector.applyQuaternion( this.controls.object.quaternion );
-      let newPos = new THREE.Vector3( )
-      dir.multiplyScalar( offset * 1.25 )
-      newPos.addVectors( bsphere.center, dir )
-      this.setCamera( {
-        position: [ newPos.x, newPos.y, newPos.z ],
+        let offset = r / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
+        let vector = new THREE.Vector3( 0, 0, 1 )
+        let dir = vector.applyQuaternion( this.controls.object.quaternion );
+        let newPos = new THREE.Vector3( )
+        dir.multiplyScalar( offset * 1.25 )
+        newPos.addVectors( bsphere.center, dir )
+        this.setCamera( {
+          position: [ newPos.x, newPos.y, newPos.z ],
         rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
         target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
-      }, 100 )
+        }, 100 )
       })
     },
 
@@ -345,7 +347,7 @@ export default {
 
     document.onkeydown = ( event ) => {
       if ( event.keyCode !== 27 ) return
-      this.deselectObjects( )
+        this.deselectObjects( )
     }
 
     window.THREE = THREE
