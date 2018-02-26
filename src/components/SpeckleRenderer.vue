@@ -236,6 +236,11 @@ export default {
       let child = this.scene.children.find(child => {return child.name.includes(objectId)})
       return child.hash
     },
+    dropStream(streamId){
+      console.log(streamId)
+      this.scene.children = this.scene.children.filter(child => !child.name.includes(streamId))
+      console.log(this.scene.children)
+    },
     zoomToObject(hash) {
       let myObject = this.scene.children.find( ch => { return ch.hash === hash } )
       if ( !myObject )
@@ -383,7 +388,9 @@ export default {
     bus.$on( 'select-bus', (objectId) => {
       this.selectBus(objectId)
     } )
-
+    bus.$on('renderer-drop-stream', (streamId) => {
+      this.dropStream(streamId)
+    })
     document.addEventListener( 'keydown', ( event ) => {
       const keyName = event.key;
       if ( keyName == ' ' ) this.zoomExtents( )
