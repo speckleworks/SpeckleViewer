@@ -3,9 +3,13 @@
     <md-toolbar class='md-primary'>
       <div class='md-toolbar-row'>
         <div>
-          <md-button @click.native='zoomExt'>
+          <md-button class='md-icon-button' @click.native='zoomExt'>
             <md-icon>zoom_out_map</md-icon>
             <md-tooltip md-direction="top">Zoom Extents</md-tooltip>
+          </md-button>
+          <md-button class='md-icon-button' @click.native='zoomToObject'>
+            <md-icon>zoom_in</md-icon>
+            <md-tooltip md-direction="top">Zoom to Selected</md-tooltip>
           </md-button>
         </div>
         <search-bar class="md-toolbar-section-start" :objects="searchObjects"></search-bar>
@@ -26,6 +30,9 @@ export default {
     zoomExt() {
       bus.$emit('zext')
     },
+    zoomToObject() {
+      bus.$emit('zoomToObject')
+    }
   },
   computed: {
     searchObjects() {

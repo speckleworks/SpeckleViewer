@@ -4,13 +4,9 @@
     </div>
     <div v-show='showInfoBox' id='info-box' class='object-info' ref='infobox'>
       <md-content md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'>
-        <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view>
+        <!-- <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view> -->
+        <object-details :speckleObject='selectedObjectsProperties'></object-details>
       </md-content>
-      <md-button class="md-icon-button md-raised md-accent md-dense expand-button" style='color:white !important;' @click.native='zoomToObject(selectedObjectsProperties.hash)'>
-        <md-icon>
-          zoom_in
-        </md-icon>
-      </md-button>
       <md-button class="md-icon-button md-raised xxxmd-primary md-dense expand-button" style='background-color:white;color:black !important;' @click.native='expandInfoBox=!expandInfoBox'>
         <md-icon v-if='!isMobile'>
           {{ expandInfoBox ? 'keyboard_arrow_left' : 'keyboard_arrow_right' }}
@@ -29,9 +25,12 @@ import TWEEN from 'tween.js'
 import debounce from 'debounce'
 
 import Converter from '../converter/converter'
-
+import ObjectDetails from './ObjectDetails.vue'
 export default {
   name: 'SpeckleRenderer',
+  components: {
+    ObjectDetails  
+  },
   computed: {
     isMobile( ) {
       return this.$store.getters.isMobile
@@ -213,6 +212,7 @@ export default {
       if ( event.which === 3 ) {
         this.showInfoBox = false
         this.expandInfoBox = false
+        this.deselectObjects()
         return
       }
       this.canvasHovered( event )
@@ -237,11 +237,16 @@ export default {
       return child.hash
     },
     dropStream(streamId){
-      console.log(streamId)
       this.scene.children = this.scene.children.filter(child => !child.name.includes(streamId))
-      console.log(this.scene.children)
     },
     zoomToObject(hash) {
+      if (this.hoveredObject){
+        hash = this.hoveredObject
+      }
+      if (!hash) {
+        console.log('No object selected')
+        return
+      }
       let myObject = this.scene.children.find( ch => { return ch.hash === hash } )
       if ( !myObject )
         return console.warn( 'no object selected' )
@@ -388,6 +393,9 @@ export default {
     bus.$on( 'select-bus', (objectId) => {
       this.selectBus(objectId)
     } )
+    bus.$on( 'zoomToObject', () => {
+      this.zoomToObject()
+    } )
     bus.$on('renderer-drop-stream', (streamId) => {
       this.dropStream(streamId)
     })
@@ -426,23 +434,25 @@ export default {
   margin: 0px !important;
 }
 
+
 .expanded-info-box {
-  padding: 8px 50px 10px 50px;
+  border-color:grey;
   position: absolute;
   top: 0;
   left: 35px;
-  max-width: 350px;
+  /*max-width: 400px;*/
   max-height: 300px;
-  border-top-left-radius: 16px;
-  border-bottom-left-radius: 16px;
-  border-top-right-radius: 16px;
-  border-bottom-right-radius: 16px;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
   user-select: auto;
   z-index: 40;
   box-sizing: border-box;
   overflow-x: hidden;
   overflow-y: auto;
 }
+
 
 @media ( max-width: 768px) {
   .expanded-info-box {
