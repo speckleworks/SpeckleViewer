@@ -21,6 +21,7 @@
     "three-orbit-controls": "^82.1.0",
     "three.meshline": "^1.0.3",
     "tween.js": "^16.6.0",
+    "v-clipboard": "^1.0.4",
     "vue": "^2.5.2",
     "vue-color": "^2.4.3",
     "vue-dragging": "^1.0.8",

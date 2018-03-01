@@ -7,12 +7,14 @@ import TreeView from 'vue-json-tree-view'
 import vueDrag from 'vue-dragging'
 import 'vue-material/dist/vue-material.min.css'
 import 'vue-material/dist/theme/default.css'
+import Clipboard from 'v-clipboard'
 
 Vue.prototype.$http = Axios
 
 Vue.use( VueMaterial )
 Vue.use( vueDrag )
 Vue.use( TreeView )
+Vue.use(Clipboard)
 
 window.bus = new Vue( )
 

@@ -43,6 +43,10 @@
                   <md-icon>add</md-icon>
                   <md-tooltip  md-delay="800">Add this stream to the viewer</md-tooltip>
                 </md-button>
+                <md-button class="md-icon-button md-list-action md-dense" v-on:click='shareStream(stream.streamId)'>
+                  <md-icon>share</md-icon>
+                  <md-tooltip  md-delay="800">Copy stream address to clipboard</md-tooltip>
+                </md-button>
               </md-list-item>
             </md-list>
           </md-list-item>
@@ -114,6 +118,10 @@ export default {
     addStream(stream){
       this.$emit('add', stream)
     },
+    shareStream(streamId){
+      this.$clipboard(window.location.origin + '/?' + streamId)
+      console.log(window.location.origin + '/?' + streamId)
+    }
 
   },
   created () {
