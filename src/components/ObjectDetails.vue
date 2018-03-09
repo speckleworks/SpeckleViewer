@@ -9,7 +9,7 @@
           </md-list-item>
         </md-list>
       </md-list-item>
-      <md-list-item v-else>
+      <md-list-item v-else-if='node != null'>
         <span class="md-list-item-text">{{label}}: {{node}}</span>
       </md-list-item>
     </div>
@@ -22,7 +22,7 @@ export default {
   props: ['label', 'nodes'],
   methods: {
     nodeType: function (node) {
-      if (typeof(node) === 'object'){
+      if (typeof(node) === 'object' && node != null ){
         return true 
       }
     }
