@@ -1,39 +1,41 @@
 <template>
   <div class='object-details'>
-    <!-- <md-list> -->
-    <!--   <md-list-item v-for='(value, key) in speckleObject'> -->
-    <!--     {{key}}: {{value}} -->
-    <!--   </md-list-item> -->
-    <!-- </md-list> -->
-    <md-table> 
-      <md-table-row v-for='(value, key) in speckleObject'>
-        <md-table-cell>{{key}}</md-table-cell>
-        <md-table-cell>{{value}}</md-table-cell>
-      </md-table-row>
-    </md-table>
+    <div v-for='(node, label) in nodes'>
+      <md-list-item v-if='nodeType(node)' md-expand>
+        <span class="md-list-item-text">{{label}}</span>
+        <md-list slot="md-expand">
+          <md-list-item class="md-inset">      
+            <object-details :nodes='node' :label='label'></object-details>
+          </md-list-item>
+        </md-list>
+      </md-list-item>
+      <md-list-item v-else>
+        <span class="md-list-item-text">{{label}}: {{node}}</span>
+      </md-list-item>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
   name: 'ObjectDetails',
-  props:{
-    speckleObject: [Array, Object]
-  },
-  computed: {
-  },
-  data() {
-    return {
-
-    }
-  },
+  props: ['label', 'nodes'],
   methods: {
+    nodeType: function (node) {
+      if (typeof(node) === 'object'){
+        return true 
+      }
+    }
   }
 }
 </script>
 
 <style>
-.object-details .md-table-cell-container{
-  padding: 6px 12px 6px 12px !important;
+.object-details {
+  max-width:400px;
+}
+.object-details .md-list-item-content{
+  min-height: 30px;
+  padding: 0px 12px 0px 12px !important;
 }
 </style>

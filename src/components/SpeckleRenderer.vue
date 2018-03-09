@@ -5,7 +5,9 @@
     <div v-show='showInfoBox' id='info-box' class='object-info' ref='infobox'>
       <md-content md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'>
         <!-- <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view> -->
-        <object-details :speckleObject='selectedObjectsProperties'></object-details>
+        <md-list>
+        <object-details label='Details' :nodes='selectedObjectsProperties'></object-details>
+        </md-list>
       </md-content>
       <md-button class="md-icon-button md-raised xxxmd-primary md-dense expand-button" style='background-color:white;color:black !important;' @click.native='expandInfoBox=!expandInfoBox'>
         <md-icon v-if='!isMobile'>
