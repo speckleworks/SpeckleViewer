@@ -1,23 +1,28 @@
 <template>
-<div id="stream-list-cover">
-<!--   <div class='list-menu'>
-    <md-button class="md-icon-button md-warn" @click.native='showNewStreamDialgue = true'>
-      <md-icon>add</md-icon>
+  <div id='stream-list'>
+    <md-button id='streamsButton'class="md-icon-button md-primary md-raised" @click="toggleStreamList" v-if="!showStreamList">
+      <md-icon>import_export</md-icon>
+      <md-tooltip>Streams</md-tooltip>
     </md-button>
-    <md-button class="md-icon-button md-primary" @click.native='toggleStreamList'>
-      <md-icon>{{ showStreamList ? 'keyboard_arrow_left':'keyboard_arrow_right' }}</md-icon>
-      <md-tooltip> {{ showStreamList ? 'Hide' : 'Show' }} the stream list.</md-tooltip>
-    </md-button>
-  </div> -->
-  <div id='stream-list' class='' ref='thestreamlist'>
-    <speckle-receiver v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
-    <div class='paddedcard' style='position:relative;' v-show='receivers.length === 0'>
-      <div class="md-title">There are no clients to show.</div>
-      <p>You can add a new client by click on the add button above.</p>
-    </div>
+    <md-drawer :md-active.sync="showStreamList" md-persistent="full" class='md-right md-dense'>
+      <md-toolbar class="md-transparent md-dense" md-elevation="0">
+        <span class="md-title">Streams</span>
+        <md-button class="md-icon-button md-list-action" v-on:click='toggleShowNewStream'>
+          <md-icon>add</md-icon>
+          <md-tooltip  md-delay="800">Add a stream to the viewer</md-tooltip>
+        </md-button>
+        <span class="md-toolbar-section-end">
+          <md-button class="md-icon-button" @click="toggleStreamList">
+            <md-icon>keyboard_arrow_right</md-icon>
+          </md-button>
+        </span>
+      </md-toolbar>
+      <md-list>
+        <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
+      </md-list>
+    </md-drawer>
+    <speckle-new-stream-dialog v-on:close='showNewStreamDialog = false' v-if='showNewStreamDialog'></speckle-new-stream-dialog>
   </div>
-  <speckle-new-stream-dialog v-on:close='showNewStreamDialgue = false' v-show='showNewStreamDialgue'></speckle-new-stream-dialog>
-</div>
 </template>
 
 <script>
@@ -40,7 +45,7 @@ export default {
   data() {
     return {
       showStreamList: true,
-      showNewStreamDialgue: false
+      showNewStreamDialog: false
     }
   },
   methods: {
@@ -49,7 +54,15 @@ export default {
     },
     toggleStreamList() {
       this.showStreamList = ! this.showStreamList
-      this.$refs.thestreamlist.classList.toggle('hidden')
+    },
+    toggleShowNewStream() {
+      this.showNewStreamDialog = ! this.showNewStreamDialog
+    },
+    dropReceiver(streamId){
+      console.log('Dropping receiver:', streamId)
+      this.$store.commit( 'DROP_RECEIVER', { streamId } )
+      bus.$emit('renderer-drop-stream', streamId)
+      bus.$emit('renderer-update')
     }
   },
   created() {
@@ -61,18 +74,26 @@ export default {
 </script>
 
 <style scoped>
+.md-drawer {
+  width:auto;
+}
+
+#streamsButton{
+  float:right;
+}
+/*
 #stream-list-cover{
-  position: fixed;
-  padding-top: 10px;
-  padding-bottom: 10px;
-  top:0px;
-  height: 100%;
-  left: 10px;
-  width: 340px;
-  overflow: hidden;
-  z-index: 99;
-  pointer-events: none;
-  box-sizing: border-box;
+position: fixed;
+padding-top: 10px;
+padding-bottom: 10px;
+top:0px;
+height: 100%;
+left: 10px;
+width: 340px;
+overflow: hidden;
+z-index: 99;
+pointer-events: none;
+box-sizing: border-box;
 }
 .list-menu {
   pointer-events: auto;
@@ -99,6 +120,7 @@ export default {
   left: -500px;
   opacity: 0;
 }
+ */
 
 #stream-list div {
 }

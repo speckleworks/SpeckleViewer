@@ -5,23 +5,31 @@
       {{ spklayer.name }} ({{spklayer.objectCount}} objs)
     </span>
     <span class="layer-buttons"> 
-      <md-icon xxxv-show='showPicker' @click.native='showColorPicker' :style='colorStyle'>color_lens</md-icon>
+      <md-icon v-show='showPicker' @click.native='showColorPicker' :style='colorStyle'>color_lens</md-icon>
       <md-icon @click.native='toggleLayer'>{{ visible ? "visibility" : "visibility_off" }}</md-icon>
+      <md-icon @click.native='toggleObjects'>{{ objectsExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
     </span>
     </div>
+    <md-list v-show='objectsExpanded'>
+      <md-list-item class='md-inset' v-for='object in objects' :key='object.guid'>
+        <speckle-receiver-object :spkobj='object'></speckle-receiver-object>
+      </md-list-item>
+    </md-list>
   </div>
 </template>
 
 <script>
+
+import SpeckleReceiverObject from './SpeckleReceiverObject.vue'
+
 export default {
   name: 'SpkReceiverLayer',
-  // props: {[ 'spklayer', 'streamid' ]},
   props: { 
     spklayer: { type: Object },
     streamid: { type: String },
-    // showColorPicker: { type: Boolean, default: true }
   },
   components: {
+    SpeckleReceiverObject  
   },
   computed: {
     layerMaterial() {
@@ -38,7 +46,9 @@ export default {
   },
   data() {
     return {
-      visible: true
+      visible: true,
+      objectsExpanded: false,
+      objects: this.$store.getters.objectsByLayer(this.spklayer.guid)
     }
   },
   methods: {
@@ -52,6 +62,9 @@ export default {
       this.layerMaterial.threeLineMaterial.visible = this.visible
       this.layerMaterial.threeEdgesMaterial.visible = this.layerMaterial.showEdges ? this.visible : this.layerMaterial.threeEdgesMaterial.visible
       this.layerMaterial.threePointMaterial.visible = this.visible
+    },
+    toggleObjects(){
+      this.objectsExpanded = ! this.objectsExpanded
     }
   }, 
   mounted() {
@@ -61,10 +74,10 @@ export default {
 
 <style scoped>
 
+/*
 .spk-layer{
   border-bottom: 1px solid #E6E6E6;
   position: relative;
-  /*user-select: none;*/
 }
 .spk-layer:last-of-type{
   border-bottom: 0;
@@ -81,18 +94,16 @@ export default {
   overflow: hidden;
 }
 .layer-buttons {
-  /*padding-top: 5px;*/
   text-align: right;
   float: left;
   display: inline-block;
   width: 30%;
   box-sizing: border-box;
   color: #666666;
-  /*cursor: pointer;*/
 }
 
 .layer-buttons .md-icon {
   cursor: pointer;
 }
-
+*/
 </style>

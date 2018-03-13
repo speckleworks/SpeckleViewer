@@ -1,16 +1,16 @@
 <template>
   <div class='new-stream'>
-    <md-whiteframe md-elevation="19" class="login-card">
-        <md-input-container style='margin:0;text-align:center;'>
+    <md-content md-elevation="19" class="login-card">
+        <md-field style='margin:0;text-align:center;'>
           <label>Stream Id</label>
           <md-textarea v-model='streamId'></md-textarea>
-        </md-input-container>
+        </md-field>
         <br>
         <md-button class='md-icon-button md-primary' @click.native='closeMe'>
         <md-icon>close</md-icon></md-button>
         <md-button class='md-icon-button md-primary md-raised' @click.native='makeStream'>
         <md-icon>done</md-icon></md-button>
-    </md-whiteframe>
+    </md-content>
   </div>
 </template>
 
@@ -52,7 +52,7 @@ export default {
 
 <style scoped>
 .login-card{
-  width: 200px;
+//  width: 200px;
   height: 200px;
   text-align: center;
   pointer-events: auto;

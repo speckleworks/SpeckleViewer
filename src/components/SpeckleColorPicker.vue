@@ -15,10 +15,10 @@
         <div style='cursor:pointer; height: 30px; line-height: 30px;' @click='showExtra = !showExtra'>Extra options
         <md-icon>{{ showExtra ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}}</md-icon></div>
         <div v-show='showExtra'>
-        <md-input-container style='margin-bottom: 10px !important'>
+        <md-field style='margin-bottom: 10px !important'>
           <label>shininess</label>
           <md-input type="number" v-model='layerMaterial.shininess'></md-input>
-        </md-input-container>
+        </md-field>
         <md-checkbox class='md-primary' style='margin-top: 5px;' v-model='layerMaterial.showEdges'><small>Edges</small></md-checkbox><md-checkbox class='md-primary' style='margin-top: 5px;' v-model='layerMaterial.wireframe'><small>Wireframe</small></md-checkbox>
         </div>
       </div>

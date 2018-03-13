@@ -3,14 +3,12 @@
     <div id='render-window' ref='mycanvas'>
     </div>
     <div v-show='showInfoBox' id='info-box' class='object-info' ref='infobox'>
-      <md-whiteframe md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'>
-        <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view>
-      </md-whiteframe>
-      <md-button class="md-icon-button md-raised md-accent md-dense expand-button" style='color:white !important;' @click.native='zoomToObject'>
-        <md-icon>
-          zoom_in
-        </md-icon>
-      </md-button>
+      <md-content md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'>
+        <!-- <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view> -->
+        <md-list>
+        <object-details label='Details' :nodes='selectedObjectsProperties'></object-details>
+        </md-list>
+      </md-content>
       <md-button class="md-icon-button md-raised xxxmd-primary md-dense expand-button" style='background-color:white;color:black !important;' @click.native='expandInfoBox=!expandInfoBox'>
         <md-icon v-if='!isMobile'>
           {{ expandInfoBox ? 'keyboard_arrow_left' : 'keyboard_arrow_right' }}
@@ -29,9 +27,12 @@ import TWEEN from 'tween.js'
 import debounce from 'debounce'
 
 import Converter from '../converter/converter'
-
+import ObjectDetails from './ObjectDetails.vue'
 export default {
   name: 'SpeckleRenderer',
+  components: {
+    ObjectDetails  
+  },
   computed: {
     isMobile( ) {
       return this.$store.getters.isMobile
@@ -68,7 +69,7 @@ export default {
   methods: {
     update( ) {
       if ( this.updateInProgress ) return console.warn( 'Scene update was already in progress, cancelling.' )
-      this.updateInProgress = true
+        this.updateInProgress = true
       for ( let myObject of this.allObjects ) {
 
         let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
@@ -79,21 +80,21 @@ export default {
           this.$http.get( window.SpkAppConfig.serverUrl + '/objects/' + myObject._id + '?omit=base64' )
             .then( result => {
               if ( !Converter.hasOwnProperty( result.data.speckleObject.type ) ) throw new Error( 'Cannot convert this object: ' + result.data.speckleObject.type + ',' + myObject._id )
-              Converter[ result.data.speckleObject.type ]( { obj: result.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj ) => {
-                threeObj.hash = result.data.speckleObject.hash
-                threeObj.streamId = myObject.streamId
-                threeObj.layerGuid = myObject.layerGuid
-                threeObj.visible = layer.visible
-                threeObj.isCurrent = true
-                threeObj.spkProperties = result.data.speckleObject.properties
-                threeObj.name = myObject.streamId + '::' + result.data.speckleObject._id
-                threeObj._id = myObject._id
-                this.scene.add( threeObj )
+                Converter[ result.data.speckleObject.type ]( { obj: result.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj ) => {
+                  threeObj.hash = result.data.speckleObject.hash
+                  threeObj.streamId = myObject.streamId
+                  threeObj.layerGuid = myObject.layerGuid
+                  threeObj.visible = layer.visible
+                  threeObj.isCurrent = true
+                  threeObj.spkProperties = result.data.speckleObject.properties
+                  threeObj.name = myObject.streamId + '::' + result.data.speckleObject._id
+                  threeObj._id = myObject._id
+                  this.scene.add( threeObj )
+                } )
+            } )
+              .catch( err => {
+                // console.error( err )
               } )
-            } )
-            .catch( err => {
-              // console.error( err )
-            } )
         } else {
           if ( sceneObj.visible === false ) {
             sceneObj.visible = true
@@ -115,6 +116,7 @@ export default {
         }
       }
       this.updateInProgress = false
+      this.zoomExtents()
     },
     render( ) {
       TWEEN.update( )
@@ -164,17 +166,18 @@ export default {
       this.hoveredObjects = [ ]
       this.hoveredObject = ''
       this.selectionBoxes = [ ]
+      this.showInfoBox = false
+      this.expandInfoBox = false
     },
     canvasHovered( event ) {
       if ( this.isRotatingStuff ) return
-      this.deselectObjects( )
+        this.deselectObjects( )
 
       // preselect object
       let mouse = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1 )
       this.raycaster.setFromCamera( mouse, this.camera )
 
       let intersects = this.raycaster.intersectObjects( scene.children )
-      // console.log( intersects )
       if ( intersects.length <= 0 ) {
         this.showInfoBox = false
         this.expandInfoBox = false
@@ -191,6 +194,9 @@ export default {
         this.expandInfoBox = false
         return
       }
+      this.selectObject(selectedObject)
+    },
+    selectObject(selectedObject) {
       selectedObject.material = this.hoverMaterial
       this.hoveredObjects.push( selectedObject )
       this.hoveredObject = selectedObject.hash
@@ -200,11 +206,15 @@ export default {
         streamId: selectedObject.streamId,
         properties: selectedObject.spkProperties
       }
+      this.showInfoBox = true
+      this.$refs.infobox.style.left = window.innerWidth/2 +'px'
+      this.$refs.infobox.style.top = window.innerHeight/2 +'px'
     },
     canvasClickedEvent( event ) {
       if ( event.which === 3 ) {
         this.showInfoBox = false
         this.expandInfoBox = false
+        this.deselectObjects()
         return
       }
       this.canvasHovered( event )
@@ -217,9 +227,29 @@ export default {
         this.expandInfoBox = false
       }
     },
-    zoomToObject( ) {
-      let myObject = this.scene.children.find( ch => { return ch.hash === this.selectedObjectsProperties.hash } )
-
+    selectBus(objectId) {
+      this.deselectObjects()
+      let selectedObject = this.scene.children.find(child => {return child.name.includes(objectId)})
+      let hash = this.getHash(objectId)
+      this.zoomToObject(hash)
+      this.selectObject(selectedObject)
+    },
+    getHash(objectId){
+      let child = this.scene.children.find(child => {return child.name.includes(objectId)})
+      return child.hash
+    },
+    dropStream(streamId){
+      this.scene.children = this.scene.children.filter(child => !child.name.includes(streamId))
+    },
+    zoomToObject(hash) {
+      if (this.hoveredObject){
+        hash = this.hoveredObject
+      }
+      if (!hash) {
+        console.log('No object selected')
+        return
+      }
+      let myObject = this.scene.children.find( ch => { return ch.hash === hash } )
       if ( !myObject )
         return console.warn( 'no object selected' )
       myObject.geometry.computeBoundingSphere( )
@@ -247,26 +277,25 @@ export default {
           geometry.merge( child.geometry )
       } )
       geometry.computeBoundingSphere( )
-      console.log( geometry )
       cb( geometry )
     },
 
     zoomExtents( ) {
       this.computeSceneBoundingSpehere( geometry => {
-      let bsphere = geometry.boundingSphere
-      let r = bsphere.radius
+        let bsphere = geometry.boundingSphere
+        let r = bsphere.radius
 
-      let offset = r / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
-      let vector = new THREE.Vector3( 0, 0, 1 )
-      let dir = vector.applyQuaternion( this.controls.object.quaternion );
-      let newPos = new THREE.Vector3( )
-      dir.multiplyScalar( offset * 1.25 )
-      newPos.addVectors( bsphere.center, dir )
-      this.setCamera( {
-        position: [ newPos.x, newPos.y, newPos.z ],
+        let offset = r / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
+        let vector = new THREE.Vector3( 0, 0, 1 )
+        let dir = vector.applyQuaternion( this.controls.object.quaternion );
+        let newPos = new THREE.Vector3( )
+        dir.multiplyScalar( offset * 1.25 )
+        newPos.addVectors( bsphere.center, dir )
+        this.setCamera( {
+          position: [ newPos.x, newPos.y, newPos.z ],
         rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
         target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
-      }, 100 )
+        }, 100 )
       })
     },
 
@@ -336,9 +365,7 @@ export default {
 
     document.onkeydown = ( event ) => {
       if ( event.keyCode !== 27 ) return
-      this.deselectObjects( )
-      this.showInfoBox = false
-      this.expandInfoBox = false
+        this.deselectObjects( )
     }
 
     window.THREE = THREE
@@ -365,7 +392,15 @@ export default {
       console.log( "UNPOP" )
       this.$refs.mycanvas.classList.toggle( 'pop' )
     } )
-
+    bus.$on( 'select-bus', (objectId) => {
+      this.selectBus(objectId)
+    } )
+    bus.$on( 'zoomToObject', () => {
+      this.zoomToObject()
+    } )
+    bus.$on('renderer-drop-stream', (streamId) => {
+      this.dropStream(streamId)
+    })
     document.addEventListener( 'keydown', ( event ) => {
       const keyName = event.key;
       if ( keyName == ' ' ) this.zoomExtents( )
@@ -401,23 +436,25 @@ export default {
   margin: 0px !important;
 }
 
+
 .expanded-info-box {
-  padding: 8px 50px 10px 50px;
+  border-color:grey;
   position: absolute;
   top: 0;
   left: 35px;
-  max-width: 350px;
+  /*max-width: 400px;*/
   max-height: 300px;
-  border-top-left-radius: 16px;
-  border-bottom-left-radius: 16px;
-  border-top-right-radius: 16px;
-  border-bottom-right-radius: 16px;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
   user-select: auto;
   z-index: 40;
   box-sizing: border-box;
   overflow-x: hidden;
   overflow-y: auto;
 }
+
 
 @media ( max-width: 768px) {
   .expanded-info-box {

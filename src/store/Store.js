@@ -35,6 +35,10 @@ export default new Vuex.Store( {
     allObjects: state => {
       return state.receivers.reduce( ( p, c ) => { return [ ...p, ...c.objects ] }, [ ] )
     },
+    objectsByLayer: state => (layerGuid) => {
+      let objects = state.receivers.reduce( ( p, c ) => { return [ ...p, ...c.objects ] }, [ ] )
+      return objects.filter(object => object.layerGuid == layerGuid)
+    },
     allLayerMaterials: ( state ) => {
       let arr = [ ]
       state.receivers.forEach( rec => {
@@ -72,6 +76,10 @@ export default new Vuex.Store( {
 
     ADD_COMMENTS( state, { payload } ) {
       state.comments.push( ...payload.comments )
+    },
+
+    DROP_RECEIVER( state, { streamId } ) {
+      state.receivers.splice(state.receivers.findIndex( rec => rec.streamId === streamId ),1)
     },
 
     UPDATE_LAYER_PROPS( state, { payload } ) {
