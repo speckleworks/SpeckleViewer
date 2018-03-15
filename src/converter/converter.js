@@ -11,11 +11,13 @@ export default {
       let point = new THREE.Points( geometry, args.layer.threePointMaterial )
       cb( null, point )
   },
-  Vector( obj, cb ) {
-    console.warn( 'TODO', obj.type)
+  Vector( args, cb ) {
+    console.log(args.obj)
+    console.warn( 'TODO', args.obj.type)
   },
-  Plane( obj, cb ) {
-    console.warn( 'TODO', obj.type)
+  Plane( args, cb ) {
+    console.log(args.obj)
+    console.warn( 'TODO', args.obj.type)
   },
   Line( args, cb ) {
     let geometry = new THREE.Geometry()
@@ -26,28 +28,41 @@ export default {
       cb( null, line )
   },
   Rectangle( obj, cb ) {
-    console.warn( 'TODO', obj.type)
+    console.warn( 'TODO', args.obj.type)
   },
   Circle( args, cb ) {
     let origin = args.obj.center.value
     let radius = args.obj.radius
+    let v1 = new THREE.Vector3(0,0,1)
+    let v2 = new THREE.Vector3()
+    v2.fromArray(args.obj.normal.value)
+    let q = new THREE.Quaternion()
+    q.setFromUnitVectors(v1, v2)
     let curve = new THREE.EllipseCurve(0, 0, radius, radius, 0, 2*Math.PI, false, 0)
     let points = curve.getPoints(50)
     let geometry = new THREE.BufferGeometry().setFromPoints(points)
     let circle = new THREE.Line(geometry, args.layer.threeLineMaterial)
+    circle.rotation.setFromQuaternion(q)
     circle.position.set(origin[0],origin[1],origin[2])
     circle.hash = args.obj.hash
     cb( null, circle)
   },
   Arc (args, cb) {
+    console.log(args.obj)
     let origin = args.obj.plane.origin.value
     let radius = args.obj.radius
     let startAngle = args.obj.startAngle
     let endAngle = args.obj.endAngle
+    let v1 = new THREE.Vector3(0,0,1)
+    let v2 = new THREE.Vector3()
+    v2.fromArray(args.obj.plane.normal.value)
+    let q = new THREE.Quaternion()
+    q.setFromUnitVectors(v1, v2)
     let curve = new THREE.EllipseCurve(0, 0, radius, radius, startAngle, endAngle, false, 0)
     let points = curve.getPoints(50)
     let geometry = new THREE.BufferGeometry().setFromPoints(points)
     let arc = new THREE.Line(geometry, args.layer.threeLineMaterial)
+    arc.rotation.setFromQuaternion(q)
     arc.position.set(origin[0],origin[1],origin[2])
     arc.hash = args.obj.hash
     cb( null, arc)
@@ -58,24 +73,37 @@ export default {
     let yRadius = args.obj.secondRadius
     let startAngle = args.obj.startAngle
     let endAngle = args.obj.endAngle
+    let v1 = new THREE.Vector3(0,0,1)
+    let v2 = new THREE.Vector3()
+    v2.fromArray(args.obj.plane.normal.value)
+    let q = new THREE.Quaternion()
+    q.setFromUnitVectors(v1, v2)
     let curve = new THREE.EllipseCurve(0, 0, xRadius, yRadius, startAngle, endAngle, false, 0)
     let points = curve.getPoints(50)
     let geometry = new THREE.BufferGeometry().setFromPoints(points)
     let arc = new THREE.Line(geometry, args.layer.threeLineMaterial)
+    arc.rotation.setFromQuaternion(q)
     arc.position.set(origin[0],origin[1],origin[2])
     arc.hash = args.obj.hash
     cb( null, arc)
   },
   Box( args, cb ) {
-      let width = args.obj.xSize.end - args.obj.xSize.start
-      let height = args.obj.ySize.end - args.obj.ySize.start
-      let depth = args.obj.zSize.end - args.obj.zSize.start
-      let origin = args.obj.basePlane.origin.value
-      let geometry = new THREE.BoxGeometry(width, height, depth)
-      let box = new THREE.Mesh(geometry, args.layer.threeMeshMaterial )
-      box.position.set(origin[0],origin[1],origin[2])
-      box.hash = args.obj.hash
-      cb( null, box  )
+    console.log(args.obj)
+    let width = args.obj.xSize.end - args.obj.xSize.start
+    let height = args.obj.ySize.end - args.obj.ySize.start
+    let depth = args.obj.zSize.end - args.obj.zSize.start
+    let origin = args.obj.basePlane.origin.value
+    let v1 = new THREE.Vector3(0,0,1)
+    let v2 = new THREE.Vector3()
+    v2.fromArray(args.obj.basePlane.normal.value)
+    let q = new THREE.Quaternion()
+    q.setFromUnitVectors(v1, v2)
+    let geometry = new THREE.BoxGeometry(width, height, depth)
+    let box = new THREE.Mesh(geometry, args.layer.threeMeshMaterial )
+    box.rotation.setFromQuaternion(q)
+    box.position.set(origin[0],origin[1],origin[2])
+    box.hash = args.obj.hash
+    cb( null, box  )
   },
 
   Polyline( args, cb ) {
@@ -88,7 +116,12 @@ export default {
             polyline.hash = args.obj.hash
             cb( null, polyline )
   },
-
+  Polycurve ( args, cb ){
+    console.warn('TODO', args.obj.type)
+  },
+  Annotation ( args, cb ){
+    console.warn('TODO', args.obj.type)
+  },
   Curve( args, cb ) {
     this.Polyline( { obj: args.obj.displayValue, layer: args.layer } , ( err, poly ) => {
       if( err ) return cb( err )
