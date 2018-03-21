@@ -34,7 +34,11 @@
             <md-icon>import_export</md-icon>
             <span class="md-list-item-text">My Streams</span>
             <md-list class='md-double-line md-dense' slot='md-expand'>
-              <md-list-item v-for='stream in streams':key='stream.id' class='md-inset'>
+              <md-field md-clearable>
+                <md-icon>search</md-icon>
+                <md-input v-model='searchFilter'></md-input>
+              </md-field>
+              <md-list-item v-for='stream in filteredStreams':key='stream.id' class='md-inset'>
                 <div class="md-list-item-text">
                   <span>{{stream.name}}</span>
                   <span>{{stream.streamId}}</span>
@@ -73,19 +77,19 @@ export default {
   data() {
     return {
       showLogin: false,
-      email: '',
-      password: '',
+      email: null,
+      password: null,
       loginError: false,
       menuVisible: false,
-      user: '',
-      streams: ''
+      user: null,
+      streams: null,
+      searchFilter: null,
     }
   },
   methods: {
     getUser() {return this.$store.getters.user},
     toggleMenu() {
       if (this.getUser().user) {
-        this.getStreams()
         this.menuVisible = !this.menuVisible}
       else {this.showLogin = !this.showLogin}
     },
@@ -120,9 +124,7 @@ export default {
     },
     shareStream(streamId){
       this.$clipboard(window.location.origin + '/?' + streamId)
-      console.log(window.location.origin + '/?' + streamId)
     }
-
   },
   created () {
     this.$http.get( window.SpkAppConfig.serverUrl )
@@ -149,6 +151,22 @@ export default {
           .catch( err => {
             console.warn( err )
           } )
+    if (this.getUser().user) {
+      this.getStreams()
+    }
+  },
+  computed: {
+    filteredStreams(  ) {
+      console.log(this.searchFilter)
+      if ( this.searchFilter == null || this.searchFilter == ''  )
+        return this.streams
+      else {
+        this.startIndex = 0
+        let map1 = this.streams.map( stream => stream.name.toLowerCase())
+        console.log(map1)
+        return this.streams.filter( stream => stream.name.toLowerCase(  ).includes( this.searchFilter.toLowerCase(  )  ) || stream.streamId.toLowerCase(  ).includes( this.searchFilter.toLowerCase(  )  )  )
+      }
+    },
   }
 }
 </script>
