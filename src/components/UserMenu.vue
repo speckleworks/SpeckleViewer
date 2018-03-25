@@ -7,7 +7,7 @@
         <md-icon v-else>person_outline</md-icon>
         <md-tooltip>Account</md-tooltip>
       </md-button>
-      <md-drawer :md-active.sync="menuVisible" md-persistent="full">
+      <md-drawer v-if='user' :md-active.sync="menuVisible" md-persistent="full">
         <md-toolbar class="md-transparent" md-elevation="0">
           <span class="md-toolbar-section-end">
             <md-button class="md-icon-button" @click="toggleMenu" v-if="menuVisible">
@@ -89,7 +89,7 @@ export default {
   methods: {
     getUser() {return this.$store.getters.user},
     toggleMenu() {
-      if (this.getUser().user) {
+      if (this.user) {
         this.menuVisible = !this.menuVisible}
       else {this.showLogin = !this.showLogin}
     },
@@ -103,6 +103,7 @@ export default {
         this.$store.commit( 'SET_USER', { account } )
         this.$http.defaults.headers.common[ 'Autorization' ] = jwtToken
         this.user = this.getUser().user
+        this.getStreams()
       } else if ( args.guest === true ) {
         let account = { apitoken: '', name: 'Anonymous', guest: true }
         this.$store.commit( 'SET_USER', { account } )
@@ -151,19 +152,14 @@ export default {
           .catch( err => {
             console.warn( err )
           } )
-    if (this.getUser().user) {
       this.getStreams()
-    }
   },
   computed: {
     filteredStreams(  ) {
-      console.log(this.searchFilter)
       if ( this.searchFilter == null || this.searchFilter == ''  )
         return this.streams
       else {
-        this.startIndex = 0
-        let map1 = this.streams.map( stream => stream.name.toLowerCase())
-        console.log(map1)
+        //this.startIndex = 0
         return this.streams.filter( stream => stream.name.toLowerCase(  ).includes( this.searchFilter.toLowerCase(  )  ) || stream.streamId.toLowerCase(  ).includes( this.searchFilter.toLowerCase(  )  )  )
       }
     },
