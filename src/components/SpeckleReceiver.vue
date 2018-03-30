@@ -159,7 +159,7 @@ export default {
   padding-left:32px;
 }
 .md-list-item.md-inset .md-list-item-content {
-  padding-left:32px;
+  padding-left:48px;
 }
 
 .line-height-adjustment{
