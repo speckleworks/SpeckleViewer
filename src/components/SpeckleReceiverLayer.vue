@@ -31,6 +31,12 @@ export default {
   components: {
     SpeckleReceiverObject  
   },
+  data() {
+    return {
+      visible: true,
+      objectsExpanded: false,
+    }
+  },
   computed: {
     layerMaterial() {
       return this.spklayer.properties
@@ -42,14 +48,19 @@ export default {
     },
     showPicker() {
       return this.showColorPicker
+    },
+    objects() {
+      return this.$store.getters.objectsByLayer(this.spklayer.guid)
     }
   },
-  data() {
-    return {
-      visible: true,
-      objectsExpanded: false,
-      objects: this.$store.getters.objectsByLayer(this.spklayer.guid)
-    }
+  watch: {
+    layerName(){
+      return this.spklayer.name
+    },
+    objectCount(){
+      console.log(this.spklayer)
+      return this.spklayer.objectCount
+    },
   },
   methods: {
     showColorPicker() {
