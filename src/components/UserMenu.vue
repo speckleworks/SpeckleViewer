@@ -27,6 +27,9 @@
                   <span>{{user.email}}</span>
                   <p>{{user.createdAt}}</p>
                 </div>
+                <md-button class="md-icon-button md-list-action" @click='logOut'>
+                  <md-icon class="md-primary">close</md-icon>
+                </md-button>
               </md-list-item>
             </md-list>
           </md-list-item>
@@ -43,18 +46,18 @@
               <md-list-item class='md-inset'>
                 <!-- <div class="md-layout md-alignment-center-center"> -->
                 <div class="md-layout-item"> 
-                    <md-button :disabled='startIndex==0' class='md-dense md-icon-button md-primary' @click='startIndex -= startIndex != 0 ? itemsPerPage : 0'>
-                      <md-icon>chevron_left</md-icon>
-                    </md-button>
-                  </div>
-                  <div class="md-layout-item md-text-center">
-                    <div class='md-caption'>{{currentPage}} / {{pageCount}}</div>
-                  </div>
-                  <div class="md-layout-item">
-                    <md-button :disabled='currentPage == pageCount' class='md-dense md-icon-button md-primary' @click='startIndex += currentPage == pageCount ? 0 : itemsPerPage '>
-                      <md-icon>chevron_right</md-icon>
-                    </md-button>
-                  </div>
+                  <md-button :disabled='startIndex==0' class='md-dense md-icon-button md-primary' @click='startIndex -= startIndex != 0 ? itemsPerPage : 0'>
+                    <md-icon>chevron_left</md-icon>
+                  </md-button>
+                </div>
+                <div class="md-layout-item md-text-center">
+                  <div class='md-caption'>{{currentPage}} / {{pageCount}}</div>
+                </div>
+                <div class="md-layout-item">
+                  <md-button :disabled='currentPage == pageCount' class='md-dense md-icon-button md-primary' @click='startIndex += currentPage == pageCount ? 0 : itemsPerPage '>
+                    <md-icon>chevron_right</md-icon>
+                  </md-button>
+                </div>
                 <!-- </div> -->
                 <div class="md-layout-item md-size-100 md-small-size-100 md-text-center"> 
                   <div class="md-caption">Showing {{startIndex + 1}} - {{startIndex + itemsPerPage}} out of <strong> {{filteredStreams.length}} </strong> </div>
@@ -117,6 +120,10 @@ export default {
       if (this.user) {
         this.menuVisible = !this.menuVisible}
       else {this.showLogin = !this.showLogin}
+    },
+    logOut(){
+      this.user = null
+      this.menuVisible = false
     },
     loggedIn( args ) {
       if ( args.guest === false ) {
@@ -216,7 +223,7 @@ export default {
   width:auto;
 }
 .md-field {
-  
+
   margin-bottom: 0px;
 }
 .login-error {
