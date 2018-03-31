@@ -122,6 +122,9 @@ export default {
       else {this.showLogin = !this.showLogin}
     },
     logOut(){
+      this.$store.commit( 'SET_USER', {})
+      localStorage.setItem( 'userAccount', null)
+      localStorage.setItem( 'userJwtToken', null)
       this.user = null
       this.menuVisible = false
     },
