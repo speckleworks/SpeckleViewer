@@ -54,7 +54,6 @@ export default ( args ) => {
       shininess: 30,
       side: THREE.DoubleSide,
       transparent: true,
-      shading: THREE.SmoothShading,
       wireframe: false,
       vertexColors: false
     } ),
@@ -64,7 +63,6 @@ export default ( args ) => {
       shininess: 30,
       side: THREE.DoubleSide,
       transparent: true,
-      shading: THREE.SmoothShading,
       wireframe: false,
       vertexColors: true
     } ),
