@@ -46,7 +46,6 @@ export default new Vuex.Store( {
           arr.push( layer.properties )
         } )
       } )
-      // console.log( arr )
       return arr
       // return arr.concat.apply( [ ], arr )
     }
@@ -83,9 +82,7 @@ export default new Vuex.Store( {
     },
 
     UPDATE_LAYER_PROPS( state, { payload } ) {
-      console.log( payload )
       let l = state.receivers.find( rec => rec.streamId === payload.streamId ).layers.find( l => l.guid == payload.guid ).properties
-      console.log( l )
       l.color.hex = payload.hex
       l.threeMeshMaterial.color = new THREE.Color( payload.hex )
       l.threeLineMaterial.color = new THREE.Color( payload.hex )
@@ -110,7 +107,6 @@ export default new Vuex.Store( {
           _id: obj
         }
       } )
-      console.log( payload.layers )
       target.layers = payload.layers.map( layer => {
         if ( layer.properties === undefined || layer.properties.threeMeshMaterial === undefined ) {
           layer.properties = new LMat( { guid: layer.guid, streamId: target.streamId, color: layer.properties ? layer.properties.color.hex : null } )
