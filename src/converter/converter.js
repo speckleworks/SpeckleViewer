@@ -19,16 +19,15 @@ export default {
   },
   Plane( args, cb ) {
     //make planeSize a setting in the viewer
-    let planeSize = 1
-      let position = new THREE.Vector3()
+    let planeSize = 20
       let v1 = new THREE.Vector3(0,0,1)
-      let v2 = new THREE.Vector3( ...args.obj.normal.value)
+      let v2 = new THREE.Vector3( ...args.obj.Normal.value)
       let q = new THREE.Quaternion()
       q.setFromUnitVectors(v1, v2)
       let geometry = new THREE.PlaneGeometry(planeSize, planeSize)
       let plane = new THREE.Mesh( geometry, args.layer.threeMeshMaterial)
-      plane.position.fromArray(args.obj.origin.value)
-      plane.rotation.setFromQuaternion(q)
+      plane.geometry.applyMatrix( new THREE.Matrix4().makeRotationFromQuaternion( q )  );
+      plane.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( ...args.obj.Origin.value)  );
       plane.hash = args.obj.hash
       cb( null, plane )
   },
@@ -52,63 +51,62 @@ export default {
       q.setFromUnitVectors(v1, v2)
       let curve = new THREE.EllipseCurve(0, 0, radius, radius, 0, 2*Math.PI, false, 0)
       let points = curve.getPoints(50)
-      let geometry = new THREE.BufferGeometry().setFromPoints(points)
+      let geometry = new THREE.Geometry().setFromPoints(points)
       let circle = new THREE.Line(geometry, args.layer.threeLineMaterial)
-      circle.rotation.setFromQuaternion(q)
-      circle.position.set(origin[0],origin[1],origin[2])
+      circle.geometry.applyMatrix( new THREE.Matrix4().makeRotationFromQuaternion( q )  );
+      circle.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( ...origin )  );
       circle.hash = args.obj.hash
       cb( null, circle)
   },
   Arc (args, cb) {
-    let origin = args.obj.plane.origin.value
       let radius = args.obj.radius
       let startAngle = args.obj.startAngle
       let endAngle = args.obj.endAngle
       let v1 = new THREE.Vector3(0,0,1)
-      let v2 = new THREE.Vector3( ...args.obj.plane.normal.value)
+      let v2 = new THREE.Vector3( ...args.obj.plane.Normal.value)
       let q = new THREE.Quaternion()
       q.setFromUnitVectors(v1, v2)
       let curve = new THREE.EllipseCurve(0, 0, radius, radius, startAngle, endAngle, false, 0)
       let points = curve.getPoints(50)
-      let geometry = new THREE.BufferGeometry().setFromPoints(points)
+      let geometry = new THREE.Geometry().setFromPoints(points)
       let arc = new THREE.Line(geometry, args.layer.threeLineMaterial)
-      arc.rotation.setFromQuaternion(q)
-      arc.position.set(origin[0],origin[1],origin[2])
+      arc.geometry.applyMatrix( new THREE.Matrix4().makeRotationFromQuaternion( q )  );
+      arc.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( ...args.obj.plane.Origin.value )  );
       arc.hash = args.obj.hash
       cb( null, arc)
   },
   Ellipse (args, cb) {
-    let origin = args.obj.plane.origin.value
       let xRadius = args.obj.firstRadius
       let yRadius = args.obj.secondRadius
       let startAngle = args.obj.startAngle
       let endAngle = args.obj.endAngle
       let v1 = new THREE.Vector3(0,0,1)
-      let v2 = new THREE.Vector3( ...args.obj.plane.normal.value)
+      let v2 = new THREE.Vector3( ...args.obj.plane.Normal.value)
       let q = new THREE.Quaternion()
       q.setFromUnitVectors(v1, v2)
-      let curve = new THREE.EllipseCurve(0, 0, xRadius, yRadius, startAngle, endAngle, false, 0)
+      let curve = new THREE.EllipseCurve(0, 0, radius, radius, startAngle, endAngle, false, 0)
       let points = curve.getPoints(50)
-      let geometry = new THREE.BufferGeometry().setFromPoints(points)
+      let geometry = new THREE.Geometry().setFromPoints(points)
       let arc = new THREE.Line(geometry, args.layer.threeLineMaterial)
-      arc.rotation.setFromQuaternion(q)
-      arc.position.set(origin[0],origin[1],origin[2])
+      arc.geometry.applyMatrix( new THREE.Matrix4().makeRotationFromQuaternion( q )  );
+      arc.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( ...args.obj.plane.Origin.value )  );
       arc.hash = args.obj.hash
       cb( null, arc)
   },
   Box( args, cb ) {
-    let width = args.obj.xSize.end - args.obj.xSize.start
+  let width = args.obj.xSize.end - args.obj.xSize.start
       let height = args.obj.ySize.end - args.obj.ySize.start
       let depth = args.obj.zSize.end - args.obj.zSize.start
-      let origin = args.obj.basePlane.origin.value
+      let origin = args.obj.basePlane.Origin.value
       let v1 = new THREE.Vector3(0,0,1)
-      let v2 = new THREE.Vector3( ...args.obj.basePlane.normal.value)
+      let v2 = new THREE.Vector3( ...args.obj.basePlane.Normal.value)
       let q = new THREE.Quaternion()
       q.setFromUnitVectors(v1, v2)
       let geometry = new THREE.BoxGeometry(width, height, depth)
       let box = new THREE.Mesh(geometry, args.layer.threeMeshMaterial )
-      box.rotation.setFromQuaternion(q)
-      box.position.set(origin[0],origin[1],origin[2])
+      box.geometry.applyMatrix( new THREE.Matrix4().makeRotationFromQuaternion( q )  );
+      box.geometry.applyMatrix( new THREE.Matrix4().makeTranslation( ...origin )  );
+      box.geometry.verticesNeedUpdate = true
       box.hash = args.obj.hash
       cb( null, box  )
   },

@@ -6,7 +6,7 @@
       <md-content md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'>
         <!-- <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view> -->
         <md-list>
-        <object-details label='Details' :nodes='selectedObjectsProperties'></object-details>
+          <object-details label='Details' :nodes='selectedObjectsProperties'></object-details>
         </md-list>
       </md-content>
       <md-button class="md-icon-button md-raised xxxmd-primary md-dense expand-button" style='background-color:white;color:black !important;' @click.native='expandInfoBox=!expandInfoBox'>
@@ -273,8 +273,9 @@ export default {
 
       let geometry = new THREE.Geometry( )
       this.scene.children.forEach( child => {
-        if ( child.geometry )
+        if ( child.geometry ){
           geometry.merge( child.geometry )
+        }
       } )
       geometry.computeBoundingSphere( )
       cb( geometry )
