@@ -34,7 +34,7 @@ export default {
       let receiver = { 
         streamId: this.streamId, 
         token: this.$store.getters.user.apitoken,
-        serverUrl: window.SpkAppConfig.serverUrl
+        serverUrl: this.$store.state.server
       }
       console.log(receiver)
       this.$store.commit( 'ADD_RECEIVER', { receiver } )

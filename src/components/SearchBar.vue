@@ -13,7 +13,7 @@
 export default {
   name: 'SearchBar',
   props:{
-    objects: { type: Array}
+    objects: { type: Array }
   },
   data() {
     return {

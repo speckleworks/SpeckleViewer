@@ -31,7 +31,7 @@ import ObjectDetails from './ObjectDetails.vue'
 export default {
   name: 'SpeckleRenderer',
   components: {
-    ObjectDetails  
+    ObjectDetails
   },
   computed: {
     isMobile( ) {
@@ -69,7 +69,7 @@ export default {
   methods: {
     update( ) {
       if ( this.updateInProgress ) return console.warn( 'Scene update was already in progress, cancelling.' )
-        this.updateInProgress = true
+      this.updateInProgress = true
       for ( let myObject of this.allObjects ) {
 
         let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
@@ -77,24 +77,25 @@ export default {
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
 
         if ( !sceneObj ) {
-          this.$http.get( window.SpkAppConfig.serverUrl + '/objects/' + myObject._id + '?omit=base64' )
+          this.$http.get( this.$store.state.server + '/objects/' + myObject._id + '?omit=base64,rawData' )
             .then( result => {
-              if ( !Converter.hasOwnProperty( result.data.speckleObject.type ) ) throw new Error( 'Cannot convert this object: ' + result.data.speckleObject.type + ',' + myObject._id )
-                Converter[ result.data.speckleObject.type ]( { obj: result.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj ) => {
-                  threeObj.hash = result.data.speckleObject.hash
-                  threeObj.streamId = myObject.streamId
-                  threeObj.layerGuid = myObject.layerGuid
-                  threeObj.visible = layer.visible
-                  threeObj.isCurrent = true
-                  threeObj.spkProperties = result.data.speckleObject.properties
-                  threeObj.name = myObject.streamId + '::' + result.data.speckleObject._id
-                  threeObj._id = myObject._id
-                  this.scene.add( threeObj )
-                } )
-            } )
-              .catch( err => {
-                // console.error( err )
+              if ( !Converter.hasOwnProperty( result.data.resource.type ) )
+                throw new Error( 'Cannot convert this object: ' + result.data.resource.type + ',' + myObject._id )
+              Converter[ result.data.resource.type ]( { obj: result.data.resource, layer: layer, camera: this.camera }, ( err, threeObj ) => {
+                threeObj.hash = result.data.resource.hash
+                threeObj.streamId = myObject.streamId
+                threeObj.layerGuid = myObject.layerGuid
+                threeObj.visible = layer.visible
+                threeObj.isCurrent = true
+                threeObj.spkProperties = result.data.resource.properties
+                threeObj.name = myObject.streamId + '::' + result.data.resource._id
+                threeObj._id = myObject._id
+                this.scene.add( threeObj )
               } )
+            } )
+            .catch( err => {
+              // console.error( err )
+            } )
         } else {
           if ( sceneObj.visible === false ) {
             sceneObj.visible = true
@@ -111,12 +112,10 @@ export default {
             myObject.isCurrent = false
             myObject.visible = false
           }
-          if ( this.scene.children.length > 4242 ) // arbitrary number, needs battle testing 
-            this.scene.remove( myObject )
         }
       }
       this.updateInProgress = false
-      this.zoomExtents()
+      this.zoomExtents( )
     },
     render( ) {
       TWEEN.update( )
@@ -171,7 +170,7 @@ export default {
     },
     canvasHovered( event ) {
       if ( this.isRotatingStuff ) return
-        this.deselectObjects( )
+      this.deselectObjects( )
 
       // preselect object
       let mouse = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1 )
@@ -194,9 +193,9 @@ export default {
         this.expandInfoBox = false
         return
       }
-      this.selectObject(selectedObject)
+      this.selectObject( selectedObject )
     },
-    selectObject(selectedObject) {
+    selectObject( selectedObject ) {
       selectedObject.material = this.hoverMaterial
       this.hoveredObjects.push( selectedObject )
       this.hoveredObject = selectedObject.hash
@@ -207,14 +206,14 @@ export default {
         properties: selectedObject.spkProperties
       }
       this.showInfoBox = true
-      this.$refs.infobox.style.left = window.innerWidth/2 +'px'
-      this.$refs.infobox.style.top = window.innerHeight/2 +'px'
+      this.$refs.infobox.style.left = window.innerWidth / 2 + 'px'
+      this.$refs.infobox.style.top = window.innerHeight / 2 + 'px'
     },
     canvasClickedEvent( event ) {
       if ( event.which === 3 ) {
         this.showInfoBox = false
         this.expandInfoBox = false
-        this.deselectObjects()
+        this.deselectObjects( )
         return
       }
       this.canvasHovered( event )
@@ -227,26 +226,26 @@ export default {
         this.expandInfoBox = false
       }
     },
-    selectBus(objectId) {
-      this.deselectObjects()
-      let selectedObject = this.scene.children.find(child => {return child.name.includes(objectId)})
-      let hash = this.getHash(objectId)
-      this.zoomToObject(hash)
-      this.selectObject(selectedObject)
+    selectBus( objectId ) {
+      this.deselectObjects( )
+      let selectedObject = this.scene.children.find( child => { return child.name.includes( objectId ) } )
+      let hash = this.getHash( objectId )
+      this.zoomToObject( hash )
+      this.selectObject( selectedObject )
     },
-    getHash(objectId){
-      let child = this.scene.children.find(child => {return child.name.includes(objectId)})
+    getHash( objectId ) {
+      let child = this.scene.children.find( child => { return child.name.includes( objectId ) } )
       return child.hash
     },
-    dropStream(streamId){
-      this.scene.children = this.scene.children.filter(child => !child.name.includes(streamId))
+    dropStream( streamId ) {
+      this.scene.children = this.scene.children.filter( child => !child.name.includes( streamId ) )
     },
-    zoomToObject(hash) {
-      if (this.hoveredObject){
+    zoomToObject( hash ) {
+      if ( this.hoveredObject ) {
         hash = this.hoveredObject
       }
-      if (!hash) {
-        console.log('No object selected')
+      if ( !hash ) {
+        console.log( 'No object selected' )
         return
       }
       let myObject = this.scene.children.find( ch => { return ch.hash === hash } )
@@ -273,7 +272,7 @@ export default {
 
       let geometry = new THREE.Geometry( )
       this.scene.children.forEach( child => {
-        if ( child.geometry ){
+        if ( child.geometry ) {
           geometry.merge( child.geometry )
         }
       } )
@@ -294,10 +293,10 @@ export default {
         newPos.addVectors( bsphere.center, dir )
         this.setCamera( {
           position: [ newPos.x, newPos.y, newPos.z ],
-        rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
-        target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
+          rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
+          target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
         }, 100 )
-      })
+      } )
     },
 
     setCamera( where, time ) {
@@ -366,7 +365,7 @@ export default {
 
     document.onkeydown = ( event ) => {
       if ( event.keyCode !== 27 ) return
-        this.deselectObjects( )
+      this.deselectObjects( )
     }
 
     window.THREE = THREE
@@ -374,7 +373,7 @@ export default {
 
     bus.$on( 'renderer-update', debounce( this.update, 300 ) )
     bus.$on( 'renderer-setview', this.setCamera )
-    bus.$on('zext', this.zoomExtents )
+    bus.$on( 'zext', this.zoomExtents )
     bus.$on( 'renderer-layer-update-colors', args => {
       //set colorsNeedUpdate flag to true on all geoms in args.layerguid and args.streamid
     } )
@@ -393,21 +392,22 @@ export default {
       console.log( "UNPOP" )
       this.$refs.mycanvas.classList.toggle( 'pop' )
     } )
-    bus.$on( 'select-bus', (objectId) => {
-      this.selectBus(objectId)
+    bus.$on( 'select-bus', ( objectId ) => {
+      this.selectBus( objectId )
     } )
-    bus.$on( 'zoomToObject', () => {
-      this.zoomToObject()
+    bus.$on( 'zoomToObject', ( ) => {
+      this.zoomToObject( )
     } )
-    bus.$on('renderer-drop-stream', (streamId) => {
-      this.dropStream(streamId)
-    })
+    bus.$on( 'renderer-drop-stream', ( streamId ) => {
+      this.dropStream( streamId )
+    } )
     document.addEventListener( 'keydown', ( event ) => {
       const keyName = event.key;
       if ( keyName == ' ' ) this.zoomExtents( )
     } )
   }
 }
+
 </script>
 <style scoped>
 #render-window {
@@ -418,6 +418,7 @@ export default {
   height: 100%;
   /*z-index: 10;*/
   transition: all .2s ease;
+  background-color: aliceblue;
 }
 
 #render-window.pop {
@@ -439,7 +440,7 @@ export default {
 
 
 .expanded-info-box {
-  border-color:grey;
+  border-color: grey;
   position: absolute;
   top: 0;
   left: 35px;
@@ -476,4 +477,5 @@ export default {
   font-family: auto;
   overflow: hidden !important;
 }
+
 </style>
