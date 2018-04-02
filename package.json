@@ -12,6 +12,7 @@
     "axios": "^0.17.1",
     "debounce": "^1.1.0",
     "event-emitter-es6": "^1.1.5",
+    "query-parse": "^2.0.0",
     "three": "^0.89.0",
     "three-orbit-controls": "^82.1.0",
     "three.meshline": "^1.0.3",

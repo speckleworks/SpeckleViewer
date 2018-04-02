@@ -1,39 +1,40 @@
 import Vue from 'vue'
-import App from './App.vue'
-import VueMaterial from 'vue-material'
 import Axios from 'axios'
-import Store from './store/Store'
+import VueMaterial from 'vue-material'
 import TreeView from 'vue-json-tree-view'
 import vueDrag from 'vue-dragging'
+import Clipboard from 'v-clipboard'
+import qp from 'query-parse'
+
+import App from './App.vue'
+import Store from './store/Store'
+
 import 'vue-material/dist/vue-material.min.css'
 import 'vue-material/dist/theme/default.css'
-import Clipboard from 'v-clipboard'
 
 Vue.prototype.$http = Axios
 
 Vue.use( VueMaterial )
 Vue.use( vueDrag )
 Vue.use( TreeView )
-Vue.use(Clipboard)
+Vue.use( Clipboard )
 
 window.bus = new Vue( )
-
-//hacky
 window.camLoc = {}
 
-// If there's no "dev" keyword in the url, set the serverUrl from window.location.origin
-if ( !window.location.href.includes( 'dev' ) )
-  window.SpkAppConfig.serverUrl = window.location.origin + '/api'
-// ELSE
-// we will go forward and use the one provided in the dist/config.js file.
+// if we provide a server url, use that.
+// if not, assume the plugin is online and live, and
+// default to `window.location.origin + '/api/v1'` 
 
-// Vue.material.registerTheme( 'default', {
-//   primary: 'black',
-  // accent: 'light-blue',
-  // warn: 'red',
-  // background: 'white'
-// } )
-
+if ( window.location.href.includes( '?' ) ) {
+  let query = qp.toObject( window.location.href.split( '?' )[ 1 ] )
+  if ( query.server )
+    Store.state.server = query.server + '/api/v1'
+  else
+    Store.state.server = window.location.origin + '/api/v1'
+} else {
+  Store.state.server = window.location.origin + '/api/v1'
+}
 
 new Vue( {
   el: '#app',

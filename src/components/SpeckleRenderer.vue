@@ -77,7 +77,7 @@ export default {
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
 
         if ( !sceneObj ) {
-          this.$http.get( window.SpkAppConfig.serverUrl + '/objects/' + myObject._id + '?omit=base64' )
+          this.$http.get( this.$store.state.server + '/objects/' + myObject._id + '?omit=base64,rawData' )
             .then( result => {
               if ( !Converter.hasOwnProperty( result.data.speckleObject.type ) ) throw new Error( 'Cannot convert this object: ' + result.data.speckleObject.type + ',' + myObject._id )
                 Converter[ result.data.speckleObject.type ]( { obj: result.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj ) => {

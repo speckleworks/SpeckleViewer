@@ -2,18 +2,18 @@
   <div id="app">
     <div id='main' class="md-layout md-gutter">
       <div class='md-layout-item md-size-33'>
-        <user-menu v-on:add="addReceiver" ></user-menu>
+        <user-menu v-on:add="addReceiver"></user-menu>
       </div>
       <div class='md-layout-item'>
         <speckle-renderer></speckle-renderer>
       </div>
-      <div class="md-layout-item md-size-33" >
+      <div class="md-layout-item md-size-33">
         <speckle-stream-list> </speckle-stream-list>
       </div>
     </div>
     <div id='bottom-bar'>
       <div class='md-layout md-alignment-bottom-center'>
-        <div class="md-layout-item md-size-50" >
+        <div class="md-layout-item md-size-50">
           <bottom-bar></bottom-bar>
         </div>
       </div>
@@ -33,6 +33,7 @@ import BottomBar from './components/BottomBar.vue'
 
 export default {
   name: 'app',
+  props: [ ],
   components: {
     SpeckleStreamList,
     UserMenu,
@@ -49,44 +50,44 @@ export default {
   methods: {
     createReceivers( ) {
       if ( this.receiversCreated ) return
-        let streamIds = window.location.href.split( '/' )[ window.location.href.split( '/' ).length - 1 ].split( ',' )
-      streamIds[ 0 ] = streamIds[ 0 ].substr( 1 )
+      // let streamIds = window.location.href.split( '/' )[ window.location.href.split( '/' ).length - 1 ].split( ',' )
+      // streamIds[ 0 ] = streamIds[ 0 ].substr( 1 )
 
-      // make sure we ignore 'dev'
-      streamIds = streamIds.filter( ( obj, index, self ) => { return self.indexOf( obj ) === index && obj !== 'dev' } )
+      // // make sure we ignore 'dev'
+      // streamIds = streamIds.filter( ( obj, index, self ) => { return self.indexOf( obj ) === index && obj !== 'dev' } )
 
-      console.log( 'streamIds:', streamIds )
+      // console.log( 'streamIds:', streamIds )
 
-      if ( streamIds.length == 0 || streamIds[ 0 ] === '' )
-        return console.warn( 'no streams provided in url.' )
+      // if ( streamIds.length == 0 || streamIds[ 0 ] === '' )
+      //   return console.warn( 'no streams provided in url.' )
 
-      let receivers = streamIds.map( id => {
-        return {
-          serverUrl: window.SpkAppConfig.serverUrl,
-          streamId: id,
-          token: this.$store.getters.user.apitoken,
-          objects: [ ],
-          layers: [ ],
-          history: [ ],
-          name: 'Loading ' + id + '...',
-          layerMaterials: [ ]
-        }
-      } )
-      this.$store.commit( 'ADD_RECEIVERS', { receivers } )
+      // let receivers = streamIds.map( id => {
+      //   return {
+      //     serverUrl: this.$store.state.server,
+      //     streamId: id,
+      //     token: this.$store.getters.user.apitoken,
+      //     objects: [ ],
+      //     layers: [ ],
+      //     history: [ ],
+      //     name: 'Loading ' + id + '...',
+      //     layerMaterials: [ ]
+      //   }
+      // } )
+      // this.$store.commit( 'ADD_RECEIVERS', { receivers } )
     },
-    addReceiver(streamId){
-      console.log('Adding a receiver', streamId)
-      if( this.$store.getters.receiverById( streamId ) )
+    addReceiver( streamId ) {
+      console.log( 'Adding a receiver', streamId )
+      if ( this.$store.getters.receiverById( streamId ) )
         return this.showSnackbar = true
       let receiver = {
-        serverUrl: window.SpkAppConfig.serverUrl,
+        serverUrl: this.$store.state.server,
         streamId: streamId,
         token: this.$store.getters.user.apitoken,
-        objects: [],
-        layers: [],
-        history: [],
+        objects: [ ],
+        layers: [ ],
+        history: [ ],
         name: 'Loading ' + streamId + '...',
-        layerMaterials: []
+        layerMaterials: [ ]
       }
       this.$store.commit( 'ADD_RECEIVER', { receiver } )
     },
@@ -94,29 +95,29 @@ export default {
 
   created( ) {
     this.createReceivers( )
-    this.$http.get( window.SpkAppConfig.serverUrl )
+    this.$http.get( this.$store.state.server )
       .then( response => {
         var account = localStorage.getItem( 'userAccount' )
         var jwtToken = localStorage.getItem( 'userJwtToken' )
         if ( !jwtToken || jwtToken == '' )
           throw new Error( 'no login details found' )
-        return this.$http.get( window.SpkAppConfig.serverUrl + '/accounts/profile', {
+        return this.$http.get( this.$store.state.server + '/accounts', {
           headers: {
             Authorization: JSON.parse( jwtToken )
           }
         } )
       } )
-        .then( response => {
-          if ( response.status != 200 ) throw new Error( response )
-            let args = {
-              guest: false,
+      .then( response => {
+        if ( response.status != 200 ) throw new Error( response )
+        let args = {
+          guest: false,
           account: response.data
-            }
-          localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
-        } )
-          .catch( err => {
-            console.warn( err )
-          } )
+        }
+        localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
+      } )
+      .catch( err => {
+        console.warn( err )
+      } )
   },
   computed: {
     isMobileView( ) {
@@ -130,12 +131,13 @@ export default {
     }
   }
 }
-</script>
 
+</script>
 <style>
 .md-layout {
-  padding:8px;
+  padding: 8px;
 }
+
 #app {
   position: fixed;
   top: 0;
@@ -143,11 +145,13 @@ export default {
   width: 100%;
   height: 100%;
 }
-#main {
-}
+
+#main {}
+
 #bottom-bar {
-position:absolute;
-bottom: 0;
-width: 100%;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
 }
+
 </style>

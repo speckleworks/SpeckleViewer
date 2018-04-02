@@ -8,6 +8,9 @@ Vue.use( Vuex )
 
 export default new Vuex.Store( {
   state: {
+    server: null,
+    auth: false,
+    token: null,
     mobile: false,
     receivers: [ ],
     comments: [ ],
@@ -59,6 +62,7 @@ export default new Vuex.Store( {
       state.jwtToken = jwtToken
     },
     SET_USER( state, { account } ) {
+      console.log( account )
       state.user = account
     },
 

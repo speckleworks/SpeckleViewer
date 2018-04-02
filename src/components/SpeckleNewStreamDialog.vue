@@ -33,7 +33,7 @@ export default {
       if( this.$store.getters.receiverById( this.streamId ) )
         return alert( 'This stream is already there.' )
       let receiver = {
-        serverUrl: window.SpkAppConfig.serverUrl,
+        serverUrl: this.$store.state.server,
         streamId: this.streamId,
         token: this.$store.getters.user.apitoken,
         objects: [],
