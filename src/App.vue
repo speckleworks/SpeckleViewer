@@ -30,6 +30,7 @@ import LoginScreen from './components/LoginScreen.vue'
 import SpeckleViewer from './components/SpeckleViewer.vue'
 import UserMenu from './components/UserMenu.vue'
 import BottomBar from './components/BottomBar.vue'
+
 export default {
   name: 'app',
   components: {
