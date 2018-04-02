@@ -2,7 +2,7 @@
   <div class="login-screen">
     <md-card class="login-card md-elevation-0">
       <md-card-content>
-        <div style='text-align:center'><img :src='logoUrl' style="max-width:50px;"></div>
+        <!-- <div style='text-align:center'><img :src='logoUrl' style="max-width:50px;"></div> -->
         <md-field>
           <label>Email address</label>
           <md-input v-model='email'></md-input>
@@ -69,7 +69,7 @@ export default {
 </script>
 <style scoped>
 .login-card {
-  width: 400px;
+  /*width: 400px;*/
   /*text-align: center;*/
   pointer-events: auto;
 }

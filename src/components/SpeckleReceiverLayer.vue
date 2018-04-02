@@ -10,11 +10,11 @@
       <md-icon @click.native='toggleObjects'>{{ objectsExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
     </span>
     </div>
-    <md-list v-show='objectsExpanded'>
+    <!-- <md-list v-show='objectsExpanded'>
       <md-list-item class='md-inset' v-for='object in objects' :key='object.guid'>
         <speckle-receiver-object :spkobj='object'></speckle-receiver-object>
       </md-list-item>
-    </md-list>
+    </md-list> -->
   </div>
 </template>
 

@@ -1,15 +1,16 @@
 <template>
   <div>
-    <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen>
-    <div class="user-menu" v-else>
-      <md-toolbar class="md-primary" md-elevation="0">
-        <span class="md-toolbar-section-end">
-            <md-button class="md-icon-button" @click="$emit('closeme')">
-              <md-icon>close</md-icon>
-            </md-button>
-          </span>
-        <span class="md-title">Hello {{user.name}}!</span>
-      </md-toolbar>
+    <md-toolbar class="md-primary">
+      <span class="md-toolbar-section-end">
+        <md-button class="md-icon-button" @click="showAccountsStuff=!showAccountsStuff">
+          <md-icon>{{showAccountsStuff ? "keyboard_arrow_up" : "keyboard_arrow_down"}}</md-icon>
+        </md-button>
+      </span>
+      <span class="md-title" v-if='showLogin'>Login</span>
+      <span class="md-title" v-else>Hello <strong>{{user.name}}!</strong></span>
+    </md-toolbar>
+    <login-screen v-if='showLogin && showAccountsStuff' v-on:success='loggedIn'></login-screen>
+    <div class="user-menu" v-if='!showLogin && showAccountsStuff'>
       <md-list>
         <md-list-item md-expand>
           <md-icon>person</md-icon>
@@ -64,40 +65,54 @@
                 <md-icon>add</md-icon>
                 <md-tooltip md-delay="800">Add this stream to the viewer</md-tooltip>
               </md-button>
-              <md-button class="md-icon-button md-list-action md-dense" v-on:click='shareStream(stream.streamId)'>
+              <!--               <md-button class="md-icon-button md-list-action md-dense" v-on:click='shareStream(stream.streamId)'>
                 <md-icon>share</md-icon>
                 <md-tooltip md-delay="800">Copy stream address to clipboard</md-tooltip>
-              </md-button>
+              </md-button> -->
             </md-list-item>
           </md-list>
         </md-list-item>
-        <md-list-item md-expand>
-          <md-icon>history</md-icon>
-          <span class="md-list-item-text">Recent</span>
-          <md-list slot='md-expand'>
-            <md-list-item class='xxxmd-inset'>Soon™</md-list-item>
-          </md-list>
-        </md-list-item>
       </md-list>
-      <!-- </md-drawer> -->
     </div>
+    <md-toolbar class="md-accent md-elevation-4" md-elevation="0">
+      <span class="md-toolbar-section-end">
+        <md-button class="md-icon-button" @click="showCurrentStreamStuff=!showCurrentStreamStuff">
+          <md-icon>{{showCurrentStreamStuff ? "keyboard_arrow_up" : "keyboard_arrow_down"}}</md-icon>
+        </md-button>
+      </span>
+      <span class="md-title">Current <strong>Streams</strong></span>
+    </md-toolbar>
+    <md-list v-show='showCurrentStreamStuff'>
+      <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in $store.state.receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
+    </md-list>
+    <span v-show='$store.state.receivers.length === 0 && showCurrentStreamStuff' class='md-subheading' style="padding: 10px">No streams present.</span>
   </div>
 </template>
 <script>
 import LoginScreen from './LoginScreen.vue'
+import SpeckleReceiver from './SpeckleReceiver.vue'
+
 export default {
   name: 'UserMenu',
   components: {
-    LoginScreen
+    LoginScreen,
+    SpeckleReceiver
+  },
+  computed: {
+    receivers( ) {
+      return this.$store.getters.allReceivers
+    }
   },
   data( ) {
     return {
       showLogin: false,
+      showAccountsStuff: true,
+      showCurrentStreamStuff: true,
       email: null,
       password: null,
       loginError: false,
       menuVisible: false,
-      user: { name: 'Not initialised'},
+      user: { name: 'Not initialised' },
       streams: [ ],
       searchFilter: null,
       startIndex: 0,
@@ -106,6 +121,7 @@ export default {
   },
   methods: {
     getUser( ) { return this.$store.getters.user },
+    toggleShowNewStream( ) {},
     toggleMenu( ) {
       if ( this.user ) {
         this.menuVisible = !this.menuVisible
@@ -147,11 +163,17 @@ export default {
         } )
         .then( response => {
           console.log( response )
-          this.streams = [ ...response.data.resources.reverse( ), ...response.data.resources.reverse( ), ...response.data.resources.reverse( ) ]
+          this.streams = response.data.resources.reverse( )
         } )
     },
     addStream( stream ) {
       this.$emit( 'add', stream )
+    },
+    dropReceiver( streamId ) {
+      console.log( 'Dropping receiver:', streamId )
+      this.$store.commit( 'DROP_RECEIVER', { streamId } )
+      bus.$emit( 'renderer-drop-stream', streamId )
+      bus.$emit( 'renderer-update' )
     },
     shareStream( streamId ) {
       this.$clipboard( window.location.origin + '/?' + streamId )
@@ -211,6 +233,10 @@ export default {
 </script>
 <style scoped>
 .user-menu {}
+
+.md-list-item-expand {
+  border: 0 !important;
+}
 
 .md-list-item-content>.md-icon:first-child {
   margin-right: 8px;

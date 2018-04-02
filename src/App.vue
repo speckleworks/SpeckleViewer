@@ -5,12 +5,10 @@
         <div class="md-toolbar-row">
           <div class="md-toolbar-section-start">
             <md-button class='md-icon-button md-raised' @click.native='showAccounts=!showAccounts'>
-              <md-icon style='color: black'>account_circle</md-icon>
-              <md-tooltip md-direction="bottom">Your Account</md-tooltip>
-            </md-button>
-            <md-button class='md-icon-button md-raised' @click.native='showStreamList=!showStreamList'>
-              <md-icon style='color: black'>import_export</md-icon>
-              <md-tooltip md-direction="bottom">streams</md-tooltip>
+              <md-icon style='color: black'>
+                {{ showAccounts ? "close" : "menu"}}
+              </md-icon>
+              <md-tooltip md-direction="bottom">Menu</md-tooltip>
             </md-button>
             <md-button class='md-icon-button' @click.native='zoomExt'>
               <md-icon>zoom_out_map</md-icon>
@@ -20,6 +18,7 @@
               <md-icon>zoom_in</md-icon>
               <md-tooltip md-direction="top">Zoom to Selected</md-tooltip>
             </md-button>
+            <!-- <search-bar class="md-toolbar-section-start" :objects="searchobjects"></search-bar> -->
           </div>
           <div class="md-toolbar-section-end">
             <a href="https://speckle.works">
@@ -29,57 +28,30 @@
           </div>
         </div>
       </md-app-toolbar>
+      <md-app-drawer :md-active.sync="showAccounts" style='z-index:100' class='md-elevation-4' md-persistent="full">
+        <sidebar-menu v-on:add="addReceiver"></sidebar-menu>
+      </md-app-drawer>
       <md-app-content>
-        <md-drawer :md-active.sync="showAccounts" style='z-index:100' class='md-dense'>
-          <user-menu v-on:add="addReceiver" @closeme='showAccounts=false'></user-menu>
-        </md-drawer>
-        <md-drawer :md-active.sync="showStreamList" style='z-index:100' xxxmd-permanent="full" class='md-dense'>
-          <speckle-stream-list></speckle-stream-list>
-        </md-drawer>
         <speckle-renderer></speckle-renderer>
         <md-snackbar :md-active.sync="showSnackbar" md-position="center">
           <span>That stream is already here</span>
         </md-snackbar>
       </md-app-content>
     </md-app>
-    <!--     <div id='main' class="md-layout md-gutter">
-      <div class='md-layout-item md-size-33'>
-        <user-menu v-on:add="addReceiver"></user-menu>
-      </div>
-      <div class='md-layout-item'>
-        <speckle-renderer></speckle-renderer>
-      </div>
-      <div class="md-layout-item md-size-33">
-        <speckle-stream-list> </speckle-stream-list>
-      </div>
-    </div> -->
-    <!-- <div id='bottom-bar'>
-      <div class='md-layout md-alignment-bottom-left'>
-        <div class="md-layout-item md-size-50">
-          <bottom-bar></bottom-bar>
-        </div>
-      </div>
-    </div> -->
   </div>
 </template>
 <script>
-import SpeckleStreamList from './components/SpeckleStreamList.vue'
 import SpeckleRenderer from './components/SpeckleRenderer.vue'
-import LoginScreen from './components/LoginScreen.vue'
-import SpeckleViewer from './components/SpeckleViewer.vue'
-import UserMenu from './components/UserMenu.vue'
-import BottomBar from './components/BottomBar.vue'
+import SidebarMenu from './components/SidebarMenu.vue'
+import SearchBar from './components/SearchBar.vue'
 
 export default {
   name: 'app',
   props: [ ],
   components: {
-    SpeckleStreamList,
-    UserMenu,
-    LoginScreen,
-    SpeckleViewer,
+    SidebarMenu,
     SpeckleRenderer,
-    BottomBar,
+    SearchBar
   },
   data( ) {
     return {
@@ -89,6 +61,12 @@ export default {
     }
   },
   methods: {
+    zoomExt( ) {
+      bus.$emit( 'zext' )
+    },
+    zoomToObject( ) {
+      bus.$emit( 'zoomToObject' )
+    },
     createReceivers( ) {
       if ( this.receiversCreated ) return
       if ( this.$store.state.initStreams.length != 0 ) {
@@ -127,7 +105,6 @@ export default {
       this.$store.commit( 'ADD_RECEIVER', { receiver } )
     },
   },
-
   created( ) {
     this.createReceivers( )
     this.$http.get( this.$store.state.server )
@@ -155,6 +132,14 @@ export default {
       } )
   },
   computed: {
+    searchobjects( ) {
+      let objects = this.$store.getters.allObjects
+      if ( objects.length === 0 ) return [ ]
+      let objectIds = objects.map( ( obj ) => {
+        return obj.type + ' ' + obj._id
+      } )
+      return objectIds
+    },
     isMobileView( ) {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test( navigator.userAgent ) && window.innerWidth < 768
     },
