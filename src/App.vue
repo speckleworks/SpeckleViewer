@@ -1,6 +1,48 @@
 <template>
   <div id="app">
-    <div id='main' class="md-layout md-gutter">
+    <md-app>
+      <md-app-toolbar class="md-primary md-dense" style='z-index: 10'>
+        <div class="md-toolbar-row">
+          <div class="md-toolbar-section-start">
+            <md-button class='md-icon-button md-raised' @click.native='showAccounts=!showAccounts'>
+              <md-icon style='color: black'>account_circle</md-icon>
+              <md-tooltip md-direction="bottom">Your Account</md-tooltip>
+            </md-button>
+            <md-button class='md-icon-button md-raised' @click.native='showStreamList=!showStreamList'>
+              <md-icon style='color: black'>import_export</md-icon>
+              <md-tooltip md-direction="bottom">streams</md-tooltip>
+            </md-button>
+            <md-button class='md-icon-button' @click.native='zoomExt'>
+              <md-icon>zoom_out_map</md-icon>
+              <md-tooltip md-direction="top">Zoom Extents</md-tooltip>
+            </md-button>
+            <md-button class='md-icon-button' @click.native='zoomToObject'>
+              <md-icon>zoom_in</md-icon>
+              <md-tooltip md-direction="top">Zoom to Selected</md-tooltip>
+            </md-button>
+          </div>
+          <div class="md-toolbar-section-end">
+            <a href="https://speckle.works">
+              <img src='https://speckle.works/img/logos/logo-xs.png' width="17"/>
+              <md-tooltip md-direction="left">Speckle.Works!</md-tooltip>
+              </a>
+          </div>
+        </div>
+      </md-app-toolbar>
+      <md-app-content>
+        <md-drawer :md-active.sync="showAccounts" style='z-index:100' class='md-dense'>
+          <user-menu v-on:add="addReceiver" @closeme='showAccounts=false'></user-menu>
+        </md-drawer>
+        <md-drawer :md-active.sync="showStreamList" style='z-index:100' xxxmd-permanent="full" class='md-dense'>
+          <speckle-stream-list></speckle-stream-list>
+        </md-drawer>
+        <speckle-renderer></speckle-renderer>
+        <md-snackbar :md-active.sync="showSnackbar" md-position="center">
+          <span>That stream is already here</span>
+        </md-snackbar>
+      </md-app-content>
+    </md-app>
+    <!--     <div id='main' class="md-layout md-gutter">
       <div class='md-layout-item md-size-33'>
         <user-menu v-on:add="addReceiver"></user-menu>
       </div>
@@ -10,17 +52,14 @@
       <div class="md-layout-item md-size-33">
         <speckle-stream-list> </speckle-stream-list>
       </div>
-    </div>
-    <div id='bottom-bar'>
-      <div class='md-layout md-alignment-bottom-center'>
+    </div> -->
+    <!-- <div id='bottom-bar'>
+      <div class='md-layout md-alignment-bottom-left'>
         <div class="md-layout-item md-size-50">
           <bottom-bar></bottom-bar>
         </div>
       </div>
-    </div>
-    <md-snackbar :md-active.sync="showSnackbar" md-position="center">
-      <span>That stream is already here</span>
-    </md-snackbar>
+    </div> -->
   </div>
 </template>
 <script>
@@ -44,7 +83,9 @@ export default {
   },
   data( ) {
     return {
-      showSnackbar: false
+      showSnackbar: false,
+      showStreamList: false,
+      showAccounts: false
     }
   },
   methods: {
@@ -128,8 +169,9 @@ export default {
 
 </script>
 <style>
-.md-layout {
-  padding: 8px;
+.md-app {
+  height: 100vh;
+  border: 1px solid rgba(#000, .12);
 }
 
 #app {
@@ -143,9 +185,11 @@ export default {
 #main {}
 
 #bottom-bar {
-  position: absolute;
+  /*  position: absolute;
+  top: 10px;
   bottom: 0;
-  width: 100%;
+  left: 0;
+  width: 100%;*/
 }
 
 </style>

@@ -1,91 +1,85 @@
 <template>
   <div>
     <login-screen v-if='showLogin' v-on:success='loggedIn'></login-screen>
-    <div class="user-menu">
-      <md-button class="md-icon-button md-primary md-raised" @click="toggleMenu" v-if="!menuVisible">
-        <md-icon v-if='user'>person</md-icon>
-        <md-icon v-else>person_outline</md-icon>
-        <md-tooltip>Account</md-tooltip>
-      </md-button>
-      <md-drawer v-if='user' :md-active.sync="menuVisible" md-persistent="full" class='md-elevation-5'>
-        <md-toolbar class="md-transparent" md-elevation="0">
-          <span class="md-toolbar-section-end">
-            <md-button class="md-icon-button" @click="toggleMenu" v-if="menuVisible">
-              <md-icon>keyboard_arrow_left</md-icon>
+    <div class="user-menu" v-else>
+      <md-toolbar class="md-primary" md-elevation="0">
+        <span class="md-toolbar-section-end">
+            <md-button class="md-icon-button" @click="$emit('closeme')">
+              <md-icon>close</md-icon>
             </md-button>
           </span>
-          <span class="md-title">Hello, {{user.name}}</span>
-        </md-toolbar>
-        <md-list>
-          <md-list-item md-expand>
-            <md-icon>person</md-icon>
-            <span class="md-list-item-text">My Account</span>
-            <md-list class='md-triple-line md-dense' slot='md-expand'>
-              <md-list-item class='xxxmd-inset'>
-                <div class="md-list-item-text">
-                  <span>{{user.name}} {{user.surname}}</span>
-                  <span>{{user.email}}</span>
-                  <p>{{user.createdAt}}</p>
-                </div>
-                <md-button class="md-icon-button md-list-action" @click='logOut'>
-                  <md-icon class="md-primary">close</md-icon>
+        <span class="md-title">Hello {{user.name}}!</span>
+      </md-toolbar>
+      <md-list>
+        <md-list-item md-expand>
+          <md-icon>person</md-icon>
+          <span class="md-list-item-text">My Account</span>
+          <md-list class='md-triple-line md-dense' slot='md-expand'>
+            <md-list-item class='xxxmd-inset'>
+              <div class="md-list-item-text">
+                <span>{{user.name}} {{user.surname}}</span>
+                <span>{{user.email}}</span>
+                <p>{{user.createdAt}}</p>
+              </div>
+              <md-button class="md-icon-button md-list-action" @click='logOut'>
+                <md-icon class="md-primary">close</md-icon>
+              </md-button>
+            </md-list-item>
+          </md-list>
+        </md-list-item>
+        <md-list-item md-expand>
+          <md-icon>import_export</md-icon>
+          <span class="md-list-item-text">My Streams</span>
+          <md-list class='md-double-line md-dense' slot='md-expand'>
+            <md-list-item class='xxxmd-inset'>
+              <md-field md-clearable>
+                <md-icon>search</md-icon>
+                <label>Search your streams</label>
+                <md-input v-model='searchFilter'></md-input>
+              </md-field>
+            </md-list-item>
+            <md-list-item>
+              <div class="md-layout-item">
+                <md-button :disabled='startIndex==0' class='md-dense md-icon-button md-primary' @click='startIndex -= startIndex != 0 ? itemsPerPage : 0'>
+                  <md-icon>chevron_left</md-icon>
                 </md-button>
-              </md-list-item>
-            </md-list>
-          </md-list-item>
-          <md-list-item md-expand>
-            <md-icon>import_export</md-icon>
-            <span class="md-list-item-text">My Streams</span>
-            <md-list class='md-double-line md-dense' slot='md-expand'>
-              <md-list-item class='xxxmd-inset'>
-                <md-field md-clearable>
-                  <md-icon>search</md-icon>
-                  <label>Search your streams</label>
-                  <md-input v-model='searchFilter'></md-input>
-                </md-field>
-              </md-list-item>
-              <md-list-item>
-                <div class="md-layout-item">
-                  <md-button :disabled='startIndex==0' class='md-dense md-icon-button md-primary' @click='startIndex -= startIndex != 0 ? itemsPerPage : 0'>
-                    <md-icon>chevron_left</md-icon>
-                  </md-button>
-                </div>
-                <div class="md-layout-item md-text-center">
-                  <div class='md-caption'>{{currentPage}} / {{pageCount}}</div>
-                </div>
-                <div class="md-layout-item">
-                  <md-button :disabled='currentPage == pageCount' class='md-dense md-icon-button md-primary' @click='startIndex += currentPage == pageCount ? 0 : itemsPerPage '>
-                    <md-icon>chevron_right</md-icon>
-                  </md-button>
-                </div>
-                <div class="md-caption">Showing {{startIndex + 1}} - {{startIndex + itemsPerPage}} out of <strong> {{filteredStreams.length}} </strong> </div>
-              </md-list-item>
-              <!-- <md-divider class='xxxmd-inset'></md-divider> -->
-              <md-list-item v-for='stream in paginatedStreams' :key='stream.id' class='xxxmd-inset'>
-                <div class="md-list-item-text">
-                  <span>{{stream.name}}</span>
-                  <span>{{stream.streamId}}</span>
-                </div>
-                <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(stream.streamId)'>
-                  <md-icon>add</md-icon>
-                  <md-tooltip md-delay="800">Add this stream to the viewer</md-tooltip>
+              </div>
+              <div class="md-layout-item md-text-center">
+                <div class='md-caption'>{{currentPage}} / {{pageCount}}</div>
+              </div>
+              <div class="md-layout-item">
+                <md-button :disabled='currentPage == pageCount' class='md-dense md-icon-button md-primary' @click='startIndex += currentPage == pageCount ? 0 : itemsPerPage '>
+                  <md-icon>chevron_right</md-icon>
                 </md-button>
-                <!--                 <md-button class="md-icon-button md-list-action md-dense" v-on:click='shareStream(stream.streamId)'>
-                  <md-icon>share</md-icon>
-                  <md-tooltip md-delay="800">Copy stream address to clipboard</md-tooltip>
-                </md-button> -->
-              </md-list-item>
-            </md-list>
-          </md-list-item>
-          <md-list-item md-expand>
-            <md-icon>history</md-icon>
-            <span class="md-list-item-text">Recent</span>
-            <md-list slot='md-expand'>
-              <md-list-item class='xxxmd-inset'>Soon™</md-list-item>
-            </md-list>
-          </md-list-item>
-        </md-list>
-      </md-drawer>
+              </div>
+              <div class="md-caption">Showing {{startIndex + 1}} - {{startIndex + itemsPerPage}} out of <strong> {{filteredStreams.length}} </strong> </div>
+            </md-list-item>
+            <!-- <md-divider class='xxxmd-inset'></md-divider> -->
+            <md-list-item v-for='stream in paginatedStreams' :key='stream.id' class='xxxmd-inset'>
+              <div class="md-list-item-text">
+                <span>{{stream.name}}</span>
+                <span>{{stream.streamId}}</span>
+              </div>
+              <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(stream.streamId)'>
+                <md-icon>add</md-icon>
+                <md-tooltip md-delay="800">Add this stream to the viewer</md-tooltip>
+              </md-button>
+              <md-button class="md-icon-button md-list-action md-dense" v-on:click='shareStream(stream.streamId)'>
+                <md-icon>share</md-icon>
+                <md-tooltip md-delay="800">Copy stream address to clipboard</md-tooltip>
+              </md-button>
+            </md-list-item>
+          </md-list>
+        </md-list-item>
+        <md-list-item md-expand>
+          <md-icon>history</md-icon>
+          <span class="md-list-item-text">Recent</span>
+          <md-list slot='md-expand'>
+            <md-list-item class='xxxmd-inset'>Soon™</md-list-item>
+          </md-list>
+        </md-list-item>
+      </md-list>
+      <!-- </md-drawer> -->
     </div>
   </div>
 </template>
@@ -103,7 +97,7 @@ export default {
       password: null,
       loginError: false,
       menuVisible: false,
-      user: null,
+      user: { name: 'Not initialised'},
       streams: [ ],
       searchFilter: null,
       startIndex: 0,
@@ -123,6 +117,7 @@ export default {
       window.localStorage.setItem( 'token', null )
       this.user = null
       this.menuVisible = false
+      this.showLogin = true
     },
     loggedIn( args ) {
       if ( args.guest === false ) {
@@ -183,11 +178,12 @@ export default {
         }
         window.localStorage.setItem( 'userAccount', JSON.stringify( response.data.resource ) )
         this.loggedIn( args )
+        this.getStreams( )
       } )
       .catch( err => {
+        this.showLogin = true
         console.warn( err )
       } )
-    this.getStreams( )
   },
   computed: {
     filteredStreams( ) {

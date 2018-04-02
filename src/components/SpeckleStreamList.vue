@@ -1,34 +1,22 @@
 <template>
   <div id='stream-list'>
-    <md-button id='streamsButton'class="md-icon-button md-primary md-raised" @click="toggleStreamList" v-if="!showStreamList">
-      <md-icon>import_export</md-icon>
-      <md-tooltip>Streams</md-tooltip>
-    </md-button>
-    <md-drawer :md-active.sync="showStreamList" md-persistent="full" class='md-right md-dense'>
-      <md-toolbar class="md-transparent md-dense" md-elevation="0">
-        <span class="md-title">Streams</span>
-        <md-button class="md-icon-button md-list-action" v-on:click='toggleShowNewStream'>
-          <md-icon>add</md-icon>
-          <md-tooltip  md-delay="800">Add a stream to the viewer</md-tooltip>
-        </md-button>
-        <span class="md-toolbar-section-end">
-          <md-button class="md-icon-button" @click="toggleStreamList">
-            <md-icon>keyboard_arrow_right</md-icon>
-          </md-button>
-        </span>
-      </md-toolbar>
-      <md-list>
-        <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
-      </md-list>
-    </md-drawer>
+    <md-toolbar class="md-transparent md-dense" md-elevation="0">
+      <span class="md-title">Streams</span>
+      <md-button class="md-icon-button md-list-action" v-on:click='toggleShowNewStream'>
+        <md-icon>add</md-icon>
+        <md-tooltip md-delay="800">Add a stream to the viewer</md-tooltip>
+      </md-button>
+    </md-toolbar>
+    <md-list>
+      <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
+    </md-list>
     <speckle-new-stream-dialog v-on:close='showNewStreamDialog = false' v-if='showNewStreamDialog'></speckle-new-stream-dialog>
   </div>
 </template>
-
 <script>
-import SpeckleReceiver            from './SpeckleReceiver.vue'
-import SpeckleNewStreamDialog     from './SpeckleNewStreamDialog.vue'
-import NewReceiver                from './NewReceiver.vue'
+import SpeckleReceiver from './SpeckleReceiver.vue'
+import SpeckleNewStreamDialog from './SpeckleNewStreamDialog.vue'
+import NewReceiver from './NewReceiver.vue'
 
 export default {
   name: 'SpeckleStreamList',
@@ -38,49 +26,51 @@ export default {
     SpeckleNewStreamDialog
   },
   computed: {
-    receivers() {
+    receivers( ) {
       return this.$store.getters.allReceivers
     }
   },
-  data() {
+  data( ) {
     return {
       showStreamList: true,
       showNewStreamDialog: false
     }
   },
   methods: {
-    dialogClosed() {
+    dialogClosed( ) {
 
     },
-    toggleStreamList() {
-      this.showStreamList = ! this.showStreamList
+    toggleStreamList( ) {
+      this.showStreamList = !this.showStreamList
     },
-    toggleShowNewStream() {
-      this.showNewStreamDialog = ! this.showNewStreamDialog
+    toggleShowNewStream( ) {
+      this.showNewStreamDialog = !this.showNewStreamDialog
     },
-    dropReceiver(streamId){
-      console.log('Dropping receiver:', streamId)
+    dropReceiver( streamId ) {
+      console.log( 'Dropping receiver:', streamId )
       this.$store.commit( 'DROP_RECEIVER', { streamId } )
-      bus.$emit('renderer-drop-stream', streamId)
-      bus.$emit('renderer-update')
+      bus.$emit( 'renderer-drop-stream', streamId )
+      bus.$emit( 'renderer-update' )
     }
   },
-  created() {
-    bus.$on('showstreamadd', () => {
+  created( ) {
+    bus.$on( 'showstreamadd', ( ) => {
       this.showNewStreamDialgue = true
-    })
+    } )
   }
 }
-</script>
 
+</script>
 <style scoped>
 .md-drawer {
-  width:auto;
+  width: auto;
 }
 
-#streamsButton{
-  float:right;
+#streamsButton {
+  float: right;
 }
+
+
 /*
 #stream-list-cover{
 position: fixed;
@@ -122,6 +112,6 @@ box-sizing: border-box;
 }
  */
 
-#stream-list div {
-}
+#stream-list div {}
+
 </style>

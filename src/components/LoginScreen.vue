@@ -1,6 +1,6 @@
 <template>
   <div class="login-screen">
-    <md-card md-with-hover class="login-card">
+    <md-card class="login-card md-elevation-0">
       <md-card-content>
         <div style='text-align:center'><img :src='logoUrl' style="max-width:50px;"></div>
         <md-field>
@@ -12,16 +12,15 @@
           <md-input type='password' v-model='password'></md-input>
         </md-field>
         <md-button class='md-primary md-raised' @click.native='login'>Login</md-button>
+        <md-button class='md-accent md-raised' @click.native='guestLogin' v-if='allowGuestLogin'>
+          Continue as guest
+          <md-tooltip>You will not be allowed to comment or edit.</md-tooltip>
+        </md-button>
         <div v-show='loginError' class='login-error'>
           <br>
           <md-icon>warning</md-icon>
           <br> Error logging in. Wrong password/email combo.
         </div>
-        <br>
-        <md-button class='md-accent md-raised' @click.native='guestLogin' v-if='allowGuestLogin'>
-          Continue as guest
-          <md-tooltip>You will not be allowed to comment or edit.</md-tooltip>
-        </md-button>
       </md-card-content>
     </md-card>
   </div>
@@ -71,12 +70,12 @@ export default {
 <style scoped>
 .login-card {
   width: 400px;
-  text-align: center;
+  /*text-align: center;*/
   pointer-events: auto;
 }
 
 .login-screen {
-  display: flex;
+/*  display: flex;
   align-items: center;
   justify-content: center;
   position: fixed;
@@ -86,7 +85,7 @@ export default {
   height: 100%;
   z-index: 1000;
   pointer-events: none;
-  background-color: rgba(0, 0, 255, 0.5)
+  background-color: rgba(0, 0, 255, 0.5)*/
 }
 
 .login-error {
