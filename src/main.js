@@ -32,6 +32,9 @@ if ( window.location.href.includes( '?' ) ) {
     Store.state.server = query.server + '/api/v1'
   else
     Store.state.server = window.location.origin + '/api/v1'
+
+  if( query.streams )
+    Store.state.initStreams = query.streams.split(',')
 } else {
   Store.state.server = window.location.origin + '/api/v1'
 }

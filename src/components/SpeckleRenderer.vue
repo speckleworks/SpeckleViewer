@@ -79,15 +79,15 @@ export default {
         if ( !sceneObj ) {
           this.$http.get( this.$store.state.server + '/objects/' + myObject._id + '?omit=base64,rawData' )
             .then( result => {
-              if ( !Converter.hasOwnProperty( result.data.speckleObject.type ) ) throw new Error( 'Cannot convert this object: ' + result.data.speckleObject.type + ',' + myObject._id )
-                Converter[ result.data.speckleObject.type ]( { obj: result.data.speckleObject, layer: layer, camera: this.camera }, ( err, threeObj ) => {
-                  threeObj.hash = result.data.speckleObject.hash
+              if ( !Converter.hasOwnProperty( result.data.resource.type ) ) throw new Error( 'Cannot convert this object: ' + result.data.resource.type + ',' + myObject._id )
+                Converter[ result.data.resource.type ]( { obj: result.data.resource, layer: layer, camera: this.camera }, ( err, threeObj ) => {
+                  threeObj.hash = result.data.resource.hash
                   threeObj.streamId = myObject.streamId
                   threeObj.layerGuid = myObject.layerGuid
                   threeObj.visible = layer.visible
                   threeObj.isCurrent = true
-                  threeObj.spkProperties = result.data.speckleObject.properties
-                  threeObj.name = myObject.streamId + '::' + result.data.speckleObject._id
+                  threeObj.spkProperties = result.data.resource.properties
+                  threeObj.name = myObject.streamId + '::' + result.data.resource._id
                   threeObj._id = myObject._id
                   this.scene.add( threeObj )
                 } )
@@ -111,8 +111,6 @@ export default {
             myObject.isCurrent = false
             myObject.visible = false
           }
-          if ( this.scene.children.length > 4242 ) // arbitrary number, needs battle testing 
-            this.scene.remove( myObject )
         }
       }
       this.updateInProgress = false

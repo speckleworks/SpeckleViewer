@@ -70,7 +70,7 @@ export default class SpeckleReceiver extends EventEmitter {
   setupClient( cb ) {
     axios.post( this.baseUrl + '/clients', { client: { documentName: 'Online Viewer' } }, { headers: { 'Auth': this.auth } } )
       .then( response => {
-        this.clientId = response.data.clientId
+        this.clientId = response.data.resource._id
         cb( )
       } )
       .catch( err => {
@@ -93,7 +93,7 @@ export default class SpeckleReceiver extends EventEmitter {
     axios.get( this.baseUrl + '/streams/' + this.streamId, { headers: { 'Auth': this.auth } } )
       .then( response => {
         console.log( response.data )
-        this.stream = response.data.stream
+        this.stream = response.data.resource
         cb( this.stream ) 
       } )
       .catch( err => {
@@ -104,37 +104,13 @@ export default class SpeckleReceiver extends EventEmitter {
   getStreamNameAndLayers( cb ) {
     // TODO: Promise.all()
     let responseName = {}
-    axios.get( this.baseUrl + '/streams/' + this.streamId + '/name', { headers: { 'Auth': this.auth } } )
+    axios.get( this.baseUrl + '/streams/' + this.streamId + '?fields=name,layers', { headers: { 'Auth': this.auth } } )
     .then( response => {
-      responseName = response
-      return axios.get( this.baseUrl + '/streams/' + this.streamId + '/layers', { headers: { 'Auth': this.auth } } )
-    })
-    .then( response => {
-      cb( responseName.data.name, response.data.layers )
+      cb( responseName.data.resource.name, response.data.resource.layers )
     })
     .catch( err => {
       console.error( err )
     }) 
-  }
-
-  getStreamName( ) {
-    axios.get( this.baseUrl + '/streams/' + this.streamId + '/name', { headers: { 'Auth': this.auth } } )
-    .then( response => {
-
-    })
-    .catch( err => {
-      console.log( err )
-    })
-  }
-
-  getStreamLayers( ) {
-    axios.get( this.baseUrl + '/streams/' + this.streamId + '/layers', { headers: { 'Auth': this.auth } } )
-    .then( response => {
-
-    })
-    .catch( err => {
-
-    })
   }
 
   getObject( objectId ) {

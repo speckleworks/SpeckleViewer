@@ -12,6 +12,7 @@ export default new Vuex.Store( {
     auth: false,
     token: null,
     mobile: false,
+    initStreams: [ ],
     receivers: [ ],
     comments: [ ],
     user: {},
@@ -38,9 +39,9 @@ export default new Vuex.Store( {
     allObjects: state => {
       return state.receivers.reduce( ( p, c ) => { return [ ...p, ...c.objects ] }, [ ] )
     },
-    objectsByLayer: state => (layerGuid) => {
+    objectsByLayer: state => ( layerGuid ) => {
       let objects = state.receivers.reduce( ( p, c ) => { return [ ...p, ...c.objects ] }, [ ] )
-      return objects.filter(object => object.layerGuid == layerGuid)
+      return objects.filter( object => object.layerGuid == layerGuid )
     },
     allLayerMaterials: ( state ) => {
       let arr = [ ]
@@ -82,7 +83,7 @@ export default new Vuex.Store( {
     },
 
     DROP_RECEIVER( state, { streamId } ) {
-      state.receivers.splice(state.receivers.findIndex( rec => rec.streamId === streamId ),1)
+      state.receivers.splice( state.receivers.findIndex( rec => rec.streamId === streamId ), 1 )
     },
 
     UPDATE_LAYER_PROPS( state, { payload } ) {
@@ -108,7 +109,7 @@ export default new Vuex.Store( {
           layerGuid: payload.layers.find( layer => {
             return index >= layer.startIndex && index < layer.startIndex + layer.objectCount
           } ).guid,
-          _id: obj
+          _id: obj._id
         }
       } )
       target.layers = payload.layers.map( layer => {

@@ -50,30 +50,24 @@ export default {
   methods: {
     createReceivers( ) {
       if ( this.receiversCreated ) return
-      // let streamIds = window.location.href.split( '/' )[ window.location.href.split( '/' ).length - 1 ].split( ',' )
-      // streamIds[ 0 ] = streamIds[ 0 ].substr( 1 )
-
-      // // make sure we ignore 'dev'
-      // streamIds = streamIds.filter( ( obj, index, self ) => { return self.indexOf( obj ) === index && obj !== 'dev' } )
-
-      // console.log( 'streamIds:', streamIds )
-
-      // if ( streamIds.length == 0 || streamIds[ 0 ] === '' )
-      //   return console.warn( 'no streams provided in url.' )
-
-      // let receivers = streamIds.map( id => {
-      //   return {
-      //     serverUrl: this.$store.state.server,
-      //     streamId: id,
-      //     token: this.$store.getters.user.apitoken,
-      //     objects: [ ],
-      //     layers: [ ],
-      //     history: [ ],
-      //     name: 'Loading ' + id + '...',
-      //     layerMaterials: [ ]
-      //   }
-      // } )
-      // this.$store.commit( 'ADD_RECEIVERS', { receivers } )
+      if ( this.$store.state.initStreams.length != 0 ) {
+        let receivers = this.$store.state.initStreams
+          .filter( id => id != "" )
+          .map( id => {
+            return {
+              serverUrl: this.$store.state.server,
+              streamId: id,
+              token: this.$store.getters.user.apitoken,
+              objects: [ ],
+              layers: [ ],
+              history: [ ],
+              name: 'Loading ' + id + '...',
+              layerMaterials: [ ]
+            }
+          } )
+        console.log( receivers )
+        this.$store.commit( 'ADD_RECEIVERS', { receivers } )
+      }
     },
     addReceiver( streamId ) {
       console.log( 'Adding a receiver', streamId )
