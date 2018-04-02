@@ -4,6 +4,7 @@
   "description": "A Speckle Threejs viewer",
   "author": "hello@speckle.works",
   "private": false,
+  "licence":"MIT",
   "main": "src/main.js",
   "files": [
     "dist",
