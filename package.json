@@ -1,11 +1,14 @@
 {
   "name": "@speckle/speckle-viewer",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A Speckle Threejs viewer",
   "author": "hello@speckle.works",
   "private": false,
   "main": "src/main.js",
-  "files": ["dist", "index.html"],
+  "files": [
+    "dist",
+    "index.html"
+  ],
   "scripts": {
     "dev": "cross-env NODE_ENV=development webpack-dev-server --open --hot",
     "build": "cross-env NODE_ENV=production webpack --progress --hide-modules"
