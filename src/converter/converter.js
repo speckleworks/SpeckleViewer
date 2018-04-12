@@ -93,6 +93,43 @@ export default {
     arc.hash = args.obj.hash
     cb( null, arc )
   },
+  Extrusion ( args, cb ) {
+    console.log(args.obj)
+    let type = args.obj.profile.type
+    console.log('Type:',type)
+    let pts = []
+    if (type == 'Polyline'){
+      let values = args.obj.profile.value
+      for(var i = 0, l = values.length; i < l; ++i){
+        if (i%3 === 0){
+          // pts.push([values[i],values[i+1],values[i+2]])
+          pts.push(new THREE.Vector2(values[i],values[i+1]))
+        }
+      }
+    }
+    if (type == 'Curve'){
+      let values = args.obj.profile.displayValue.value
+      for(var i = 0, l = values.length; i < l; ++i){
+        if (i%3 === 0){
+          pts.push([values[i],values[i+1],values[i+2]])
+        }
+      }
+    }
+    let shape = new THREE.Shape(pts)
+    let path = new THREE.LineCurve(args.obj.pathStart, args.obj.pathEnd)
+    let extrudePath = new THREE.CurvePath()
+    extrudePath.add(path)
+    let extrudeSettings = {
+      amount: args.obj.length,
+      bevelEnabled: false,
+    }
+    let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
+    let extrusion = new THREE.Mesh(geometry, args.layer.threeMeshMaterial)
+    extrusion.hash = args.obj.hash
+
+    console.log('extrusion:',extrusion)
+    cb ( null, extrusion )
+  },
   Box( args, cb ) {
     let width = args.obj.xSize.end - args.obj.xSize.start
     let height = args.obj.ySize.end - args.obj.ySize.start
@@ -104,8 +141,8 @@ export default {
     q.setFromUnitVectors( v1, v2 )
     let geometry = new THREE.BoxGeometry( width, height, depth )
     let box = new THREE.Mesh( geometry, args.layer.threeMeshMaterial )
-    box.geometry.applyMatrix( new THREE.Matrix4( ).makeRotationFromQuaternion( q ) );
-    box.geometry.applyMatrix( new THREE.Matrix4( ).makeTranslation( ...origin ) );
+    box.geometry.applyMatrix( new THREE.Matrix4( ).makeRotationFromQuaternion( q ) )
+    box.geometry.applyMatrix( new THREE.Matrix4( ).makeTranslation( ...origin ) )
     box.geometry.verticesNeedUpdate = true
     box.hash = args.obj.hash
     cb( null, box )
