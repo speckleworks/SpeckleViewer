@@ -63,7 +63,7 @@ export default {
     let startAngle = args.obj.startAngle
     let endAngle = args.obj.endAngle
     let v1 = new THREE.Vector3( 0, 0, 1 )
-    let v2 = new THREE.Vector3( ...args.obj.plane.Normal.value )
+    let v2 = new THREE.Vector3( ...args.obj.plane.normal.value )
     let q = new THREE.Quaternion( )
     q.setFromUnitVectors( v1, v2 )
     let curve = new THREE.EllipseCurve( 0, 0, radius, radius, startAngle, endAngle, false, 0 )
@@ -71,7 +71,7 @@ export default {
     let geometry = new THREE.Geometry( ).setFromPoints( points )
     let arc = new THREE.Line( geometry, args.layer.threeLineMaterial )
     arc.geometry.applyMatrix( new THREE.Matrix4( ).makeRotationFromQuaternion( q ) );
-    arc.geometry.applyMatrix( new THREE.Matrix4( ).makeTranslation( ...args.obj.plane.Origin.value ) );
+    arc.geometry.applyMatrix( new THREE.Matrix4( ).makeTranslation( ...args.obj.plane.origin.value ) );
     arc.hash = args.obj.hash
     cb( null, arc )
   },
@@ -94,9 +94,7 @@ export default {
     cb( null, arc )
   },
   Extrusion ( args, cb ) {
-    console.log(args.obj)
     let type = args.obj.profile.type
-    console.log('Type:',type)
     let pts = []
     if (type == 'Polyline'){
       let values = args.obj.profile.value
@@ -107,15 +105,51 @@ export default {
         }
       }
     }
-    if (type == 'Curve'){
+    else if (type == 'Arc'){
+      let values = args.obj.profile.value
+      console.log(args.obj.profile)
+      for(var i = 0, l = values.length; i < l; ++i){
+        if (i%3 === 0){
+          // pts.push([values[i],values[i+1],values[i+2]])
+          pts.push(new THREE.Vector2(values[i],values[i+1]))
+        }
+      }
+    }
+    else {
       let values = args.obj.profile.displayValue.value
       for(var i = 0, l = values.length; i < l; ++i){
         if (i%3 === 0){
-          pts.push([values[i],values[i+1],values[i+2]])
+          // pts.push([values[i],values[i+1],values[i+2]])
+          pts.push(new THREE.Vector2(values[i],values[i+1]))
         }
       }
     }
     let shape = new THREE.Shape(pts)
+    for (var i = 1; i < args.obj.profiles.length; i++){
+      let holeProfile = null
+      let holePts = []
+      if (args.obj.profiles[i].type == 'Arc'){
+        this.Arc( { obj: args.obj.profiles[i], layer: args.layer }, (err, arc) => {
+          holeProfile = arc
+        })
+      }
+      else if (args.obj.profiles[i].type == 'Polyline'){
+          this.Polyline( { obj: args.obj.profiles[i], layer: args.layer }, (err, polyline) => {
+          holeProfile = polyline
+        })
+      }
+      else {
+        console.log(args.obj.profiles[i])
+          this.Polyline( { obj: args.obj.profiles[i].displayValue, layer: args.layer }, (err, polyline) => {
+          holeProfile = polyline
+        })
+      }
+      holeProfile.geometry.vertices.forEach( function (vertex) {
+        holePts.push(new THREE.Vector2(vertex.x, vertex.y))
+      })
+      let holePath= new THREE.Path(holePts)
+      shape.holes.push(holePath)
+    }
     let path = new THREE.LineCurve(args.obj.pathStart, args.obj.pathEnd)
     let extrudePath = new THREE.CurvePath()
     extrudePath.add(path)
@@ -126,7 +160,6 @@ export default {
     let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
     let extrusion = new THREE.Mesh(geometry, args.layer.threeMeshMaterial)
     extrusion.hash = args.obj.hash
-
     console.log('extrusion:',extrusion)
     cb ( null, extrusion )
   },
