@@ -106,14 +106,13 @@ export default {
       }
     }
     else if (type == 'Arc'){
-      let values = args.obj.profile.value
-      console.log(args.obj.profile)
-      for(var i = 0, l = values.length; i < l; ++i){
-        if (i%3 === 0){
-          // pts.push([values[i],values[i+1],values[i+2]])
-          pts.push(new THREE.Vector2(values[i],values[i+1]))
-        }
-      }
+      this.Arc( { obj: args.obj.profile, layer: args.layer }, (err, arc) => {
+      let values = arc.geometry.vertices
+          for(var i = 0, l = values.length; i < l; ++i){
+            pts.push(new THREE.Vector2(values[i].x,values[i].y))
+          }
+      })
+      console.log('Points', pts)
     }
     else {
       let values = args.obj.profile.displayValue.value
@@ -134,13 +133,13 @@ export default {
         })
       }
       else if (args.obj.profiles[i].type == 'Polyline'){
-          this.Polyline( { obj: args.obj.profiles[i], layer: args.layer }, (err, polyline) => {
+        this.Polyline( { obj: args.obj.profiles[i], layer: args.layer }, (err, polyline) => {
           holeProfile = polyline
         })
       }
       else {
         console.log(args.obj.profiles[i])
-          this.Polyline( { obj: args.obj.profiles[i].displayValue, layer: args.layer }, (err, polyline) => {
+        this.Polyline( { obj: args.obj.profiles[i].displayValue, layer: args.layer }, (err, polyline) => {
           holeProfile = polyline
         })
       }
