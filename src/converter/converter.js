@@ -280,5 +280,14 @@ export default {
       if ( err ) return cb( err, null )
       return cb( null, obj )
     } )
+  },
+  Abstract( args, cb ) {
+    console.log('Soon™', args.obj.type)
+    console.log(args.obj)
+    let loader = new THREE.FontLoader()
+    loader.load('/src/assets/helvetiker_regular.typeface.json')
+    if (args.obj._type.includes('Dimension')){
+      let dim = args.obj.properties
+    }
   }
 }
