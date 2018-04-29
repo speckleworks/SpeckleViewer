@@ -18,13 +18,26 @@
               <md-icon>zoom_in</md-icon>
               <md-tooltip md-direction="top">Zoom to Selected</md-tooltip>
             </md-button>
+              <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'>
+              <md-icon>videocam</md-icon>
+              <md-tooltip md-direction="top">Set camera view</md-tooltip>
+            </md-button>
+            <md-field v-if=showViewSelect class='view-field'>
+              <label for='view'>View</label>
+              <md-select v-model="view" name="view" id="view">
+              <md-option value="top">Top</md-option>
+              <md-option value="front">Front</md-option>
+              <md-option value="right">Right</md-option>
+              <md-option value="3d">Perspective</md-option>
+            </md-select>
+            </md-field>
             <!-- <search-bar class="md-toolbar-section-start" :objects="searchobjects"></search-bar> -->
           </div>
           <div class="md-toolbar-section-end">
             <a href="https://speckle.works">
               <img src='https://speckle.works/img/logos/logo-xs.png' width="17"/>
               <md-tooltip md-direction="left">Speckle.Works!</md-tooltip>
-              </a>
+            </a>
           </div>
         </div>
       </md-app-toolbar>
@@ -57,7 +70,9 @@ export default {
     return {
       showSnackbar: false,
       showStreamList: false,
-      showAccounts: false
+      showAccounts: false,
+      showViewSelect: false,
+      view: '3d'
     }
   },
   methods: {
@@ -69,9 +84,9 @@ export default {
     },
     createReceivers( ) {
       if ( this.receiversCreated ) return
-      if ( this.$store.state.initStreams.length != 0 ) {
-        let receivers = this.$store.state.initStreams
-          .filter( id => id != "" )
+        if ( this.$store.state.initStreams.length != 0 ) {
+          let receivers = this.$store.state.initStreams
+            .filter( id => id != "" )
           .map( id => {
             return {
               serverUrl: this.$store.state.server,
@@ -84,9 +99,9 @@ export default {
               layerMaterials: [ ]
             }
           } )
-        console.log( receivers )
-        this.$store.commit( 'ADD_RECEIVERS', { receivers } )
-      }
+          console.log( receivers )
+          this.$store.commit( 'ADD_RECEIVERS', { receivers } )
+        }
     },
     addReceiver( streamId ) {
       console.log( 'Adding a receiver', streamId )
@@ -119,25 +134,25 @@ export default {
           }
         } )
       } )
-      .then( response => {
-        if ( response.status != 200 ) throw new Error( response )
-        let args = {
-          guest: false,
+        .then( response => {
+          if ( response.status != 200 ) throw new Error( response )
+            let args = {
+              guest: false,
           account: response.data
-        }
-        localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
-      } )
-      .catch( err => {
-        console.warn( err )
-      } )
+            }
+          localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
+        } )
+          .catch( err => {
+            console.warn( err )
+          } )
   },
   computed: {
     searchobjects( ) {
       let objects = this.$store.getters.allObjects
       if ( objects.length === 0 ) return [ ]
-      let objectIds = objects.map( ( obj ) => {
-        return obj.type + ' ' + obj._id
-      } )
+        let objectIds = objects.map( ( obj ) => {
+          return obj.type + ' ' + obj._id
+        } )
       return objectIds
     },
     isMobileView( ) {
@@ -158,7 +173,13 @@ export default {
   height: 100vh;
   border: 1px solid rgba(#000, .12);
 }
+.view-field {
+  width: auto;
+}
 
+.md-menu-content{
+  max-height:none;
+}
 #app {
   position: fixed;
   top: 0;
