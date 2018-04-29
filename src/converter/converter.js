@@ -131,7 +131,6 @@ export default {
       } )
     }
     else {
-      console.log('Non-arc:',args.obj)
       let values = args.obj.profile.displayValue.value
       for(var i = 0, l = values.length; i < l; ++i){
         if (i%3 === 0){
@@ -155,13 +154,11 @@ export default {
         })
       }
       else {
-        console.log(args.obj.profiles[i])
         this.Polyline( { obj: args.obj.profiles[i].displayValue, layer: args.layer }, (err, polyline) => {
           holeProfile = polyline
         })
       }
       holeProfile.geometry.applyMatrix(mInverse)
-      console.log('holeProfile:',holeProfile)
       holeProfile.geometry.vertices.forEach( function (vertex) {
         holePts.push(new THREE.Vector2(vertex.x, vertex.y))
       })
@@ -179,7 +176,6 @@ export default {
     geometry.applyMatrix(m)
     let extrusion = new THREE.Mesh(geometry, args.layer.threeMeshMaterial)
     extrusion.hash = args.obj.hash
-    console.log('extrusion:',extrusion)
     cb ( null, extrusion )
   },
   Box( args, cb ) {
@@ -201,8 +197,12 @@ export default {
   },
 
   Polyline( args, cb ) {
+    console.log(args.obj)
     let geometry = new THREE.Geometry( )
     if ( !args.obj.value ) return console.warn( 'Strange polyline.' )
+    if (args.obj.closed == true){
+      args.obj.value.push.apply(args.obj.value,args.obj.value.slice(0,3))
+    }
     for ( let i = 2; i < args.obj.value.length; i += 3 )
       geometry.vertices.push( new THREE.Vector3( args.obj.value[ i - 2 ], args.obj.value[ i - 1 ], args.obj.value[ i ] ) )
     let polyline = new THREE.Line( geometry, args.layer.threeLineMaterial )
