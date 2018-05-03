@@ -18,19 +18,6 @@
               <md-icon>zoom_in</md-icon>
               <md-tooltip md-direction="top">Zoom to Selected</md-tooltip>
             </md-button>
-              <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'>
-              <md-icon>videocam</md-icon>
-              <md-tooltip md-direction="top">Set camera view</md-tooltip>
-            </md-button>
-            <md-field v-if=showViewSelect class='view-field'>
-              <label for='view'>View</label>
-              <md-select v-model="view" name="view" id="view">
-              <md-option value="top">Top</md-option>
-              <md-option value="front">Front</md-option>
-              <md-option value="right">Right</md-option>
-              <md-option value="3d">Perspective</md-option>
-            </md-select>
-            </md-field>
             <!-- <search-bar class="md-toolbar-section-start" :objects="searchobjects"></search-bar> -->
           </div>
           <div class="md-toolbar-section-end">
