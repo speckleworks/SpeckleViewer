@@ -96,6 +96,7 @@ export default {
       expired: false,
       debounceCount: 0,
       senderId: null,
+      viewerSettings: {},
       controllers: []
     }
   },
@@ -134,7 +135,7 @@ export default {
 
     updateGlobal( ) {
       console.info( 'live update event' )
-      this.expired = true
+      this.viewerSettings.autoRefresh ? this.getAndSetStream() : this.expired = true
     },
 
     getAndSetStream( ) {
@@ -200,6 +201,7 @@ export default {
     }, 500  ),
   },
   mounted( ) {
+    this.viewerSettings = this.$store.getters.viewerSettings
     console.log( 'Stream receiver mounted for streamid: ' + this.spkreceiver.streamId )
     this.name = 'loading ' + this.spkreceiver.streamId
 

@@ -13,7 +13,7 @@ export default {
   name: 'Controller',
   props: ['controller'],
   components: {
-    vueSlider
+    //vueSlider
   },
   computed: {
     trimmedName: function(){
