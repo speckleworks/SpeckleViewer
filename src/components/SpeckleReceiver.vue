@@ -41,6 +41,16 @@
         </md-button>
       </md-subheader>
       <md-list-item v-show='historyExpanded' class='md-inset'>Soon™</md-list-item>
+      <md-subheader class='md-inset'>
+        Controllers
+        <md-button class='md-icon-button md-dense' @click.native='getControllers(spkreceiver.streamId); controllersExpanded = ! controllersExpanded'>
+          <md-icon>{{ controllersExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
+        </md-button>
+      </md-subheader>
+      <md-list-item class='md-inset' v-if='controllersExpanded && !controllers'>No controllers are broadcasting for this stream</md-list-item>
+      <md-list-item class='md-inset' v-if='controllersExpanded' v-for='controller in controllers' key='controller.guid'> 
+        <controller :controller='controller'></controller>
+      </md-list-item>
     </md-list>
   </div>
 </template>
@@ -48,6 +58,7 @@
 import ReceiverClient from '../receiver/ClientReceiver'
 import SpeckleReceiverLayer from './SpeckleReceiverLayer.vue'
 import SpeckleReceiverComments from './SpeckleReceiverComments.vue'
+import Controller from './Controller.vue'
 
 import Converter from '../converter/converter'
 import * as THREE from 'three'
@@ -57,7 +68,8 @@ export default {
   name: 'SpeckleReceiver',
   components: {
     SpeckleReceiverLayer,
-    SpeckleReceiverComments
+    SpeckleReceiverComments,
+    Controller
   },
   props: [ 'spkreceiver' ],
   computed: {
@@ -66,6 +78,9 @@ export default {
     },
     layers( ) {
       return this.spkreceiver.layers
+    },
+    sliders () {
+      return this.controllers.filter( c => c.InputType === 'Slider' )
     }
   },
   data( ) {
@@ -77,8 +92,30 @@ export default {
       layersExpanded: false,
       commentsExpanded: false,
       historyExpanded: false,
-      expired: false
+      controllersExpanded: false,
+      expired: false,
+      debounceCount: 0,
+      senderId: null,
+      controllers: []
     }
+  },
+  watch: {
+    'controllers':{
+      handler( values  ) {
+        // prevents init requests etc. 
+        if(this.debounceCount >= 5) { 
+          let args = {
+            controllers: this.controllers, 
+            layers: this.spkreceiver.layers,
+            client: this.mySpkReceiver, 
+            senderId: this.senderId 
+          }
+          this.sendComputeRequest( args  )
+        }
+        this.debounceCount++
+      },
+      deep: true
+    }  
   },
   methods: {
     receiverError( err ) {
@@ -104,6 +141,7 @@ export default {
       this.showProgressBar = true
       this.expired = false
       this.mySpkReceiver.getStream( stream => {
+        console.log(stream)
         let payload = { streamId: this.spkreceiver.streamId, name: stream.name, layers: stream.layers, objects: stream.objects }
         this.$store.commit( 'SET_RECEIVER_DATA', { payload } )
         this.showProgressBar = false
@@ -124,16 +162,42 @@ export default {
     },
 
     broadcastReceived( message ) {
-      console.log( message )
+      console.log( 'broadcastReceived message:', message )
       let parsedMessage = JSON.parse( message.args )
-      console.log( parsedMessage )
+      console.log( 'broadcastReceived parsedMessage:', parsedMessage )
       if ( parsedMessage.event != 'comment-added' ) return
       let payload = parsedMessage.comment
       this.$store.commit( 'ADD_COMMENT', { payload } )
     },
     dropStream( stream ) {
       this.$emit( 'drop', stream )
-    }
+    },
+    getControllers( stream ) {
+      console.log('Getting controllers for ' + stream)
+      this.mySpkReceiver.broadcast( { eventType: 'get-defintion-io'  }  )
+      setTimeout( this.finaliseIo, 1000  )
+    },
+    addControllers(wsMessage){
+      this.senderId = wsMessage.senderId
+      this.controllers = wsMessage.args.controllers
+    },
+    sendComputeRequest: _.debounce( args => {
+      console.log( 'sendComputeRequest args:', args  )
+      let requestParams = args.controllers.map( controller => { 
+        return {
+          guid: controller.guid,
+          value: controller.inputType != 'Point' ? controller.value : { X: controller.X, Y: controller.Y, Z: controller.Z  },
+          inputType: controller.inputType
+
+        }
+      } )
+      let message = { eventType: 'compute-request', requestParameters: requestParams  }
+
+      console.log( 'Sending computation request. requestParams:', requestParams  )
+
+      args.client.sendMessage( message,  args.senderId  ) 
+
+    }, 500  ),
   },
   mounted( ) {
     console.log( 'Stream receiver mounted for streamid: ' + this.spkreceiver.streamId )
@@ -149,6 +213,7 @@ export default {
     this.mySpkReceiver.on( 'ready', this.receiverReady )
     this.mySpkReceiver.on( 'update-meta', this.updateMeta )
     this.mySpkReceiver.on( 'update-global', this.updateGlobal )
+    this.mySpkReceiver.on( 'get-def-io-response', this.addControllers )
   }
 }
 
