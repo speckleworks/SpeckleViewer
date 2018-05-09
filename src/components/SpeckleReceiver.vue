@@ -47,7 +47,7 @@
           <md-icon>{{ controllersExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
         </md-button>
       </md-subheader>
-      <md-list-item class='md-inset' v-if='controllersExpanded && !controllers'>No controllers are broadcasting for this stream</md-list-item>
+      <md-list-item class='md-inset' v-if='controllersExpanded && (!controllers || !controllers.length)'>No controllers are broadcasting for this stream</md-list-item>
       <md-list-item class='md-inset' v-if='controllersExpanded' v-for='controller in controllers' key='controller.guid'> 
         <controller :controller='controller'></controller>
       </md-list-item>
@@ -111,6 +111,7 @@ export default {
             client: this.mySpkReceiver, 
             senderId: this.senderId 
           }
+          this.showProgressBar = true
           this.sendComputeRequest( args  )
         }
         this.debounceCount++
@@ -130,7 +131,7 @@ export default {
 
       this.$store.commit( 'INIT_RECEIVER_DATA', { payload } )
 
-      bus.$emit( 'renderer-update' )
+      bus.$emit( 'renderer-load-stream' )
     },
 
     updateGlobal( ) {
@@ -176,7 +177,6 @@ export default {
     getControllers( stream ) {
       console.log('Getting controllers for ' + stream)
       this.mySpkReceiver.broadcast( { eventType: 'get-defintion-io'  }  )
-      setTimeout( this.finaliseIo, 1000  )
     },
     addControllers(wsMessage){
       this.senderId = wsMessage.senderId
@@ -193,12 +193,10 @@ export default {
         }
       } )
       let message = { eventType: 'compute-request', requestParameters: requestParams  }
-
       console.log( 'Sending computation request. requestParams:', requestParams  )
-
       args.client.sendMessage( message,  args.senderId  ) 
 
-    }, 500  ),
+    }, 500 ),
   },
   mounted( ) {
     this.viewerSettings = this.$store.getters.viewerSettings
