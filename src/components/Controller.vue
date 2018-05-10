@@ -1,9 +1,15 @@
 <template>
-  <div class='speckle-input md-layout md-alignment-center-left'>
-    <!-- <vue-slider ref='slider' :interval='0.01' :dot-size='24' :width='200' :min="min" :max="max" v-model='controller.value'></vue-slider> -->
-    <div class='md-layout-item md-size-5'>{{trimmedName}}</div>
-    <div class='md-layout-item slider-wrapper'><input type="range" :min="min" :max="max" step='0.01' class='slider' v-model.number="controller.value"></div>
-    <div class='md-layout-item md-size-10'>{{controller.value}}</div> 
+  
+  <div class='speckle-input'>
+    <div class='controller-wrapper'>
+      <div class='md-subheading'>{{trimmedName}}: {{controller.value}}</div>
+    <div class='md-layout md-alignment-center-left'>
+      <!-- <vue-slider ref='slider' :interval='0.01' :dot-size='24' :width='200' :min="min" :max="max" v-model='controller.value'></vue-slider> -->
+      <div class='md-layout-item md-size-5 md-caption'>{{min}}</div>
+      <div class='md-layout-item slider-wrapper md-caption'><input type="range" :min="min" :max="max" step='0.01' class='slider' v-model.number="controller.value"></div>
+      <div class='md-layout-item md-size-10 md-caption'>{{max}}</div> 
+    </div>
+    </div>
   </div>
 </template>
 
@@ -45,5 +51,9 @@ export default {
 }
 .slider{
   width:100%
+}
+.controller-wrapper{
+  padding-top:5px;
+  padding-bottom:5px;
 }
 </style>
