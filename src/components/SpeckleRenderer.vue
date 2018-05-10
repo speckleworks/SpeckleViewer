@@ -54,7 +54,8 @@ export default {
       showInfoBox: false,
       expandInfoBox: false,
       isRotatingStuff: false,
-      enableDo: false
+      enableDo: false,
+      isInitLoad: false
     }
   },
   watch: {
@@ -114,8 +115,15 @@ export default {
           }
         }
       }
+      if (this.isInitLoad) {
+        console.log('zooming extents')
+        this.zoomExtents
+        this.isInitLoad = false
+      }
+      else {
+        console.log('Not init load')
+      }   
       this.updateInProgress = false
-      this.zoomExtents( )
     },
     render( ) {
       TWEEN.update( )
@@ -312,6 +320,10 @@ export default {
         if ( this.x === where.target[ 0 ] )
           console.log( 'camera finished stuff' )
       } ).easing( TWEEN.Easing.Quadratic.InOut ).start( )
+    },
+    loadStream () {
+      this.isInitLoad = true
+      this.update()
     }
   },
   mounted( ) {
@@ -373,6 +385,7 @@ export default {
 
     bus.$on( 'renderer-update', debounce( this.update, 300 ) )
     bus.$on( 'renderer-setview', this.setCamera )
+    bus.$on( 'renderer-load-stream', this.loadStream )
     bus.$on( 'zext', this.zoomExtents )
     bus.$on( 'renderer-layer-update-colors', args => {
       //set colorsNeedUpdate flag to true on all geoms in args.layerguid and args.streamid
