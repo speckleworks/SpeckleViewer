@@ -1,5 +1,19 @@
 <template>
   <div id="app">
+      <div>
+        <md-dialog :md-active.sync="showSettings">
+          <md-dialog-title>Settings</md-dialog-title>
+          <md-list class='md-inset'>
+                <md-subheader>Global settings for the Speckle Viewer</md-subheader>
+                <md-list-item>
+                  <md-switch class='md-primary' v-model="viewerSettings.autoRefresh"> Automatic refresh on Stream update?</md-switch>
+                </md-list-item>
+          </md-list>
+          <md-dialog-actions>
+            <md-button class="md-primary" @click="showSettings=false; saveSettings(viewerSettings)">Save</md-button>
+          </md-dialog-actions>
+        </md-dialog>
+      </div>
     <md-app>
       <md-app-toolbar class="md-primary md-dense" style='z-index: 10'>
         <div class="md-toolbar-row">
@@ -18,13 +32,29 @@
               <md-icon>zoom_in</md-icon>
               <md-tooltip md-direction="top">Zoom to Selected</md-tooltip>
             </md-button>
+            <!-- <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'> -->
+            <!--   <md-icon>videocam</md-icon> -->
+            <!--   <md-tooltip md-direction="top">Set camera view</md-tooltip> -->
+            <!-- </md-button> -->
+            <!-- <md-field v-if=showViewSelect class='view-field'> -->
+            <!--   <label for='view'>View</label> -->
+            <!--   <md-select v-model="view" name="view" id="view"> -->
+            <!--     <md-option value="top">Top</md-option> -->
+            <!--     <md-option value="front">Front</md-option> -->
+            <!--     <md-option value="right">Right</md-option> -->
+            <!--     <md-option value="3d">Perspective</md-option> -->
+            <!--   </md-select> -->
+            <!-- </md-field> -->
             <!-- <search-bar class="md-toolbar-section-start" :objects="searchobjects"></search-bar> -->
           </div>
           <div class="md-toolbar-section-end">
+            <md-button class='md-icon-button' @click='showSettings =! showSettings'>
+              <md-icon>settings</md-icon>
+            </md-button>
             <a href="https://speckle.works">
               <img src='https://speckle.works/img/logos/logo-xs.png' width="17"/>
               <md-tooltip md-direction="left">Speckle.Works!</md-tooltip>
-              </a>
+            </a>
           </div>
         </div>
       </md-app-toolbar>
@@ -57,7 +87,11 @@ export default {
     return {
       showSnackbar: false,
       showStreamList: false,
-      showAccounts: false
+      showAccounts: false,
+      showViewSelect: false,
+      showSettings: false,
+      view: '3d',
+      viewerSettings: {}
     }
   },
   methods: {
@@ -104,6 +138,10 @@ export default {
       }
       this.$store.commit( 'ADD_RECEIVER', { receiver } )
     },
+    saveSettings (settings) {
+      window.localStorage.setItem('viewerSettings', JSON.stringify(settings))
+      this.$store.commit( 'SET_VIEWER_SETTINGS', { settings } )
+    }
   },
   created( ) {
     this.createReceivers( )
@@ -130,6 +168,10 @@ export default {
       .catch( err => {
         console.warn( err )
       } )
+    if (window.localStorage.getItem('viewerSettings') !== null ) {
+      this.$store.commit('SET_VIEWER_SETTINGS', {settings: JSON.parse(window.localStorage.getItem('viewerSettings'))})
+    }
+    this.viewerSettings = this.$store.getters.viewerSettings
   },
   computed: {
     searchobjects( ) {
@@ -158,7 +200,13 @@ export default {
   height: 100vh;
   border: 1px solid rgba(#000, .12);
 }
+.view-field {
+  width: auto;
+}
 
+.md-menu-content{
+  max-height:none;
+}
 #app {
   position: fixed;
   top: 0;

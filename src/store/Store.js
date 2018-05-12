@@ -16,7 +16,8 @@ export default new Vuex.Store( {
     receivers: [ ],
     comments: [ ],
     user: {},
-    jwtToken: ''
+    jwtToken: '',
+    viewerSettings: {},
   },
   getters: {
     isMobile: state => state.mobile,
@@ -52,10 +53,14 @@ export default new Vuex.Store( {
       } )
       return arr
       // return arr.concat.apply( [ ], arr )
-    }
+    },
+    viewerSettings: (state) => state.viewerSettings
   },
   actions: {},
   mutations: {
+    SET_VIEWER_SETTINGS( state, { settings } ) {
+      state.viewerSettings = settings
+    },
     MOBILE_VIEW( state ) {
       state.mobile = true
     },
@@ -175,7 +180,7 @@ export default new Vuex.Store( {
           layerGuid: payload.layers.find( layer => {
             return index >= layer.startIndex && index < layer.startIndex + layer.objectCount
           } ).guid,
-          _id: obj
+          _id: obj._id
         }
       } )
     }
