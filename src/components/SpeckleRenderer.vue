@@ -54,7 +54,6 @@ export default {
       showInfoBox: false,
       expandInfoBox: false,
       isRotatingStuff: false,
-      enableDo: false,
       isInitLoad: false
     }
   },
@@ -68,16 +67,47 @@ export default {
     }
   },
   methods: {
+    loadStream( ) {
+      this.update( )
+        .then( ( ) => {
+          this.zoomExtents( )
+        } )
+    },
     update( ) {
-      if ( this.updateInProgress ) return console.warn( 'Scene update was already in progress, cancelling.' )
-      this.updateInProgress = true
-      for ( let myObject of this.allObjects ) {
+      return new Promise( ( resolve, reject ) => {
+        // hides the objects that are no longer in any stream's object list
+        for ( let myObject of this.scene.children ) {
+          if ( myObject.hasOwnProperty( '_id' ) ) {
+            let found = this.allObjects.find( o => { return o._id === myObject._id && o.streamId === myObject.streamId } )
+            if ( !found ) {
+              myObject.isCurrent = false
+              myObject.visible = false
+            }
+          }
+        }
 
-        let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
+        // creates a list of objects to request from the server and makes the previously requested ones visible
+        let thingsToReq = [ ]
+        for ( let myObject of this.allObjects ) {
+          let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
+          if ( !sceneObj ) {
+            let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
+            thingsToReq.push( { object: myObject, layer: layer } )
+          } else {
+            // makes things visible
+            if ( sceneObj.visible === false ) {
+              sceneObj.visible = true
+              sceneObj.isCurrent = true
+              sceneObj.spkProperties = myObject.properties
+            }
+          }
+        }
 
-        let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-
-        if ( !sceneObj ) {
+        //
+        let totalCount = 0
+        for ( let pair of thingsToReq ) {
+          let myObject = pair.object
+          let layer = pair.layer
           this.$http.get( this.$store.state.server + '/objects/' + myObject._id + '?omit=base64,rawData' )
             .then( result => {
               if ( !Converter.hasOwnProperty( result.data.resource.type ) )
@@ -92,38 +122,14 @@ export default {
                 threeObj.name = myObject.streamId + '::' + result.data.resource._id
                 threeObj._id = myObject._id
                 this.scene.add( threeObj )
+
+                if ( ++totalCount == thingsToReq.length - 1 ) {
+                  return resolve( )
+                }
               } )
             } )
-            .catch( err => {
-              // console.error( err )
-            } )
-        } else {
-          if ( sceneObj.visible === false ) {
-            sceneObj.visible = true
-            sceneObj.isCurrent = true
-            sceneObj.spkProperties = myObject.properties
-          }
         }
-      }
-
-      for ( let myObject of this.scene.children ) {
-        if ( myObject.hasOwnProperty( '_id' ) ) {
-          let found = this.allObjects.find( o => { return o._id === myObject._id && o.streamId === myObject.streamId } )
-          if ( !found ) {
-            myObject.isCurrent = false
-            myObject.visible = false
-          }
-        }
-      }
-      if (this.isInitLoad) {
-        console.log('zooming extents')
-        this.zoomExtents
-        this.isInitLoad = false
-      }
-      else {
-        console.log('Not init load')
-      }   
-      this.updateInProgress = false
+      } )
     },
     render( ) {
       TWEEN.update( )
@@ -320,10 +326,6 @@ export default {
         if ( this.x === where.target[ 0 ] )
           console.log( 'camera finished stuff' )
       } ).easing( TWEEN.Easing.Quadratic.InOut ).start( )
-    },
-    loadStream () {
-      this.isInitLoad = true
-      this.update()
     }
   },
   mounted( ) {
@@ -387,13 +389,6 @@ export default {
     bus.$on( 'renderer-setview', this.setCamera )
     bus.$on( 'renderer-load-stream', this.loadStream )
     bus.$on( 'zext', this.zoomExtents )
-    bus.$on( 'renderer-layer-update-colors', args => {
-      //set colorsNeedUpdate flag to true on all geoms in args.layerguid and args.streamid
-    } )
-
-    bus.$on( 'renderer-toggle-do', ( ) => {
-      // TODO
-    } )
 
     bus.$on( 'renderer-pop', ( ) => {
       console.log( "POP" )
