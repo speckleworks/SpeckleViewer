@@ -54,7 +54,6 @@ export default {
       showInfoBox: false,
       expandInfoBox: false,
       isRotatingStuff: false,
-      enableDo: false,
       isInitLoad: false
     }
   },
