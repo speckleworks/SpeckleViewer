@@ -6,17 +6,20 @@ function argbToRGB( color ) {
 }
 
 export default {
+
   Point( args, cb ) {
     let geometry = new THREE.Geometry( )
     geometry.vertices.push( new THREE.Vector3( ...args.obj.value ) )
     let point = new THREE.Points( geometry, args.layer.threePointMaterial )
     cb( null, point )
   },
+
   Vector( args, cb ) {
     let v = new THREE.Vector3( ...args.obj.value )
     //can't render this, vectors do not have origin point
     console.warn( 'TODO', args.obj.type )
   },
+
   Plane( args, cb ) {
     //make planeSize a setting in the viewer
     let planeSize = 20
@@ -31,17 +34,21 @@ export default {
     plane.hash = args.obj.hash
     cb( null, plane )
   },
+
   Line( args, cb ) {
     let geometry = new THREE.Geometry( )
-    geometry.vertices.push( new THREE.Vector3( args.obj.start.value[ 0 ], args.obj.start.value[ 1 ], args.obj.start.value[ 2 ] ) )
-    geometry.vertices.push( new THREE.Vector3( args.obj.end.value[ 0 ], args.obj.end.value[ 1 ], args.obj.end.value[ 2 ] ) )
+    console.log( args )
+    geometry.vertices.push( new THREE.Vector3( args.obj.value[ 0 ], args.obj.value[ 1 ], args.obj.value[ 2 ] ) )
+    geometry.vertices.push( new THREE.Vector3( args.obj.value[ 3 ], args.obj.value[ 4 ], args.obj.value[ 5 ] ) )
     let line = new THREE.Line( geometry, args.layer.threeLineMaterial )
     line.hash = args.obj.hash
     cb( null, line )
   },
+
   Rectangle( obj, cb ) {
     console.warn( 'TODO', args.obj.type )
   },
+
   Circle( args, cb ) {
     let origin = args.obj.center.value
     let radius = args.obj.radius
@@ -58,6 +65,7 @@ export default {
     circle.hash = args.obj.hash
     cb( null, circle )
   },
+
   Arc( args, cb ) {
     let radius = args.obj.radius
     let startAngle = args.obj.startAngle
@@ -75,6 +83,7 @@ export default {
     arc.hash = args.obj.hash
     cb( null, arc )
   },
+
   Ellipse( args, cb ) {
     let xRadius = args.obj.firstRadius
     let yRadius = args.obj.secondRadius
@@ -93,91 +102,57 @@ export default {
     arc.hash = args.obj.hash
     cb( null, arc )
   },
-  Extrusion ( args, cb ) {
-    let m = new THREE.Matrix4()
-    let mInverse = new THREE.Matrix4()
-    let xform = Object.values(args.obj.profileTransformation)
-    m.fromArray(xform.slice(0,16))
-    m.transpose()
-    mInverse = m.clone()
-    mInverse.getInverse(m)
+
+  Extrusion( args, cb ) {
+    let m = new THREE.Matrix4( )
+    let mInverse = new THREE.Matrix4( )
+    let xform = Object.values( args.obj.profileTransformation )
+    m.fromArray( xform.slice( 0, 16 ) )
+    m.transpose( )
+    mInverse = m.clone( )
+    mInverse.getInverse( m )
     let type = args.obj.profile.type
-    let pts = []
-    if (type == 'Polyline'){
-      this.Polyline( { obj: args.obj.profile, layer: args.layer }, (err,poly) => {
-        poly.geometry.applyMatrix(mInverse)
-        let values = poly.geometry.vertices
-        for(var i = 0, l = values.length; i < l; ++i){
-          pts.push(new THREE.Vector2(values[i].x,values[i].y))
-        }
-      })
-    }
-    else if (type == 'Arc'){
-      this.Arc( { obj: args.obj.profile, layer: args.layer }, (err, arc) => {
-        arc.geometry.applyMatrix(mInverse)
-        let values = arc.geometry.vertices
-        for(var i = 0, l = values.length; i < l; ++i){
-          pts.push(new THREE.Vector2(values[i].x,values[i].y))
-        }
-      })
-    }
-    else if (type == 'Curve'){
-      this.Polyline( { obj: args.obj.profile.displayValue, layer: args.layer }, ( err, poly ) => {
-        poly.geometry.applyMatrix(mInverse)
-        let values = poly.geometry.vertices
-        for(var i = 0, l = values.length; i < l; ++i){
-          pts.push(new THREE.Vector2(values[i].x,values[i].y))
-        }
-      } )
-    }
-    else {
-      let values = args.obj.profile.displayValue.value
-      for(var i = 0, l = values.length; i < l; ++i){
-        if (i%3 === 0){
-          // pts.push([values[i],values[i+1],values[i+2]])
-          pts.push(new THREE.Vector2(values[i],values[i+1]))
-        }
+    let pts = [ ]
+
+    this[ args.obj.profile.type ]( { obj: args.obj.profile, layer: args.layer }, ( err, obj ) => {
+      obj.geometry.applyMatrix( mInverse )
+      let values = obj.geometry.vertices
+      for ( var i = 0, l = values.length; i < l; ++i ) {
+        pts.push( new THREE.Vector2( values[ i ].x, values[ i ].y ) )
       }
-    }
-    let shape = new THREE.Shape(pts)
-    for (var i = 1; i < args.obj.profiles.length; i++){
+    } )
+
+    let shape = new THREE.Shape( pts )
+    for ( var i = 1; i < args.obj.profiles.length; i++ ) {
       let holeProfile = null
-      let holePts = []
-      if (args.obj.profiles[i].type == 'Arc'){
-        this.Arc( { obj: args.obj.profiles[i], layer: args.layer }, (err, arc) => {
-          holeProfile = arc
-        })
-      }
-      else if (args.obj.profiles[i].type == 'Polyline'){
-        this.Polyline( { obj: args.obj.profiles[i], layer: args.layer }, (err, polyline) => {
-          holeProfile = polyline
-        })
-      }
-      else {
-        this.Polyline( { obj: args.obj.profiles[i].displayValue, layer: args.layer }, (err, polyline) => {
-          holeProfile = polyline
-        })
-      }
-      holeProfile.geometry.applyMatrix(mInverse)
-      holeProfile.geometry.vertices.forEach( function (vertex) {
-        holePts.push(new THREE.Vector2(vertex.x, vertex.y))
+      let holePts = [ ]
+
+      this[  args.obj.profiles[ i ].type ] ( { obj: args.obj.profiles[ i ], layer: args.layer }, ( err, obj ) => {
+        holeProfile = obj
       })
-      let holePath= new THREE.Path(holePts)
-      shape.holes.push(holePath)
+      
+      holeProfile.geometry.applyMatrix( mInverse )
+      holeProfile.geometry.vertices.forEach( function( vertex ) {
+        holePts.push( new THREE.Vector2( vertex.x, vertex.y ) )
+      } )
+      let holePath = new THREE.Path( holePts )
+      shape.holes.push( holePath )
     }
-    let path = new THREE.LineCurve(args.obj.pathStart, args.obj.pathEnd)
-    let extrudePath = new THREE.CurvePath()
-    extrudePath.add(path)
+
+    let path = new THREE.LineCurve( args.obj.pathStart, args.obj.pathEnd )
+    let extrudePath = new THREE.CurvePath( )
+    extrudePath.add( path )
     let extrudeSettings = {
       amount: args.obj.length,
       bevelEnabled: false,
     }
-    let geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings)
-    geometry.applyMatrix(m)
-    let extrusion = new THREE.Mesh(geometry, args.layer.threeMeshMaterial)
+    let geometry = new THREE.ExtrudeGeometry( shape, extrudeSettings )
+    geometry.applyMatrix( m )
+    let extrusion = new THREE.Mesh( geometry, args.layer.threeMeshMaterial )
     extrusion.hash = args.obj.hash
-    cb ( null, extrusion )
+    cb( null, extrusion )
   },
+
   Box( args, cb ) {
     let width = args.obj.xSize.end - args.obj.xSize.start
     let height = args.obj.ySize.end - args.obj.ySize.start
@@ -197,11 +172,11 @@ export default {
   },
 
   Polyline( args, cb ) {
-    console.log(args.obj)
+    console.log( args.obj )
     let geometry = new THREE.Geometry( )
     if ( !args.obj.value ) return console.warn( 'Strange polyline.' )
-    if (args.obj.closed == true){
-      args.obj.value.push.apply(args.obj.value,args.obj.value.slice(0,3))
+    if ( args.obj.closed == true ) {
+      args.obj.value.push.apply( args.obj.value, args.obj.value.slice( 0, 3 ) )
     }
     for ( let i = 2; i < args.obj.value.length; i += 3 )
       geometry.vertices.push( new THREE.Vector3( args.obj.value[ i - 2 ], args.obj.value[ i - 1 ], args.obj.value[ i ] ) )
@@ -209,18 +184,21 @@ export default {
     polyline.hash = args.obj.hash
     cb( null, polyline )
   },
+
   Polycurve( args, cb ) {
     for ( let i in args.obj.segments ) {
       let segment = args.obj.segments[ i ]
-      this.Polyline( { obj: segment.displayValue, layer: args.layer }, ( err, poly ) => {
+      this[ segment.type ]( { obj: segment, layer: args.layer }, ( err, poly ) => {
         if ( err ) return cb( err )
         return cb( null, poly )
       } )
     }
   },
+
   Annotation( args, cb ) {
     console.warn( 'TODO', args.obj.type )
   },
+
   Curve( args, cb ) {
     this.Polyline( { obj: args.obj.displayValue, layer: args.layer }, ( err, poly ) => {
       if ( err ) return cb( err )
@@ -281,12 +259,13 @@ export default {
       return cb( null, obj )
     } )
   },
+
   Abstract( args, cb ) {
-    console.log('Soon™', args.obj.type)
-    console.log(args.obj)
-    let loader = new THREE.FontLoader()
-    loader.load('/src/assets/helvetiker_regular.typeface.json')
-    if (args.obj._type.includes('Dimension')){
+    console.log( 'Soon™', args.obj.type )
+    console.log( args.obj )
+    let loader = new THREE.FontLoader( )
+    loader.load( '/src/assets/helvetiker_regular.typeface.json' )
+    if ( args.obj._type.includes( 'Dimension' ) ) {
       let dim = args.obj.properties
     }
   }
