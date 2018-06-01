@@ -37,7 +37,7 @@ export default {
 
   Line( args, cb ) {
     let geometry = new THREE.Geometry( )
-    console.log( args  )
+    console.log( args )
     geometry.vertices.push( new THREE.Vector3( args.obj.value[ 0 ], args.obj.value[ 1 ], args.obj.value[ 2 ] ) )
     geometry.vertices.push( new THREE.Vector3( args.obj.value[ 3 ], args.obj.value[ 4 ], args.obj.value[ 5 ] ) )
     let line = new THREE.Line( geometry, args.layer.threeLineMaterial )
@@ -113,56 +113,24 @@ export default {
     mInverse.getInverse( m )
     let type = args.obj.profile.type
     let pts = [ ]
-    if ( type == 'Polyline' ) {
-      this.Polyline( { obj: args.obj.profile, layer: args.layer }, ( err, poly ) => {
-        poly.geometry.applyMatrix( mInverse )
-        let values = poly.geometry.vertices
-        for ( var i = 0, l = values.length; i < l; ++i ) {
-          pts.push( new THREE.Vector2( values[ i ].x, values[ i ].y ) )
-        }
-      } )
-    } else if ( type == 'Arc' ) {
-      this.Arc( { obj: args.obj.profile, layer: args.layer }, ( err, arc ) => {
-        arc.geometry.applyMatrix( mInverse )
-        let values = arc.geometry.vertices
-        for ( var i = 0, l = values.length; i < l; ++i ) {
-          pts.push( new THREE.Vector2( values[ i ].x, values[ i ].y ) )
-        }
-      } )
-    } else if ( type == 'Curve' ) {
-      this.Polyline( { obj: args.obj.profile.displayValue, layer: args.layer }, ( err, poly ) => {
-        poly.geometry.applyMatrix( mInverse )
-        let values = poly.geometry.vertices
-        for ( var i = 0, l = values.length; i < l; ++i ) {
-          pts.push( new THREE.Vector2( values[ i ].x, values[ i ].y ) )
-        }
-      } )
-    } else {
-      let values = args.obj.profile.displayValue.value
+
+    this[ args.obj.profile.type ]( { obj: args.obj.profile, layer: args.layer }, ( err, obj ) => {
+      obj.geometry.applyMatrix( mInverse )
+      let values = obj.geometry.vertices
       for ( var i = 0, l = values.length; i < l; ++i ) {
-        if ( i % 3 === 0 ) {
-          // pts.push([values[i],values[i+1],values[i+2]])
-          pts.push( new THREE.Vector2( values[ i ], values[ i + 1 ] ) )
-        }
+        pts.push( new THREE.Vector2( values[ i ].x, values[ i ].y ) )
       }
-    }
+    } )
+
     let shape = new THREE.Shape( pts )
     for ( var i = 1; i < args.obj.profiles.length; i++ ) {
       let holeProfile = null
       let holePts = [ ]
-      if ( args.obj.profiles[ i ].type == 'Arc' ) {
-        this.Arc( { obj: args.obj.profiles[ i ], layer: args.layer }, ( err, arc ) => {
-          holeProfile = arc
-        } )
-      } else if ( args.obj.profiles[ i ].type == 'Polyline' ) {
-        this.Polyline( { obj: args.obj.profiles[ i ], layer: args.layer }, ( err, polyline ) => {
-          holeProfile = polyline
-        } )
-      } else {
-        this.Polyline( { obj: args.obj.profiles[ i ].displayValue, layer: args.layer }, ( err, polyline ) => {
-          holeProfile = polyline
-        } )
-      }
+
+      this[  args.obj.profiles[ i ].type ] ( { obj: args.obj.profiles[ i ], layer: args.layer }, ( err, obj ) => {
+        holeProfile = obj
+      })
+      
       holeProfile.geometry.applyMatrix( mInverse )
       holeProfile.geometry.vertices.forEach( function( vertex ) {
         holePts.push( new THREE.Vector2( vertex.x, vertex.y ) )
@@ -170,6 +138,7 @@ export default {
       let holePath = new THREE.Path( holePts )
       shape.holes.push( holePath )
     }
+
     let path = new THREE.LineCurve( args.obj.pathStart, args.obj.pathEnd )
     let extrudePath = new THREE.CurvePath( )
     extrudePath.add( path )
