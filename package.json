@@ -6,6 +6,10 @@
   "private": false,
   "licence": "MIT",
   "main": "src/main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/speckleworks/SpeckleViewer.git"
+  },
   "files": [
     "dist",
     "index.html"
@@ -28,7 +32,7 @@
     "vue-color": "^2.4.3",
     "vue-dragging": "^1.0.8",
     "vue-json-tree-view": "^2.1.3",
-    "vue-material": "^1.0.0-beta-7",
+    "vue-material": "^1.0.0-beta-10.2",
     "vue-router": "^3.0.1",
     "vuex": "^3.0.1"
   },
