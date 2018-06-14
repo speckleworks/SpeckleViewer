@@ -176,7 +176,7 @@ export default {
     },
     getControllers( stream ) {
       console.log('Getting controllers for ' + stream)
-      this.mySpkReceiver.broadcast( { eventType: 'get-defintion-io'  }  )
+      this.mySpkReceiver.broadcast( { eventType: 'get-definition-io'  }  )
     },
     addControllers(wsMessage){
       this.senderId = wsMessage.senderId
