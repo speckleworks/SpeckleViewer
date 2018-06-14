@@ -48,7 +48,7 @@
         </md-button>
       </md-subheader>
       <md-list-item class='md-inset' v-if='controllersExpanded && (!controllers || !controllers.length)'>No controllers are broadcasting for this stream</md-list-item>
-      <md-list-item class='md-inset' v-if='controllersExpanded' v-for='controller in controllers' key='controller.guid'> 
+      <md-list-item class='md-inset' v-if='controllersExpanded' v-for='controller in controllers' :key='controller.guid'> 
         <controller :controller='controller'></controller>
       </md-list-item>
     </md-list>
