@@ -138,7 +138,6 @@ export default {
     loggedIn( args ) {
       if ( args.guest === false ) {
         this.showLogin = false
-        console.log( args )
         var account = args.account
         account.guest = false
         var jwtToken = args.account.apitoken
@@ -162,7 +161,6 @@ export default {
           }
         } )
         .then( response => {
-          console.log( response )
           this.streams = response.data.resources.reverse( )
         } )
     },

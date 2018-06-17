@@ -97,7 +97,7 @@ export default {
       debounceCount: 0,
       senderId: null,
       viewerSettings: {},
-      controllers: []
+      controllers: [],
     }
   },
   watch: {
@@ -121,7 +121,11 @@ export default {
   },
   methods: {
     receiverError( err ) {
-      this.errror = err
+      this.error = err
+      if (err == 'Remote control is disabled for this sender'){ // need a more elegant error handler for progress bar
+        this.showProgressBar = false
+      }
+      bus.$emit( 'snackbar-update', err)
     },
 
     receiverReady( name, layers, objects, history, layerMaterials ) {

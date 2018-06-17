@@ -64,7 +64,7 @@
       <md-app-content>
         <speckle-renderer></speckle-renderer>
         <md-snackbar :md-active.sync="showSnackbar" md-position="center">
-          <span>That stream is already here</span>
+          <span>{{snackbarMessage}}</span>
         </md-snackbar>
       </md-app-content>
     </md-app>
@@ -91,7 +91,8 @@ export default {
       showViewSelect: false,
       showSettings: false,
       view: '3d',
-      viewerSettings: {}
+      viewerSettings: {},
+      snackbarMessage: null
     }
   },
   methods: {
@@ -124,8 +125,10 @@ export default {
     },
     addReceiver( streamId ) {
       console.log( 'Adding a receiver', streamId )
-      if ( this.$store.getters.receiverById( streamId ) )
+      if ( this.$store.getters.receiverById( streamId ) ){
+        this.snackbarMessage = 'That stream is already loaded'
         return this.showSnackbar = true
+      }
       let receiver = {
         serverUrl: this.$store.state.server,
         streamId: streamId,
@@ -141,6 +144,10 @@ export default {
     saveSettings (settings) {
       window.localStorage.setItem('viewerSettings', JSON.stringify(settings))
       this.$store.commit( 'SET_VIEWER_SETTINGS', { settings } )
+    },
+    snackbarUpdate (message) {
+      this.snackbarMessage = message
+      this.showSnackbar = true
     }
   },
   created( ) {
@@ -191,6 +198,9 @@ export default {
     objects( ) {
       return this.$store.getters.allObjects
     }
+  },
+  mounted () {
+    bus.$on( 'snackbar-update', this.snackbarUpdate)
   }
 }
 
