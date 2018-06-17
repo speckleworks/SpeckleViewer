@@ -54,6 +54,8 @@ export default class SpeckleReceiver extends EventEmitter {
           this.emit( 'update-meta' )
           console.log( 'METAMETA UPDATE YO')
           break
+        case 'compute-request-error':
+          this.emit( 'error', parsedMessage.args.response )
         default:
           console.log( 'Custom event received:', parsedMessage.args.eventType )
           console.log( parsedMessage )
