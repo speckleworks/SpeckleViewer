@@ -122,6 +122,9 @@ export default {
   methods: {
     receiverError( err ) {
       this.error = err
+      if (err == 'Remote control is disabled for this sender'){ // need a more elegant error handler for progress bar
+        this.showProgressBar = false
+      }
       bus.$emit( 'snackbar-update', err)
     },
 
