@@ -22,7 +22,7 @@
                 <span>{{user.email}}</span>
                 <p>{{user.createdAt}}</p>
               </div>
-              <md-button class="md-icon-button md-list-action" @click='logOut'>
+              <md-button class="md-raised md-icon-button md-list-action" @click='logOut'>
                 <md-icon class="md-primary">close</md-icon>
               </md-button>
             </md-list-item>
@@ -32,14 +32,18 @@
           <md-icon>import_export</md-icon>
           <span class="md-list-item-text">My Streams</span>
           <md-list class='md-double-line md-dense' slot='md-expand'>
-            <md-list-item class='xxxmd-inset'>
+            <md-list-item> 
               <md-field md-clearable>
                 <md-icon>search</md-icon>
-                <label>Search your streams</label>
+                <label>Filter your streams</label>
                 <md-input v-model='searchFilter'></md-input>
               </md-field>
             </md-list-item>
             <md-list-item>
+              <md-button class="md-icon-button md-dense" @click="updateStreamList">
+                <md-icon>refresh</md-icon>
+                <md-tooltip md-delay="500">Refresh stream list</md-tooltip>
+              </md-button>
               <div class="md-layout-item">
                 <md-button :disabled='startIndex==0' class='md-dense md-icon-button md-primary' @click='startIndex -= startIndex != 0 ? itemsPerPage : 0'>
                   <md-icon>chevron_left</md-icon>
@@ -163,6 +167,9 @@ export default {
         .then( response => {
           this.streams = response.data.resources.reverse( )
         } )
+    },
+    updateStreamList() {
+      this.getStreams()
     },
     addStream( stream ) {
       this.$emit( 'add', stream )
