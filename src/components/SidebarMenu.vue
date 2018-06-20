@@ -16,7 +16,7 @@
           <md-icon>person</md-icon>
           <span class="md-list-item-text">My Account</span>
           <md-list class='md-triple-line md-dense' slot='md-expand'>
-            <md-list-item class='xxxmd-inset'>
+            <md-list-item class='md-inset'>
               <div class="md-list-item-text">
                 <span>{{user.name}} {{user.surname}}</span>
                 <span>{{user.email}}</span>
@@ -59,8 +59,7 @@
               </div>
               <div class="md-caption">Showing {{startIndex + 1}} - {{startIndex + itemsPerPage}} out of <strong> {{filteredStreams.length}} </strong> </div>
             </md-list-item>
-            <!-- <md-divider class='xxxmd-inset'></md-divider> -->
-            <md-list-item v-for='stream in paginatedStreams' :key='stream.id' class='xxxmd-inset'>
+            <md-list-item v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
               <div class="md-list-item-text">
                 <span>{{stream.name}}</span>
                 <span>{{stream.streamId}}</span>
@@ -86,10 +85,10 @@
       </span>
       <span class="md-title">Current <strong>Streams</strong></span>
     </md-toolbar>
-    <md-list v-show='showCurrentStreamStuff'>
-      <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in $store.state.receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
-    </md-list>
-    <span v-show='$store.state.receivers.length === 0 && showCurrentStreamStuff' class='md-subheading' style="padding: 10px">No streams present.</span>
+        <md-list v-show='showCurrentStreamStuff'>
+          <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in $store.state.receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
+        </md-list>
+        <span v-show='$store.state.receivers.length === 0 && showCurrentStreamStuff' class='md-subheading' style="padding: 10px">No streams present.</span>
   </div>
 </template>
 <script>
@@ -121,6 +120,7 @@ export default {
       searchFilter: null,
       startIndex: 0,
       itemsPerPage: 5,
+      streamAddition: null
     }
   },
   methods: {
@@ -170,9 +170,6 @@ export default {
     },
     updateStreamList() {
       this.getStreams()
-    },
-    addStream( stream ) {
-      this.$emit( 'add', stream )
     },
     dropReceiver( streamId ) {
       console.log( 'Dropping receiver:', streamId )
@@ -256,7 +253,6 @@ export default {
 }
 
 .md-field {
-
   margin-bottom: 0px;
 }
 
