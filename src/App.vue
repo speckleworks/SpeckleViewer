@@ -28,9 +28,13 @@
               <md-icon>zoom_out_map</md-icon>
               <md-tooltip md-direction="top">Zoom Extents</md-tooltip>
             </md-button>
-            <md-button class='md-icon-button' @click.native='zoomToObject'>
-              <md-icon>zoom_in</md-icon>
-              <md-tooltip md-direction="top">Zoom to Selected</md-tooltip>
+            <!-- <md-button class='md-icon-button' @click.native='zoomToObject'> -->
+            <!--   <md-icon>zoom_in</md-icon> -->
+            <!--   <md-tooltip md-direction="top">Zoom to Selected</md-tooltip> -->
+            <!-- </md-button> -->
+            <md-button class='md-icon-button' @click.native='showAddStreamDialog=true'>
+              <md-icon>add</md-icon>
+              <md-tooltip md-direction="top">Add a stream to the viewer</md-tooltip>
             </md-button>
             <!-- <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'> -->
             <!--   <md-icon>videocam</md-icon> -->
@@ -66,6 +70,13 @@
         <md-snackbar :md-active.sync="showSnackbar" md-position="center">
           <span>{{snackbarMessage}}</span>
         </md-snackbar>
+        <md-dialog-prompt 
+          :md-active.sync="showAddStreamDialog" 
+          v-model="addStreamString" 
+          md-title="Add a stream to the viewer" 
+          md-input-placeholder="streamId..." 
+          md-confirm-text="Add"
+          @md-confirm="addReceiver(addStreamString)"/>
       </md-app-content>
     </md-app>
   </div>
@@ -86,6 +97,8 @@ export default {
   data( ) {
     return {
       showSnackbar: false,
+      showAddStreamDialog: false,
+      addStreamString: null,
       showStreamList: false,
       showAccounts: false,
       showViewSelect: false,
@@ -124,6 +137,11 @@ export default {
       }
     },
     addReceiver( streamId ) {
+      if (!streamId)
+      {
+        this.snackbarMessage = 'Invalid streamId'
+        return this.showSnackbar = true
+      }
       console.log( 'Adding a receiver', streamId )
       if ( this.$store.getters.receiverById( streamId ) ){
         this.snackbarMessage = 'That stream is already loaded'
