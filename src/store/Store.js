@@ -18,6 +18,7 @@ export default new Vuex.Store( {
     user: {},
     jwtToken: '',
     viewerSettings: {},
+    selectedObjects: {}
   },
   getters: {
     isMobile: state => state.mobile,
@@ -54,7 +55,8 @@ export default new Vuex.Store( {
       return arr
       // return arr.concat.apply( [ ], arr )
     },
-    viewerSettings: (state) => state.viewerSettings
+    viewerSettings: (state) => state.viewerSettings,
+    selectedObjects: (state) => state.selectedObjects
   },
   actions: {},
   mutations: {
@@ -183,6 +185,9 @@ export default new Vuex.Store( {
           _id: obj._id
         }
       } )
+    },
+    SET_SELECTED_OBJECTS( state, { selectedObjectProperties } ) {
+      state.selectedObjects = selectedObjectProperties
     }
   }
 } )

@@ -171,6 +171,9 @@ export default {
     updateStreamList() {
       this.getStreams()
     },
+    addStream( stream ) {
+      this.$emit( 'add', stream )
+    },
     dropReceiver( streamId ) {
       console.log( 'Dropping receiver:', streamId )
       this.$store.commit( 'DROP_RECEIVER', { streamId } )

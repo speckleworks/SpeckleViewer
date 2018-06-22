@@ -24,17 +24,17 @@
               </md-icon>
               <md-tooltip md-direction="bottom">Menu</md-tooltip>
             </md-button>
+            <md-button class='md-icon-button' @click.native='showAddStreamDialog=true'>
+              <md-icon>add</md-icon>
+              <md-tooltip md-direction="top">Add a stream to the viewer</md-tooltip>
+            </md-button>
             <md-button class='md-icon-button' @click.native='zoomExt'>
               <md-icon>zoom_out_map</md-icon>
               <md-tooltip md-direction="top">Zoom Extents</md-tooltip>
             </md-button>
-            <!-- <md-button class='md-icon-button' @click.native='zoomToObject'> -->
-            <!--   <md-icon>zoom_in</md-icon> -->
-            <!--   <md-tooltip md-direction="top">Zoom to Selected</md-tooltip> -->
-            <!-- </md-button> -->
-            <md-button class='md-icon-button' @click.native='showAddStreamDialog=true'>
-              <md-icon>add</md-icon>
-              <md-tooltip md-direction="top">Add a stream to the viewer</md-tooltip>
+            <md-button class='md-icon-button' @click.native='toggleObjectDetails()'>
+              <md-icon>list</md-icon>
+              <md-tooltip md-direction="top">Show details for selected objects</md-tooltip>
             </md-button>
             <!-- <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'> -->
             <!--   <md-icon>videocam</md-icon> -->
@@ -70,13 +70,24 @@
         <md-snackbar :md-active.sync="showSnackbar" md-position="center">
           <span>{{snackbarMessage}}</span>
         </md-snackbar>
-        <md-dialog-prompt 
-          :md-active.sync="showAddStreamDialog" 
-          v-model="addStreamString" 
-          md-title="Add a stream to the viewer" 
-          md-input-placeholder="streamId..." 
-          md-confirm-text="Add"
-          @md-confirm="addReceiver(addStreamString)"/>
+        <md-dialog :md-active.sync="showAddStreamDialog">
+          <md-dialog-title>Load a stream into the viewer</md-dialog-title>
+          <md-dialog-content>
+            <md-field md-clearable>
+              <md-input v-model="addStreamString" placeholder="Enter a streamId..."></md-input>
+            </md-field>
+          </md-dialog-content>
+          <md-dialog-actions>
+            <md-button class="md-primary" @click="addStreamString=null; showAddStreamDialog=false">Cancel</md-button>
+            <md-button class="md-primary" @click="addReceiver(addStreamString)">Add</md-button>
+          </md-dialog-actions>
+        </md-dialog>
+        <md-dialog :md-active.sync="showObjectDetails">
+          <md-dialog-title>Details:</md-dialog-title>
+          <md-dialog-content>
+            <object-details label='Details' :nodes='selectedObjects'></object-details>
+          </md-dialog-content>
+        </md-dialog>
       </md-app-content>
     </md-app>
   </div>
@@ -85,6 +96,7 @@
 import SpeckleRenderer from './components/SpeckleRenderer.vue'
 import SidebarMenu from './components/SidebarMenu.vue'
 import SearchBar from './components/SearchBar.vue'
+import ObjectDetails from './components/ObjectDetails.vue'
 
 export default {
   name: 'app',
@@ -92,7 +104,8 @@ export default {
   components: {
     SidebarMenu,
     SpeckleRenderer,
-    SearchBar
+    SearchBar,
+    ObjectDetails
   },
   data( ) {
     return {
@@ -103,6 +116,7 @@ export default {
       showAccounts: false,
       showViewSelect: false,
       showSettings: false,
+      showObjectDetails: false,
       view: '3d',
       viewerSettings: {},
       snackbarMessage: null
@@ -132,7 +146,6 @@ export default {
               layerMaterials: [ ]
             }
           } )
-        console.log( receivers )
         this.$store.commit( 'ADD_RECEIVERS', { receivers } )
       }
     },
@@ -166,6 +179,13 @@ export default {
     snackbarUpdate (message) {
       this.snackbarMessage = message
       this.showSnackbar = true
+    },
+    toggleObjectDetails () {
+      if (!this.selectedObjects)
+      {
+        return this.snackbarUpdate("No objects selected")
+      }
+      this.showObjectDetails = true
     }
   },
   created( ) {
@@ -215,6 +235,9 @@ export default {
     },
     objects( ) {
       return this.$store.getters.allObjects
+    },
+    selectedObjects() {
+      return this.$store.getters.selectedObjects
     }
   },
   mounted () {
