@@ -82,9 +82,17 @@
             <md-button class="md-primary" @click="addReceiver(addStreamString)">Add</md-button>
           </md-dialog-actions>
         </md-dialog>
-        <md-dialog :md-active.sync="showObjectDetails">
-          <md-dialog-title>Details:</md-dialog-title>
+        <md-dialog v-show="selectedObjects!=null"
+          style="position: absolute;" 
+          :md-close-on-esc="false"
+          :md-click-outside-to-close="false"
+          :md-backdrop="false"
+          v-drag :md-active.sync="showObjectDetails">
+          <md-button class="md-mini md-flat md-icon-button" @click="showObjectDetails=false">
+            <md-icon>close</md-icon>
+          </md-button>
           <md-dialog-content>
+            <div class="md-subheading">Object Details:</div>
             <object-details label='Details' :nodes='selectedObjects'></object-details>
           </md-dialog-content>
         </md-dialog>
@@ -98,6 +106,8 @@ import SidebarMenu from './components/SidebarMenu.vue'
 import SearchBar from './components/SearchBar.vue'
 import ObjectDetails from './components/ObjectDetails.vue'
 
+import drag from '@branu-jp/v-drag'
+
 export default {
   name: 'app',
   props: [ ],
@@ -106,6 +116,9 @@ export default {
     SpeckleRenderer,
     SearchBar,
     ObjectDetails
+  },
+  directives: {
+    drag
   },
   data( ) {
     return {
@@ -185,6 +198,7 @@ export default {
       {
         return this.snackbarUpdate("No objects selected")
       }
+      this.snackbarUpdate("You can drag the info panel around the screen")
       this.showObjectDetails = true
     }
   },
