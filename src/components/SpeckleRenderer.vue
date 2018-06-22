@@ -2,22 +2,22 @@
   <div>
     <div id='render-window' ref='mycanvas'>
     </div>
-    <div v-show='showInfoBox' id='info-box' class='object-info' ref='infobox'>
-      <md-content md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'>
-        <!-- <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view> -->
-        <md-list>
-          <object-details label='Details' :nodes='selectedObjectsProperties'></object-details>
-        </md-list>
-      </md-content>
-      <md-button class="md-icon-button md-raised xxxmd-primary md-dense expand-button" style='background-color:white;color:black !important;' @click.native='expandInfoBox=!expandInfoBox'>
-        <md-icon v-if='!isMobile'>
-          {{ expandInfoBox ? 'keyboard_arrow_left' : 'keyboard_arrow_right' }}
-        </md-icon>
-        <md-icon v-else>
-          {{ expandInfoBox ? 'close' : 'info_outline' }}
-        </md-icon>
-      </md-button>
-    </div>
+    <!-- <div v-show='showInfoBox' id='info-box' class='object-info' ref='infobox'> -->
+    <!--   <md-content md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'> -->
+    <!--     <1!-- <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view> --1> -->
+    <!--     <md-list> -->
+    <!--       <object-details label='Details' :nodes='selectedObjectsProperties'></object-details> -->
+    <!--     </md-list> -->
+    <!--   </md-content> -->
+    <!--   <md-button class="md-icon-button md-raised xxxmd-primary md-dense expand-button" style='background-color:white;color:black !important;' @click.native='expandInfoBox=!expandInfoBox'> -->
+    <!--     <md-icon v-if='!isMobile'> -->
+    <!--       {{ expandInfoBox ? 'keyboard_arrow_left' : 'keyboard_arrow_right' }} -->
+    <!--     </md-icon> -->
+    <!--     <md-icon v-else> -->
+    <!--       {{ expandInfoBox ? 'close' : 'info_outline' }} -->
+    <!--     </md-icon> -->
+    <!--   </md-button> -->
+    <!-- </div> -->
   </div>
 </template>
 <script>
@@ -181,6 +181,8 @@ export default {
       this.selectionBoxes = [ ]
       this.showInfoBox = false
       this.expandInfoBox = false
+      let selectedObjectProperties = null
+      this.$store.commit('SET_SELECTED_OBJECTS', {selectedObjectProperties})
     },
     canvasHovered( event ) {
       if ( this.isRotatingStuff ) return
@@ -219,9 +221,11 @@ export default {
         streamId: selectedObject.streamId,
         properties: selectedObject.spkProperties
       }
-      this.showInfoBox = true
-      this.$refs.infobox.style.left = window.innerWidth / 2 + 'px'
-      this.$refs.infobox.style.top = window.innerHeight / 2 + 'px'
+      let selectedObjectProperties = this.selectedObjectsProperties
+      this.$store.commit('SET_SELECTED_OBJECTS', {selectedObjectProperties})
+      //this.showInfoBox = true
+      //this.$refs.infobox.style.left = window.innerWidth / 2 + 'px'
+      //this.$refs.infobox.style.top = window.innerHeight / 2 + 'px'
     },
     canvasClickedEvent( event ) {
       if ( event.which === 3 ) {
@@ -231,14 +235,14 @@ export default {
         return
       }
       this.canvasHovered( event )
-      if ( this.hoveredObject != '' ) {
-        this.showInfoBox = true
-        this.$refs.infobox.style.left = event.clientX - 20 + 'px'
-        this.$refs.infobox.style.top = event.clientY - 20 + 'px'
-      } else {
-        this.showInfoBox = false
-        this.expandInfoBox = false
-      }
+      //if ( this.hoveredObject != '' ) {
+      //  this.showInfoBox = true
+      //  this.$refs.infobox.style.left = event.clientX - 20 + 'px'
+      //  this.$refs.infobox.style.top = event.clientY - 20 + 'px'
+      //} else {
+      //  this.showInfoBox = false
+      //  this.expandInfoBox = false
+      //}
     },
     selectBus( objectId ) {
       this.deselectObjects( )
