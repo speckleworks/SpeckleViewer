@@ -31,12 +31,12 @@
         <md-list-item md-expand>
           <md-icon>import_export</md-icon>
           <span class="md-list-item-text">My Streams</span>
-          <md-list class='md-double-line md-dense' slot='md-expand'>
+          <md-list class='md-double-line md-dense' slot='md-expand' :md-expand-single="true" >
             <md-list-item> 
               <md-field md-clearable>
                 <md-icon>search</md-icon>
-                <label>Filter your streams</label>
-                <md-input v-model='searchFilter'></md-input>
+            <label>Filter your streams</label>
+            <md-input v-model='searchFilter'></md-input>
               </md-field>
             </md-list-item>
             <md-list-item>
@@ -59,7 +59,7 @@
               </div>
               <div class="md-caption">Showing {{startIndex + 1}} - {{startIndex + itemsPerPage}} out of <strong> {{filteredStreams.length}} </strong> </div>
             </md-list-item>
-            <md-list-item v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
+            <md-list-item v-if="stream.children.length > 0" md-expand v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
               <div class="md-list-item-text">
                 <span>{{stream.name}}</span>
                 <span>{{stream.streamId}}</span>
@@ -68,11 +68,34 @@
                 <md-icon>add</md-icon>
                 <md-tooltip md-delay="800">Add this stream to the viewer</md-tooltip>
               </md-button>
-              <!--               <md-button class="md-icon-button md-list-action md-dense" v-on:click='shareStream(stream.streamId)'>
-                <md-icon>share</md-icon>
-                <md-tooltip md-delay="800">Copy stream address to clipboard</md-tooltip>
-              </md-button> -->
+              <md-list slot="md-expand" class="md-dense"> 
+                <md-list-item>{{stream.name}}'s children:</span></md-list-item>
+                <md-list-item v-for='childStream in stream.children' :key=childStream> 
+                  <div class="md-list-item-text">
+                    <span>{{childStream}}</span>
+                  </div>
+                  <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(childStream)'>
+                    <md-icon>add</md-icon>
+                    <md-tooltip md-delay="800">Add this stream to the viewer</md-tooltip>
+                  </md-button>
+                </md-list-item>
+              </md-list>
             </md-list-item>
+            <md-list-item v-else class='md-inset'>
+              <div class="md-list-item-text">
+                <span>{{stream.name}}</span>
+                <span>{{stream.streamId}}</span>
+              </div>
+              <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(stream.streamId)'>
+                <md-icon>add</md-icon>
+                <md-tooltip md-delay="800">Add this stream to the viewer</md-tooltip>
+              </md-button>
+            </md-list-item>
+
+            <!--               <md-button class="md-icon-button md-list-action md-dense" v-on:click='shareStream(stream.streamId)'>
+              <md-icon>share</md-icon>
+              <md-tooltip md-delay="800">Copy stream address to clipboard</md-tooltip>
+              </md-button> -->
           </md-list>
         </md-list-item>
       </md-list>
@@ -85,10 +108,10 @@
       </span>
       <span class="md-title">Current <strong>Streams</strong></span>
     </md-toolbar>
-        <md-list v-show='showCurrentStreamStuff'>
-          <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in $store.state.receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
-        </md-list>
-        <span v-show='$store.state.receivers.length === 0 && showCurrentStreamStuff' class='md-subheading' style="padding: 10px">No streams present.</span>
+    <md-list v-show='showCurrentStreamStuff'>
+      <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in $store.state.receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
+    </md-list>
+    <span v-show='$store.state.receivers.length === 0 && showCurrentStreamStuff' class='md-subheading' style="padding: 10px">No streams present.</span>
   </div>
 </template>
 <script>
@@ -160,10 +183,10 @@ export default {
     getStreams( ) {
       var jwtToken = localStorage.getItem( 'token' )
       this.$http.get( this.$store.state.server + '/streams', {
-          headers: {
-            Authorization: jwtToken
-          }
-        } )
+        headers: {
+          Authorization: jwtToken
+        }
+      } )
         .then( response => {
           this.streams = response.data.resources.reverse( )
         } )
@@ -213,12 +236,15 @@ export default {
       } )
   },
   computed: {
+    parentStreams( ) {
+      return this.streams.filter(stream => stream.isComputedResult == false)
+    },
     filteredStreams( ) {
       if ( this.searchFilter == null || this.searchFilter == '' )
-        return this.streams
+        return this.parentStreams
       else {
         //this.startIndex = 0
-        return this.streams.filter( stream => stream.name.toLowerCase( ).includes( this.searchFilter.toLowerCase( ) ) || stream.streamId.toLowerCase( ).includes( this.searchFilter.toLowerCase( ) ) )
+        return this.parentStreams.filter( stream => stream.name.toLowerCase( ).includes( this.searchFilter.toLowerCase( ) ) || stream.streamId.toLowerCase( ).includes( this.searchFilter.toLowerCase( ) ) )
       }
     },
     paginatedStreams( ) {
