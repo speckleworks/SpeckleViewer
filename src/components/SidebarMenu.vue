@@ -59,29 +59,7 @@
               </div>
               <div class="md-caption">Showing {{startIndex + 1}} - {{startIndex + itemsPerPage}} out of <strong> {{filteredStreams.length}} </strong> </div>
             </md-list-item>
-            <md-list-item v-if="stream.children.length > 0" md-expand v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
-              <div class="md-list-item-text">
-                <span>{{stream.name}}</span>
-                <span>{{stream.streamId}}</span>
-              </div>
-              <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(stream.streamId)'>
-                <md-icon>add</md-icon>
-                <md-tooltip md-delay="800">Add this stream to the viewer</md-tooltip>
-              </md-button>
-              <md-list slot="md-expand" class="md-dense"> 
-                <md-list-item>{{stream.name}}'s children:</span></md-list-item>
-                <md-list-item v-for='childStream in stream.children' :key=childStream> 
-                  <div class="md-list-item-text">
-                    <span>{{childStream}}</span>
-                  </div>
-                  <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(childStream)'>
-                    <md-icon>add</md-icon>
-                    <md-tooltip md-delay="800">Add this stream to the viewer</md-tooltip>
-                  </md-button>
-                </md-list-item>
-              </md-list>
-            </md-list-item>
-            <md-list-item v-else class='md-inset'>
+            <md-list-item v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
               <div class="md-list-item-text">
                 <span>{{stream.name}}</span>
                 <span>{{stream.streamId}}</span>
