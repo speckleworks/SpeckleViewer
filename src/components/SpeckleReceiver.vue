@@ -43,8 +43,11 @@
       <md-list-item v-show='historyExpanded' class='md-inset'>Soon™</md-list-item>
       <md-subheader class='md-inset'>
         Controllers
-        <md-button class='md-icon-button md-dense' @click.native='getControllers(spkreceiver.streamId); controllersExpanded = ! controllersExpanded'>
+        <md-button class='md-icon-button md-dense' @click.native='toggleControllers()'>
           <md-icon>{{ controllersExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
+        </md-button>
+        <md-button v-if="controllersChecked" class='md-icon-button md-dense' @click.native='getControllers()'>
+          <md-icon>refresh</md-icon>
         </md-button>
       </md-subheader>
       <md-list-item class='md-inset' v-if='controllersExpanded && (!controllers || !controllers.length)'>No controllers are broadcasting for this stream</md-list-item>
@@ -98,6 +101,7 @@ export default {
       senderId: null,
       viewerSettings: {},
       controllers: [],
+      controllersChecked: false,
     }
   },
   watch: {
@@ -178,9 +182,16 @@ export default {
     dropStream( stream ) {
       this.$emit( 'drop', stream )
     },
-    getControllers( stream ) {
-      console.log('Getting controllers for ' + stream)
-      this.mySpkReceiver.broadcast( { eventType: 'get-definition-io'  }  )
+    toggleControllers( ) {
+     this.controllersExpanded = ! this.controllersExpanded  
+      if (!this.controllersChecked) {
+        this.controllersChecked = true
+        this.getControllers()
+      }
+    },
+    getControllers () {
+        console.log('Getting controllers for ' + this.spkreceiver.streamId)
+        this.mySpkReceiver.broadcast( { eventType: 'get-definition-io'  }  )
     },
     addControllers(wsMessage){
       this.senderId = wsMessage.senderId
