@@ -6,6 +6,10 @@
           <md-icon>refresh</md-icon>
           <md-tooltip>Update available. Click to refresh.</md-tooltip>
         </md-button>
+        <md-button v-if="streamParent" class="md-icon-button md-list-action md-dense" @click="revertToParent()">
+          <md-icon>undo</md-icon>
+          <md-tooltip md-delay="800">Revert to the parent stream</md-tooltip>
+        </md-button>
         <md-button class="md-icon-button md-dense" @click.native='receiverExpanded = ! receiverExpanded'>
           <md-icon>{{ receiverExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
         </md-button>
@@ -84,7 +88,7 @@ export default {
     },
     sliders () {
       return this.controllers.filter( c => c.InputType === 'Slider' )
-    }
+    },
   },
   data( ) {
     return {
@@ -102,6 +106,7 @@ export default {
       viewerSettings: {},
       controllers: [],
       controllersChecked: false,
+      streamParent: null
     }
   },
   watch: {
@@ -133,6 +138,7 @@ export default {
     },
 
     receiverReady( name, layers, objects, history, layerMaterials ) {
+      this.streamParent = this.mySpkReceiver.stream.parent
       this.showProgressBar = false
       this.objLoadProgress = 0
       let payload = { streamId: this.spkreceiver.streamId, name: name, layers: layers, objects: objects, layerMaterials: layerMaterials }
@@ -204,7 +210,6 @@ export default {
           guid: controller.guid,
           value: controller.inputType != 'Point' ? controller.value : { X: controller.X, Y: controller.Y, Z: controller.Z  },
           inputType: controller.inputType
-
         }
       } )
       let message = { eventType: 'compute-request', requestParameters: requestParams  }
@@ -212,6 +217,11 @@ export default {
       args.client.sendMessage( message,  args.senderId  ) 
 
     }, 500 ),
+    revertToParent(){
+      this.streamParent = null
+      this.getAndSetStream()
+      bus.$emit('snackbar-update', "Restoring parent stream")
+    }
   },
   mounted( ) {
     this.viewerSettings = this.$store.getters.viewerSettings
