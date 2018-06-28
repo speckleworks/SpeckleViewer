@@ -1,6 +1,6 @@
 {
   "name": "@speckle/speckle-viewer",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "A Speckle Threejs viewer",
   "author": "hello@speckle.works",
   "private": false,
