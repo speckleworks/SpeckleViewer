@@ -130,7 +130,7 @@ export default {
       this[  args.obj.profiles[ i ].type ] ( { obj: args.obj.profiles[ i ], layer: args.layer }, ( err, obj ) => {
         holeProfile = obj
       })
-      
+
       holeProfile.geometry.applyMatrix( mInverse )
       holeProfile.geometry.vertices.forEach( function( vertex ) {
         holePts.push( new THREE.Vector2( vertex.x, vertex.y ) )
@@ -154,12 +154,13 @@ export default {
   },
 
   Box( args, cb ) {
+    console.log(args.obj)
     let width = args.obj.xSize.end - args.obj.xSize.start
     let height = args.obj.ySize.end - args.obj.ySize.start
     let depth = args.obj.zSize.end - args.obj.zSize.start
-    let origin = args.obj.basePlane.Origin.value
+    let origin = args.obj.basePlane.origin.value
     let v1 = new THREE.Vector3( 0, 0, 1 )
-    let v2 = new THREE.Vector3( ...args.obj.basePlane.Normal.value )
+    let v2 = new THREE.Vector3( ...args.obj.basePlane.normal.value )
     let q = new THREE.Quaternion( )
     q.setFromUnitVectors( v1, v2 )
     let geometry = new THREE.BoxGeometry( width, height, depth )
