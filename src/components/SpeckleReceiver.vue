@@ -6,6 +6,10 @@
           <md-icon>refresh</md-icon>
           <md-tooltip>Update available. Click to refresh.</md-tooltip>
         </md-button>
+        <md-button v-if="streamParent" class="md-icon-button md-list-action md-dense" @click="revertToParent()">
+          <md-icon>undo</md-icon>
+          <md-tooltip md-delay="800">Revert to the parent stream</md-tooltip>
+        </md-button>
         <md-button class="md-icon-button md-dense" @click.native='receiverExpanded = ! receiverExpanded'>
           <md-icon>{{ receiverExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
         </md-button>
@@ -43,12 +47,15 @@
       <md-list-item v-show='historyExpanded' class='md-inset'>Soon™</md-list-item>
       <md-subheader class='md-inset'>
         Controllers
-        <md-button class='md-icon-button md-dense' @click.native='getControllers(spkreceiver.streamId); controllersExpanded = ! controllersExpanded'>
+        <md-button class='md-icon-button md-dense' @click.native='toggleControllers()'>
           <md-icon>{{ controllersExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
+        </md-button>
+        <md-button v-if="controllersChecked" class='md-icon-button md-dense' @click.native='getControllers()'>
+          <md-icon>refresh</md-icon>
         </md-button>
       </md-subheader>
       <md-list-item class='md-inset' v-if='controllersExpanded && (!controllers || !controllers.length)'>No controllers are broadcasting for this stream</md-list-item>
-      <md-list-item class='md-inset' v-if='controllersExpanded' v-for='controller in controllers' key='controller.guid'> 
+      <md-list-item class='md-inset' v-if='controllersExpanded' v-for='controller in controllers' :key='controller.guid'> 
         <controller :controller='controller'></controller>
       </md-list-item>
     </md-list>
@@ -81,7 +88,7 @@ export default {
     },
     sliders () {
       return this.controllers.filter( c => c.InputType === 'Slider' )
-    }
+    },
   },
   data( ) {
     return {
@@ -97,7 +104,9 @@ export default {
       debounceCount: 0,
       senderId: null,
       viewerSettings: {},
-      controllers: []
+      controllers: [],
+      controllersChecked: false,
+      streamParent: null
     }
   },
   watch: {
@@ -121,10 +130,15 @@ export default {
   },
   methods: {
     receiverError( err ) {
-      this.errror = err
+      this.error = err
+      if (err == 'Remote control is disabled for this sender'){ // need a more elegant error handler for progress bar
+        this.showProgressBar = false
+      }
+      bus.$emit( 'snackbar-update', err)
     },
 
     receiverReady( name, layers, objects, history, layerMaterials ) {
+      this.streamParent = this.mySpkReceiver.stream.parent
       this.showProgressBar = false
       this.objLoadProgress = 0
       let payload = { streamId: this.spkreceiver.streamId, name: name, layers: layers, objects: objects, layerMaterials: layerMaterials }
@@ -174,9 +188,16 @@ export default {
     dropStream( stream ) {
       this.$emit( 'drop', stream )
     },
-    getControllers( stream ) {
-      console.log('Getting controllers for ' + stream)
-      this.mySpkReceiver.broadcast( { eventType: 'get-defintion-io'  }  )
+    toggleControllers( ) {
+     this.controllersExpanded = ! this.controllersExpanded  
+      if (!this.controllersChecked) {
+        this.controllersChecked = true
+        this.getControllers()
+      }
+    },
+    getControllers () {
+        console.log('Getting controllers for ' + this.spkreceiver.streamId)
+        this.mySpkReceiver.broadcast( { eventType: 'get-definition-io'  }  )
     },
     addControllers(wsMessage){
       this.senderId = wsMessage.senderId
@@ -189,7 +210,6 @@ export default {
           guid: controller.guid,
           value: controller.inputType != 'Point' ? controller.value : { X: controller.X, Y: controller.Y, Z: controller.Z  },
           inputType: controller.inputType
-
         }
       } )
       let message = { eventType: 'compute-request', requestParameters: requestParams  }
@@ -197,6 +217,11 @@ export default {
       args.client.sendMessage( message,  args.senderId  ) 
 
     }, 500 ),
+    revertToParent(){
+      this.streamParent = null
+      this.getAndSetStream()
+      bus.$emit('snackbar-update', "Restoring parent stream")
+    }
   },
   mounted( ) {
     this.viewerSettings = this.$store.getters.viewerSettings

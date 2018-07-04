@@ -1,6 +1,6 @@
 {
   "name": "@speckle/speckle-viewer",
-  "version": "0.1.7",
+  "version": "0.1.12",
   "description": "A Speckle Threejs viewer",
   "author": "hello@speckle.works",
   "private": false,
@@ -19,6 +19,7 @@
     "build": "cross-env NODE_ENV=production webpack --progress --hide-modules"
   },
   "dependencies": {
+    "@branu-jp/v-drag": "0.0.10",
     "axios": "^0.17.1",
     "debounce": "^1.1.0",
     "event-emitter-es6": "^1.1.5",

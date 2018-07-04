@@ -54,9 +54,17 @@ export default class SpeckleReceiver extends EventEmitter {
           this.emit( 'update-meta' )
           console.log( 'METAMETA UPDATE YO')
           break
+        case 'compute-request-error':
+          this.emit( 'error', parsedMessage.args.response )
+          break
+        case 'compute-response':
+          this.childStreamId = parsedMessage.args.streamId
+          this.getChildStream( cb => {
+            this.emit( 'ready', this.stream.name, this.stream.layers, this.stream.objects, [], [] )
+          })
+          break
         default:
           console.log( 'Custom event received:', parsedMessage.args.eventType )
-          console.log( parsedMessage )
           this.emit( parsedMessage.args.eventType, parsedMessage)
           break;
       }
@@ -105,6 +113,18 @@ export default class SpeckleReceiver extends EventEmitter {
     axios.get( this.baseUrl + '/streams/' + this.streamId, { headers: { 'Auth': this.auth } } )
       .then( response => {
         console.log( response.data )
+        this.stream = response.data.resource
+        cb( this.stream )
+      } )
+      .catch( err => {
+        console.log( err )
+      } )
+  }
+
+  getChildStream( cb ) {
+    axios.get( this.baseUrl + '/streams/' + this.childStreamId, { headers: { 'Auth': this.auth } } )
+      .then( response => {
+        console.log( response.data.resource )
         this.stream = response.data.resource
         cb( this.stream )
       } )

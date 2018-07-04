@@ -24,13 +24,17 @@
               </md-icon>
               <md-tooltip md-direction="bottom">Menu</md-tooltip>
             </md-button>
+            <md-button class='md-icon-button' @click.native='showAddStreamDialog=true'>
+              <md-icon>add</md-icon>
+              <md-tooltip md-direction="top">Add a stream to the viewer</md-tooltip>
+            </md-button>
             <md-button class='md-icon-button' @click.native='zoomExt'>
               <md-icon>zoom_out_map</md-icon>
               <md-tooltip md-direction="top">Zoom Extents</md-tooltip>
             </md-button>
-            <md-button class='md-icon-button' @click.native='zoomToObject'>
-              <md-icon>zoom_in</md-icon>
-              <md-tooltip md-direction="top">Zoom to Selected</md-tooltip>
+            <md-button class='md-icon-button' @click.native='toggleObjectDetails()'>
+              <md-icon>list</md-icon>
+              <md-tooltip md-direction="top">Show details for selected objects</md-tooltip>
             </md-button>
             <!-- <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'> -->
             <!--   <md-icon>videocam</md-icon> -->
@@ -64,8 +68,34 @@
       <md-app-content>
         <speckle-renderer></speckle-renderer>
         <md-snackbar :md-active.sync="showSnackbar" md-position="center">
-          <span>That stream is already here</span>
+          <span>{{snackbarMessage}}</span>
         </md-snackbar>
+        <md-dialog :md-active.sync="showAddStreamDialog">
+          <md-dialog-title>Load a stream into the viewer</md-dialog-title>
+          <md-dialog-content>
+            <md-field md-clearable>
+              <md-input v-model="addStreamString" placeholder="Enter a streamId..."></md-input>
+            </md-field>
+          </md-dialog-content>
+          <md-dialog-actions>
+            <md-button class="md-primary" @click="addStreamString=null; showAddStreamDialog=false">Cancel</md-button>
+            <md-button class="md-primary" @click="addReceiver(addStreamString)">Add</md-button>
+          </md-dialog-actions>
+        </md-dialog>
+        <md-dialog v-show="selectedObjects!=null"
+          style="position: absolute;" 
+          :md-close-on-esc="false"
+          :md-click-outside-to-close="false"
+          :md-backdrop="false"
+          v-drag :md-active.sync="showObjectDetails">
+          <md-button class="md-mini md-flat md-icon-button" @click="showObjectDetails=false">
+            <md-icon>close</md-icon>
+          </md-button>
+          <md-dialog-content>
+            <div class="md-subheading">Object Details:</div>
+            <object-details label='Details' :nodes='selectedObjects'></object-details>
+          </md-dialog-content>
+        </md-dialog>
       </md-app-content>
     </md-app>
   </div>
@@ -74,6 +104,9 @@
 import SpeckleRenderer from './components/SpeckleRenderer.vue'
 import SidebarMenu from './components/SidebarMenu.vue'
 import SearchBar from './components/SearchBar.vue'
+import ObjectDetails from './components/ObjectDetails.vue'
+
+import drag from '@branu-jp/v-drag'
 
 export default {
   name: 'app',
@@ -81,17 +114,25 @@ export default {
   components: {
     SidebarMenu,
     SpeckleRenderer,
-    SearchBar
+    SearchBar,
+    ObjectDetails
+  },
+  directives: {
+    drag
   },
   data( ) {
     return {
       showSnackbar: false,
+      showAddStreamDialog: false,
+      addStreamString: null,
       showStreamList: false,
       showAccounts: false,
       showViewSelect: false,
       showSettings: false,
+      showObjectDetails: false,
       view: '3d',
-      viewerSettings: {}
+      viewerSettings: {},
+      snackbarMessage: null
     }
   },
   methods: {
@@ -118,14 +159,20 @@ export default {
               layerMaterials: [ ]
             }
           } )
-        console.log( receivers )
         this.$store.commit( 'ADD_RECEIVERS', { receivers } )
       }
     },
     addReceiver( streamId ) {
-      console.log( 'Adding a receiver', streamId )
-      if ( this.$store.getters.receiverById( streamId ) )
+      if (!streamId)
+      {
+        this.snackbarMessage = 'Invalid streamId'
         return this.showSnackbar = true
+      }
+      console.log( 'Adding a receiver', streamId )
+      if ( this.$store.getters.receiverById( streamId ) ){
+        this.snackbarMessage = 'That stream is already loaded'
+        return this.showSnackbar = true
+      }
       let receiver = {
         serverUrl: this.$store.state.server,
         streamId: streamId,
@@ -141,6 +188,18 @@ export default {
     saveSettings (settings) {
       window.localStorage.setItem('viewerSettings', JSON.stringify(settings))
       this.$store.commit( 'SET_VIEWER_SETTINGS', { settings } )
+    },
+    snackbarUpdate (message) {
+      this.snackbarMessage = message
+      this.showSnackbar = true
+    },
+    toggleObjectDetails () {
+      if (!this.selectedObjects)
+      {
+        return this.snackbarUpdate("No objects selected")
+      }
+      this.snackbarUpdate("You can drag the info panel around the screen")
+      this.showObjectDetails = true
     }
   },
   created( ) {
@@ -190,7 +249,13 @@ export default {
     },
     objects( ) {
       return this.$store.getters.allObjects
+    },
+    selectedObjects() {
+      return this.$store.getters.selectedObjects
     }
+  },
+  mounted () {
+    bus.$on( 'snackbar-update', this.snackbarUpdate)
   }
 }
 

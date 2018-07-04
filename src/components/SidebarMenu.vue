@@ -16,13 +16,13 @@
           <md-icon>person</md-icon>
           <span class="md-list-item-text">My Account</span>
           <md-list class='md-triple-line md-dense' slot='md-expand'>
-            <md-list-item class='xxxmd-inset'>
+            <md-list-item class='md-inset'>
               <div class="md-list-item-text">
                 <span>{{user.name}} {{user.surname}}</span>
                 <span>{{user.email}}</span>
                 <p>{{user.createdAt}}</p>
               </div>
-              <md-button class="md-icon-button md-list-action" @click='logOut'>
+              <md-button class="md-raised md-icon-button md-list-action" @click='logOut'>
                 <md-icon class="md-primary">close</md-icon>
               </md-button>
             </md-list-item>
@@ -31,15 +31,19 @@
         <md-list-item md-expand>
           <md-icon>import_export</md-icon>
           <span class="md-list-item-text">My Streams</span>
-          <md-list class='md-double-line md-dense' slot='md-expand'>
-            <md-list-item class='xxxmd-inset'>
+          <md-list class='md-double-line md-dense' slot='md-expand' :md-expand-single="true" >
+            <md-list-item> 
               <md-field md-clearable>
                 <md-icon>search</md-icon>
-                <label>Search your streams</label>
-                <md-input v-model='searchFilter'></md-input>
+            <label>Filter your streams</label>
+            <md-input v-model='searchFilter'></md-input>
               </md-field>
             </md-list-item>
             <md-list-item>
+              <md-button class="md-icon-button md-dense" @click="updateStreamList">
+                <md-icon>refresh</md-icon>
+                <md-tooltip md-delay="500">Refresh stream list</md-tooltip>
+              </md-button>
               <div class="md-layout-item">
                 <md-button :disabled='startIndex==0' class='md-dense md-icon-button md-primary' @click='startIndex -= startIndex != 0 ? itemsPerPage : 0'>
                   <md-icon>chevron_left</md-icon>
@@ -55,8 +59,7 @@
               </div>
               <div class="md-caption">Showing {{startIndex + 1}} - {{startIndex + itemsPerPage}} out of <strong> {{filteredStreams.length}} </strong> </div>
             </md-list-item>
-            <!-- <md-divider class='xxxmd-inset'></md-divider> -->
-            <md-list-item v-for='stream in paginatedStreams' :key='stream.id' class='xxxmd-inset'>
+            <md-list-item v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
               <div class="md-list-item-text">
                 <span>{{stream.name}}</span>
                 <span>{{stream.streamId}}</span>
@@ -65,11 +68,12 @@
                 <md-icon>add</md-icon>
                 <md-tooltip md-delay="800">Add this stream to the viewer</md-tooltip>
               </md-button>
-              <!--               <md-button class="md-icon-button md-list-action md-dense" v-on:click='shareStream(stream.streamId)'>
-                <md-icon>share</md-icon>
-                <md-tooltip md-delay="800">Copy stream address to clipboard</md-tooltip>
-              </md-button> -->
             </md-list-item>
+
+            <!--               <md-button class="md-icon-button md-list-action md-dense" v-on:click='shareStream(stream.streamId)'>
+              <md-icon>share</md-icon>
+              <md-tooltip md-delay="800">Copy stream address to clipboard</md-tooltip>
+              </md-button> -->
           </md-list>
         </md-list-item>
       </md-list>
@@ -117,6 +121,7 @@ export default {
       searchFilter: null,
       startIndex: 0,
       itemsPerPage: 5,
+      streamAddition: null
     }
   },
   methods: {
@@ -138,7 +143,6 @@ export default {
     loggedIn( args ) {
       if ( args.guest === false ) {
         this.showLogin = false
-        console.log( args )
         var account = args.account
         account.guest = false
         var jwtToken = args.account.apitoken
@@ -157,14 +161,16 @@ export default {
     getStreams( ) {
       var jwtToken = localStorage.getItem( 'token' )
       this.$http.get( this.$store.state.server + '/streams', {
-          headers: {
-            Authorization: jwtToken
-          }
-        } )
+        headers: {
+          Authorization: jwtToken
+        }
+      } )
         .then( response => {
-          console.log( response )
           this.streams = response.data.resources.reverse( )
         } )
+    },
+    updateStreamList() {
+      this.getStreams()
     },
     addStream( stream ) {
       this.$emit( 'add', stream )
@@ -208,12 +214,15 @@ export default {
       } )
   },
   computed: {
+    parentStreams( ) {
+      return this.streams.filter(stream => stream.isComputedResult == false)
+    },
     filteredStreams( ) {
       if ( this.searchFilter == null || this.searchFilter == '' )
-        return this.streams
+        return this.parentStreams
       else {
         //this.startIndex = 0
-        return this.streams.filter( stream => stream.name.toLowerCase( ).includes( this.searchFilter.toLowerCase( ) ) || stream.streamId.toLowerCase( ).includes( this.searchFilter.toLowerCase( ) ) )
+        return this.parentStreams.filter( stream => stream.name.toLowerCase( ).includes( this.searchFilter.toLowerCase( ) ) || stream.streamId.toLowerCase( ).includes( this.searchFilter.toLowerCase( ) ) )
       }
     },
     paginatedStreams( ) {
@@ -251,7 +260,6 @@ export default {
 }
 
 .md-field {
-
   margin-bottom: 0px;
 }
 
