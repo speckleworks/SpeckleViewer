@@ -2,22 +2,6 @@
   <div>
     <div id='render-window' ref='mycanvas'>
     </div>
-    <!-- <div v-show='showInfoBox' id='info-box' class='object-info' ref='infobox'> -->
-    <!--   <md-content md-elevation="3" style='background-color:white' v-show='expandInfoBox' class='expanded-info-box'> -->
-    <!--     <1!-- <tree-view :data='propertiesToDisplay' :options='{ maxDepth: 3, rootObjectKey: selectedObjectsProperties.hash } '></tree-view> --1> -->
-    <!--     <md-list> -->
-    <!--       <object-details label='Details' :nodes='selectedObjectsProperties'></object-details> -->
-    <!--     </md-list> -->
-    <!--   </md-content> -->
-    <!--   <md-button class="md-icon-button md-raised xxxmd-primary md-dense expand-button" style='background-color:white;color:black !important;' @click.native='expandInfoBox=!expandInfoBox'> -->
-    <!--     <md-icon v-if='!isMobile'> -->
-    <!--       {{ expandInfoBox ? 'keyboard_arrow_left' : 'keyboard_arrow_right' }} -->
-    <!--     </md-icon> -->
-    <!--     <md-icon v-else> -->
-    <!--       {{ expandInfoBox ? 'close' : 'info_outline' }} -->
-    <!--     </md-icon> -->
-    <!--   </md-button> -->
-    <!-- </div> -->
   </div>
 </template>
 <script>
@@ -122,8 +106,7 @@ export default {
                 threeObj.name = myObject.streamId + '::' + result.data.resource._id
                 threeObj._id = myObject._id
                 this.scene.add( threeObj )
-
-                if ( ++totalCount == thingsToReq.length - 1 ) {
+                if ( ++totalCount == thingsToReq.length) {
                   return resolve( )
                 }
               } )
@@ -317,6 +300,15 @@ export default {
       } )
     },
 
+    setFar () {
+      this.computeSceneBoundingSpehere( geometry => {
+        let bsphere = geometry.boundingSphere
+        let camDistance = this.camera.position.distanceTo(bsphere.center)
+        this.camera.far = 2*bsphere.radius + camDistance
+        this.camera.updateProjectionMatrix()
+      })
+    },
+
     setCamera( where, time ) {
       let self = this
       let duration = time ? time : 350
@@ -330,7 +322,7 @@ export default {
         if ( this.x === where.target[ 0 ] )
           console.log( 'camera finished stuff' )
       } ).easing( TWEEN.Easing.Quadratic.InOut ).start( )
-    }
+    },
   },
   mounted( ) {
     this.oldQuaternion = null
@@ -360,6 +352,8 @@ export default {
 
     this.OrbitControls = OrbitControlsDef( THREE )
     this.controls = new this.OrbitControls( this.camera, this.renderer.domElement )
+
+    this.controls.addEventListener('change', this.setFar)
 
     this.render( )
     window.addEventListener( 'resize', this.resizeCanvas )
