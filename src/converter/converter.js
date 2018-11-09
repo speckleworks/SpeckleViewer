@@ -5,6 +5,29 @@ function argbToRGB( color ) {
   return '#' + ( '000000' + ( color & 0xFFFFFF ).toString( 16 ) ).slice( -6 )
 }
 
+let worldXY = {
+   origin : {value: [0,0,0]},
+   xdir : {value: [1,0,0]},
+   ydir : {value: [0,1,0]},
+   normal : {value: [0,0,1]}
+}
+
+function planeToPlane( geometry, plane1, plane2){
+  let qX = new THREE.Quaternion()
+  let qY = new THREE.Quaternion()
+  let qZ = new THREE.Quaternion()
+  // console.log("plane1:", plane1)
+  // console.log("plane2:", plane2)
+  qX.setFromUnitVectors(new THREE.Vector3(...plane1.xdir.value), new THREE.Vector3(...plane2.xdir.value))
+  qY.setFromUnitVectors(new THREE.Vector3(...plane1.ydir.value), new THREE.Vector3(...plane2.ydir.value))
+  qZ.setFromUnitVectors(new THREE.Vector3(...plane1.normal.value), new THREE.Vector3(...plane2.normal.value))
+  let translateVector = [(plane2.origin.value[0]-plane1.origin.value[0]), (plane2.origin.value[1]-plane1.origin.value[1]), (plane2.origin.value[2]-plane1.origin.value[2])]
+  geometry.applyMatrix( new THREE.Matrix4( ).makeRotationFromQuaternion( qX ) )
+  // geometry.applyMatrix( new THREE.Matrix4( ).makeRotationFromQuaternion( qY ) )
+  // geometry.applyMatrix( new THREE.Matrix4( ).makeRotationFromQuaternion( qZ ) )
+  geometry.translate(...translateVector)
+}
+
 export default {
 
   Point( args, cb ) {
@@ -173,7 +196,7 @@ export default {
   },
 
   Polyline( args, cb ) {
-    console.log( args.obj )
+    //console.log( args.obj )
     let geometry = new THREE.Geometry( )
     if ( !args.obj.value ) return console.warn( 'Strange polyline.' )
     if ( args.obj.closed == true ) {
@@ -265,9 +288,69 @@ export default {
     console.log( 'Soon™', args.obj.type )
     console.log( args.obj )
     let loader = new THREE.FontLoader( )
-    loader.load( '/src/assets/helvetiker_regular.typeface.json' )
     if ( args.obj._type.includes( 'Dimension' ) ) {
-      let dim = args.obj.properties
+      let dimProps = args.obj.properties
+      let extLineOffset = dimProps.ExtensionLineOffset
+      let extLineExtension = dimProps.ExtensionLineExtension
+
+      if (dimProps.DimensionLinePoint.properties.Y < 0){
+        extLineOffset = -extLineOffset
+        extLineExtension = -extLineExtension
+      }
+      //Draw the text
+      loader.load( '/src/assets/helvetiker_regular.typeface.json', function (font){
+        let geometry = new THREE.TextGeometry(dimProps.Text, {
+          font: font,
+          size: dimProps.TextHeight,
+          height: 0
+        })
+        geometry.computeBoundingBox()
+        let centerOffset = -0.5 * (geometry.boundingBox.max.x - geometry.boundingBox.min.x)
+        geometry.translate(dimProps.TextPosition.properties.X + centerOffset, dimProps.TextPosition.properties.Y - extLineExtension, 0)
+        planeToPlane(geometry, worldXY, dimProps.Plane)
+        let dimText = new THREE.Mesh( geometry, args.layer.threeLineMaterial )
+        dimText.hash = args.obj.hash
+        cb( null, dimText )
+
+      } )
+      //Draw the extension lines
+      //1st extension line
+      let ext1Geo = new THREE.Geometry( )
+      ext1Geo.vertices.push( new THREE.Vector3( dimProps.ExtensionLine1End.properties.X, dimProps.ExtensionLine1End.properties.Y + extLineOffset, 0 ))
+      ext1Geo.vertices.push( new THREE.Vector3( dimProps.ExtensionLine1End.properties.X, dimProps.DimensionLinePoint.properties.Y + extLineExtension, 0))
+      planeToPlane(ext1Geo, worldXY, dimProps.Plane)
+      let ext1line = new THREE.Line( ext1Geo, args.layer.threeLineMaterial )
+      cb( null, ext1line)
+      
+      //extension line 1 dot
+      let ext1dotGeo = new THREE.CircleGeometry(dimProps.ArrowSize/3, 32)
+      ext1dotGeo.translate(dimProps.ExtensionLine1End.properties.X, dimProps.DimensionLinePoint.properties.Y, 0)
+      planeToPlane(ext1dotGeo, worldXY, dimProps.Plane)
+      let ext1dot = new THREE.Mesh(ext1dotGeo, args.layer.threeLineMaterial)
+      cb (null, ext1dot)
+      
+      //2nd extension line
+      let ext2Geo = new THREE.Geometry( )
+      ext2Geo.vertices.push( new THREE.Vector3( dimProps.ExtensionLine2End.properties.X, dimProps.ExtensionLine2End.properties.Y + extLineOffset, 0 ))
+      ext2Geo.vertices.push( new THREE.Vector3( dimProps.ExtensionLine2End.properties.X, dimProps.DimensionLinePoint.properties.Y + extLineExtension, 0))
+      planeToPlane(ext2Geo, worldXY, dimProps.Plane)
+      let ext2line = new THREE.Line( ext2Geo, args.layer.threeLineMaterial )
+      cb( null, ext2line)
+
+      //extension line 2 dot
+      let ext2dotGeo = new THREE.CircleGeometry(dimProps.ArrowSize/3, 32)
+      ext2dotGeo.translate(dimProps.ExtensionLine2End.properties.X, dimProps.DimensionLinePoint.properties.Y, 0)
+      planeToPlane(ext2dotGeo, worldXY, dimProps.Plane)
+      let ext2dot = new THREE.Mesh(ext2dotGeo, args.layer.threeLineMaterial)
+      cb (null, ext2dot)
+
+      let dimLineGeo = new THREE.Geometry()
+      dimLineGeo.vertices.push( new THREE.Vector3( dimProps.ExtensionLine1End.properties.X, dimProps.DimensionLinePoint.properties.Y, 0))
+      dimLineGeo.vertices.push( new THREE.Vector3( dimProps.ExtensionLine2End.properties.X, dimProps.DimensionLinePoint.properties.Y, 0))
+      planeToPlane(dimLineGeo, worldXY, dimProps.Plane)
+      let dimLine = new THREE.Line( dimLineGeo, args.layer.threeLineMaterial)
+      cb (null, dimLine)
+
     }
   }
 }
