@@ -39,8 +39,20 @@ export default {
 
   Vector( args, cb ) {
     let v = new THREE.Vector3( ...args.obj.value )
-    //can't render this, vectors do not have origin point
-    console.warn( 'TODO', args.obj.type )
+    //if there's an origin in object.properties, render the vector as a line
+    if (args.obj.properties){
+      if (args.obj.properties.origin) {
+        origin = new THREE.Vector3(...args.obj.origin)
+        let geometry = new THREE.Geometry()
+        geometry.vertices.push(v)
+        geometry.vertices.push(origin)
+        let line = new THREE.Line( geometry, args.layer.threeLineMaterial )
+        line.hash = args.obj.hash
+        cb( null, line )
+      }
+    }
+    //otherwise warn the user
+    console.warn( "Can't render vectors without an origin point" )
   },
 
   Plane( args, cb ) {
