@@ -42,7 +42,7 @@
             <md-list-item>
               <md-button class="md-icon-button md-dense" @click="updateStreamList">
                 <md-icon>refresh</md-icon>
-                <md-tooltip md-delay="500">Refresh stream list</md-tooltip>
+                <md-tooltip v-if="!isIOS" md-delay="500">Refresh stream list</md-tooltip>
               </md-button>
               <div class="md-layout-item">
                 <md-button :disabled='startIndex==0' class='md-dense md-icon-button md-primary' @click='startIndex -= startIndex != 0 ? itemsPerPage : 0'>
@@ -66,7 +66,7 @@
               </div>
               <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(stream.streamId)'>
                 <md-icon>add</md-icon>
-                <md-tooltip md-delay="800">Add this stream to the viewer</md-tooltip>
+                <md-tooltip v-if="!isIOS" md-delay="800">Add this stream to the viewer</md-tooltip>
               </md-button>
             </md-list-item>
 
@@ -235,6 +235,9 @@ export default {
     currentPage( ) {
       if ( this.startIndex == 0 ) return 1
       return this.startIndex / this.itemsPerPage + 1
+    },
+    isIOS ( ) {
+      return (typeof window.orientation !== "undefined") && (navigator.userAgent.indexOf('OS X') !== -1)
     },
   }
 }

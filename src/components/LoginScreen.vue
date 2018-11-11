@@ -14,7 +14,7 @@
         <md-button class='md-primary md-raised' @click.native='login'>Login</md-button>
         <md-button class='md-accent md-raised' @click.native='guestLogin' v-if='allowGuestLogin'>
           Continue as guest
-          <md-tooltip>You will not be allowed to comment or edit.</md-tooltip>
+          <md-tooltip v-if="!isIOS">You will not be allowed to comment or edit.</md-tooltip>
         </md-button>
         <div v-show='loginError' class='login-error'>
           <br>
@@ -32,7 +32,10 @@ export default {
   computed: {
     logoUrl( ) { return window.SpkAppConfig.logoUrl },
     serverUrl( ) { return this.$store.state.server },
-    allowGuestLogin( ) { return true }
+    allowGuestLogin( ) { return true }, 
+    isIOS ( ) {
+      return (typeof window.orientation !== "undefined") && (navigator.userAgent.indexOf('OS X') !== -1)
+    },
   },
   data( ) {
     return {
