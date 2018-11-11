@@ -12,7 +12,7 @@
       <md-progress md-indeterminate v-show='showProgressBar' style='margin-bottom:20px;margin-top:20px;'></md-progress>
       <md-button v-show='expired' class='md-densexx md-warn md-raised md-icon-button' id='refresh-button' @click.native='getAndSetStream()'>
         <md-icon>refresh</md-icon>
-        <md-tooltip>Update available. Click to refresh.</md-tooltip>
+        <md-tooltip v-if="!isIOS">Update available. Click to refresh.</md-tooltip>
       </md-button>
     </md-card-header>
     <md-card-content>
@@ -54,7 +54,10 @@ export default {
     },
     sliders() {
       return this.controllers.filter( c => c.Type === 'Slider' )
-    }
+    },
+    isIOS ( ) {
+      return (typeof window.orientation !== "undefined") && (navigator.userAgent.indexOf('OS X') !== -1)
+    },
   },
   data () {
     return {
