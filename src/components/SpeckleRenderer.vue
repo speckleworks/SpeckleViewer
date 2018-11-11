@@ -38,7 +38,8 @@ export default {
       showInfoBox: false,
       expandInfoBox: false,
       isRotatingStuff: false,
-      isInitLoad: false
+      isInitLoad: false,
+      sceneBoundingSphere: null
     }
   },
   watch: {
@@ -107,7 +108,10 @@ export default {
                 threeObj._id = myObject._id
                 this.scene.add( threeObj )
                 if ( ++totalCount == thingsToReq.length) {
+                  this.computeSceneBoundingSphere( geometry => {
+                  this.sceneBoundingSphere = geometry.boundingSphere
                   return resolve( )
+                  })
                 }
               } )
             } )
@@ -268,7 +272,7 @@ export default {
         target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
       }, 100 )
     },
-    computeSceneBoundingSpehere( cb ) {
+    computeSceneBoundingSphere( cb ) {
       let minX, minY, minZ, maxX, maxY, maxZ
 
       let geometry = new THREE.Geometry( )
@@ -282,31 +286,23 @@ export default {
     },
 
     zoomExtents( ) {
-      this.computeSceneBoundingSpehere( geometry => {
-        let bsphere = geometry.boundingSphere
-        let r = bsphere.radius
-
-        let offset = r / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
+        let offset = this.sceneBoundingSphere.radius / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
         let vector = new THREE.Vector3( 0, 0, 1 )
         let dir = vector.applyQuaternion( this.controls.object.quaternion );
         let newPos = new THREE.Vector3( )
         dir.multiplyScalar( offset * 1.25 )
-        newPos.addVectors( bsphere.center, dir )
+        newPos.addVectors( this.sceneBoundingSphere.center, dir )
         this.setCamera( {
           position: [ newPos.x, newPos.y, newPos.z ],
           rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
-          target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
+          target: [ this.sceneBoundingSphere.center.x, this.sceneBoundingSphere.center.y, this.sceneBoundingSphere.center.z ]
         }, 100 )
-      } )
     },
 
     setFar () {
-      this.computeSceneBoundingSpehere( geometry => {
-        let bsphere = geometry.boundingSphere
-        let camDistance = this.camera.position.distanceTo(bsphere.center)
-        this.camera.far = 2*bsphere.radius + camDistance
+        let camDistance = this.camera.position.distanceTo(this.sceneBoundingSphere.center)
+        this.camera.far = 2*this.sceneBoundingSphere.radius + camDistance
         this.camera.updateProjectionMatrix()
-      })
     },
 
     setCamera( where, time ) {
@@ -325,6 +321,7 @@ export default {
     },
   },
   mounted( ) {
+
     this.oldQuaternion = null
     this.frameSkipper = 0
     this.animationId = null
@@ -354,6 +351,10 @@ export default {
     this.controls = new this.OrbitControls( this.camera, this.renderer.domElement )
 
     this.controls.addEventListener('change', this.setFar)
+
+    this.computeSceneBoundingSphere( geometry => {
+        this.sceneBoundingSphere = geometry.boundingSphere
+    })
 
     this.render( )
     window.addEventListener( 'resize', this.resizeCanvas )
