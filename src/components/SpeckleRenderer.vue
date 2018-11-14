@@ -56,7 +56,7 @@ export default {
           if ( !found ) {
             scene.remove( myObject )
             myObject.geometry.dispose( )
-            myObject.material.dispose( )
+            // myObject.material.dispose( ) // don't dispose material as they're used across?
             myObject = null
           }
         }
@@ -103,8 +103,8 @@ export default {
           obj.streamId = batch[ i ].object.streamId;
           obj.layerGuid = batch[ i ].object.layerGuid
         } )
-
-        bus.$emit( 'stream-load-progress', `Got ${ k++ * maxObjectRequestCount } objects out of ${thingsToReq.length }` )
+        if ( requestBatches.length > 0 && batch.length > 0 )
+          bus.$emit( 'stream-load-progress', `Got ${ k++ * maxObjectRequestCount } objects out of ${thingsToReq.length }` )
 
         filledBatch = [ ...res.data.resources.map( ( obj, i ) => { return { object: obj, layer: batch[ i ].layer } } ), ...filledBatch ]
       }

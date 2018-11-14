@@ -18,7 +18,7 @@ export default new Vuex.Store( {
     user: {},
     jwtToken: '',
     viewerSettings: {},
-    selectedObjects: {}
+    selectedObjects: []
   },
   getters: {
     isMobile: state => state.mobile,

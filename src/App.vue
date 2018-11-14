@@ -30,12 +30,13 @@
             </md-button>
             <md-button class='md-icon-button' @click.native='zoomExt'>
               <md-icon>zoom_out_map</md-icon>
-              <md-tooltip md-direction="top">Zoom Extents</md-tooltip>
+              <md-tooltip md-direction="top">Zoom Extents / To Selected Object </md-tooltip>
             </md-button>
-            <md-button class='md-icon-button' @click.native='toggleObjectDetails()'>
+            <md-button v-show='selectedObjects!=null' class='md-icon-button' @click.native='toggleObjectDetails()'>
               <md-icon>list</md-icon>
               <md-tooltip md-direction="top">Show details for selected objects</md-tooltip>
             </md-button>
+            <p class="md-caption" style="color:white" v-show='selectedObjects!=null'>{{selectedObjects ? selectedObjects.hash : ''}}</p>
             <!-- <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'> -->
             <!--   <md-icon>videocam</md-icon> -->
             <!--   <md-tooltip md-direction="top">Set camera view</md-tooltip> -->
@@ -134,7 +135,10 @@ export default {
   },
   methods: {
     zoomExt( ) {
-      bus.$emit( 'zext' )
+      if(! this.selectedObjects )
+        bus.$emit( 'zext' )
+      else
+        bus.$emit( 'zoomToObject' )
     },
     zoomToObject( ) {
       bus.$emit( 'zoomToObject' )
