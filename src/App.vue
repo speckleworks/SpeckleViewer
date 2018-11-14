@@ -1,19 +1,19 @@
 <template>
   <div id="app">
-      <div>
-        <md-dialog :md-active.sync="showSettings">
-          <md-dialog-title>Settings</md-dialog-title>
-          <md-list class='md-inset'>
-                <md-subheader>Global settings for the Speckle Viewer</md-subheader>
-                <md-list-item>
-                  <md-switch class='md-primary' v-model="viewerSettings.autoRefresh"> Automatic refresh on Stream update?</md-switch>
-                </md-list-item>
-          </md-list>
-          <md-dialog-actions>
-            <md-button class="md-primary" @click="showSettings=false; saveSettings(viewerSettings)">Save</md-button>
-          </md-dialog-actions>
-        </md-dialog>
-      </div>
+    <div>
+      <md-dialog :md-active.sync="showSettings">
+        <md-dialog-title>Settings</md-dialog-title>
+        <md-list class='md-inset'>
+          <md-subheader>Global settings for the Speckle Viewer</md-subheader>
+          <md-list-item>
+            <md-switch class='md-primary' v-model="viewerSettings.autoRefresh"> Automatic refresh on Stream update?</md-switch>
+          </md-list-item>
+        </md-list>
+        <md-dialog-actions>
+          <md-button class="md-primary" @click="showSettings=false; saveSettings(viewerSettings)">Save</md-button>
+        </md-dialog-actions>
+      </md-dialog>
+    </div>
     <md-app>
       <md-app-toolbar class="md-primary md-dense" style='z-index: 10'>
         <div class="md-toolbar-row">
@@ -49,9 +49,10 @@
             <!--     <md-option value="3d">Perspective</md-option> -->
             <!--   </md-select> -->
             <!-- </md-field> -->
-            <!-- <search-bar class="md-toolbar-section-start" :objects="searchobjects"></search-bar> -->
+            <!-- <search-bar class="md-toolbar-section-start"></search-bar> -->
           </div>
           <div class="md-toolbar-section-end">
+            <p> {{ progressMessage }}</p>
             <md-button class='md-icon-button' @click='showSettings =! showSettings'>
               <md-icon>settings</md-icon>
             </md-button>
@@ -82,12 +83,7 @@
             <md-button class="md-primary" @click="addReceiver(addStreamString)">Add</md-button>
           </md-dialog-actions>
         </md-dialog>
-        <md-dialog v-show="selectedObjects!=null"
-          style="position: absolute;" 
-          :md-close-on-esc="false"
-          :md-click-outside-to-close="false"
-          :md-backdrop="false"
-          v-drag :md-active.sync="showObjectDetails">
+        <md-dialog v-show="selectedObjects!=null" style="position: absolute;" :md-close-on-esc="false" :md-click-outside-to-close="false" :md-backdrop="false" v-drag :md-active.sync="showObjectDetails">
           <md-button class="md-mini md-flat md-icon-button" @click="showObjectDetails=false">
             <md-icon>close</md-icon>
           </md-button>
@@ -132,7 +128,8 @@ export default {
       showObjectDetails: false,
       view: '3d',
       viewerSettings: {},
-      snackbarMessage: null
+      snackbarMessage: null,
+      progressMessage: 'All is ready.'
     }
   },
   methods: {
@@ -163,13 +160,12 @@ export default {
       }
     },
     addReceiver( streamId ) {
-      if (!streamId)
-      {
+      if ( !streamId ) {
         this.snackbarMessage = 'Invalid streamId'
         return this.showSnackbar = true
       }
       console.log( 'Adding a receiver', streamId )
-      if ( this.$store.getters.receiverById( streamId ) ){
+      if ( this.$store.getters.receiverById( streamId ) ) {
         this.snackbarMessage = 'That stream is already loaded'
         return this.showSnackbar = true
       }
@@ -185,20 +181,19 @@ export default {
       }
       this.$store.commit( 'ADD_RECEIVER', { receiver } )
     },
-    saveSettings (settings) {
-      window.localStorage.setItem('viewerSettings', JSON.stringify(settings))
+    saveSettings( settings ) {
+      window.localStorage.setItem( 'viewerSettings', JSON.stringify( settings ) )
       this.$store.commit( 'SET_VIEWER_SETTINGS', { settings } )
     },
-    snackbarUpdate (message) {
+    snackbarUpdate( message ) {
       this.snackbarMessage = message
       this.showSnackbar = true
     },
-    toggleObjectDetails () {
-      if (!this.selectedObjects)
-      {
-        return this.snackbarUpdate("No objects selected")
+    toggleObjectDetails( ) {
+      if ( !this.selectedObjects ) {
+        return this.snackbarUpdate( "No objects selected" )
       }
-      this.snackbarUpdate("You can drag the info panel around the screen")
+      this.snackbarUpdate( "You can drag the info panel around the screen" )
       this.showObjectDetails = true
     }
   },
@@ -227,8 +222,8 @@ export default {
       .catch( err => {
         console.warn( err )
       } )
-    if (window.localStorage.getItem('viewerSettings') !== null ) {
-      this.$store.commit('SET_VIEWER_SETTINGS', {settings: JSON.parse(window.localStorage.getItem('viewerSettings'))})
+    if ( window.localStorage.getItem( 'viewerSettings' ) !== null ) {
+      this.$store.commit( 'SET_VIEWER_SETTINGS', { settings: JSON.parse( window.localStorage.getItem( 'viewerSettings' ) ) } )
     }
     this.viewerSettings = this.$store.getters.viewerSettings
   },
@@ -250,12 +245,15 @@ export default {
     objects( ) {
       return this.$store.getters.allObjects
     },
-    selectedObjects() {
+    selectedObjects( ) {
       return this.$store.getters.selectedObjects
     }
   },
-  mounted () {
-    bus.$on( 'snackbar-update', this.snackbarUpdate)
+  mounted( ) {
+    bus.$on( 'snackbar-update', this.snackbarUpdate )
+    bus.$on( 'stream-load-progress', message => {
+      this.progressMessage = message
+    })
   }
 }
 
@@ -265,13 +263,15 @@ export default {
   height: 100vh;
   border: 1px solid rgba(#000, .12);
 }
+
 .view-field {
   width: auto;
 }
 
-.md-menu-content{
-  max-height:none;
+.md-menu-content {
+  max-height: none;
 }
+
 #app {
   position: fixed;
   top: 0;
@@ -281,13 +281,5 @@ export default {
 }
 
 #main {}
-
-#bottom-bar {
-  /*  position: absolute;
-  top: 10px;
-  bottom: 0;
-  left: 0;
-  width: 100%;*/
-}
 
 </style>

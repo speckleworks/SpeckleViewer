@@ -55,8 +55,11 @@ export default new Vuex.Store( {
       return arr
       // return arr.concat.apply( [ ], arr )
     },
-    viewerSettings: (state) => state.viewerSettings,
-    selectedObjects: (state) => state.selectedObjects
+    defaultLayerMaterial: ( state ) => {
+      return new LMat( { guid: "default", streamId: "default", color: "#808080" } )
+    },
+    viewerSettings: ( state ) => state.viewerSettings,
+    selectedObjects: ( state ) => state.selectedObjects
   },
   actions: {},
   mutations: {

@@ -27,6 +27,9 @@ export default {
     layerMaterials( ) {
       return this.$store.getters.allLayerMaterials
     },
+    defaultLayerMaterial( ) {
+      return this.$store.getters.defaultLayerMaterial
+    },
     propertiesToDisplay( ) {
       return this.selectedObjectsProperties.properties
     }
@@ -35,8 +38,6 @@ export default {
     return {
       selectedObjectsProperties: [ { hash: null, properties: {} } ],
       hoveredObject: '',
-      showInfoBox: false,
-      expandInfoBox: false,
       isRotatingStuff: false,
       isInitLoad: false,
       sceneBoundingSphere: null
@@ -45,75 +46,112 @@ export default {
   methods: {
     loadStream( ) {
       this.update( )
-        .then( ( ) => {
-          this.zoomExtents( )
-        } )
     },
-    update( ) {
-      return new Promise( ( resolve, reject ) => {
-        // hides the objects that are no longer in any stream's object list
-        for ( let myObject of this.scene.children ) {
-          if ( myObject.hasOwnProperty( '_id' ) ) {
-            let found = this.allObjects.find( o => { return o._id === myObject._id && o.streamId === myObject.streamId } )
-            if ( !found ) {
-              scene.remove( myObject )
-              myObject.geometry.dispose()
-              myObject.material.dispose()
-              myObject = null
-            }
+    async update( ) {
+      // removes the objects that are no longer in any stream's object list
+      // TODO: remove them from the vuejs store as well (free for GC?)
+      for ( let myObject of this.scene.children ) {
+        if ( myObject.hasOwnProperty( '_id' ) ) {
+          let found = this.allObjects.find( o => { return o._id === myObject._id && o.streamId === myObject.streamId } )
+          if ( !found ) {
+            scene.remove( myObject )
+            myObject.geometry.dispose( )
+            myObject.material.dispose( )
+            myObject = null
           }
         }
+      }
 
-        // creates a list of objects to request from the server and makes the previously requested ones visible
-        let thingsToReq = [ ]
-        for ( let myObject of this.allObjects ) {
-          let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
-          if ( !sceneObj ) {
-            let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-            thingsToReq.push( { object: myObject, layer: layer } )
-          } else {
-            // makes things visible
-            if ( sceneObj.visible === false ) {
-              sceneObj.visible = true
-              sceneObj.isCurrent = true
-              sceneObj.spkProperties = myObject.properties
-            }
+      // creates a list of objects to request from the server and makes the previously requested ones visible
+      let thingsToReq = [ ]
+      for ( let myObject of this.allObjects ) {
+        let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
+        if ( !sceneObj ) {
+          let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
+          if ( !layer ) layer = this.defaultLayerMaterial
+          thingsToReq.push( { object: myObject, layer: layer } )
+        } else {
+          // makes things visible; this should no longer be the case (as we're removing the objects fully above ¯\_(ツ)_/¯
+          if ( sceneObj.visible === false ) {
+            sceneObj.visible = true
+            sceneObj.isCurrent = true
+            sceneObj.spkProperties = myObject.properties
           }
         }
+      }
 
-        //
-        let totalCount = 0
-        for ( let pair of thingsToReq ) {
-          let myObject = pair.object
-          let layer = pair.layer
-          this.$http.get( this.$store.state.server + '/objects/' + myObject._id + '?omit=base64,rawData' )
-            .then( result => {
-              if ( !Converter.hasOwnProperty( result.data.resource.type ) )
-                throw new Error( 'Cannot convert this object: ' + result.data.resource.type + ',' + myObject._id )
-              Converter[ result.data.resource.type ]( { obj: result.data.resource, layer: layer, camera: this.camera }, ( err, threeObj ) => {
-                threeObj.hash = result.data.resource.hash
-                threeObj.streamId = myObject.streamId
-                threeObj.layerGuid = myObject.layerGuid
-                threeObj.visible = layer.visible
-                threeObj.isCurrent = true
-                threeObj.spkProperties = result.data.resource.properties
-                threeObj.name = myObject.streamId + '::' + result.data.resource._id
-                threeObj._id = myObject._id
-                this.scene.add( threeObj )
-                if ( ++totalCount == thingsToReq.length ) {
-                  this.computeSceneBoundingSphere( geometry => {
-                    this.sceneBoundingSphere = geometry.boundingSphere
-                    return resolve( )
-                  } )
-                }
-              } )
-            } )
+      let totalCount = 0
+
+      let requestBatches = [ ]
+      let maxObjectRequestCount = 25
+      let bucket = [ ]
+      for ( var i = 0; i < thingsToReq.length; i++ ) {
+        bucket.push( thingsToReq[ i ] )
+        if ( i % maxObjectRequestCount == 0 && i != 0 ) {
+          requestBatches.push( [ ...bucket ] )
+          bucket = [ ]
         }
+      }
+      if ( bucket.length != 0 )
+        requestBatches.push( bucket )
+
+      let filledBatch = [ ]
+      let k = 1
+      for ( const batch of requestBatches ) {
+        let res = await this.$http.post( this.$store.state.server + '/objects/getbulk?omit=base64,rawData', batch.map( item => item.object._id ) )
+        res.data.resources.forEach( ( obj, i ) => {
+          obj.streamId = batch[ i ].object.streamId;
+          obj.layerGuid = batch[ i ].object.layerGuid
+        } )
+
+        bus.$emit( 'stream-load-progress', `Got ${ k++ * maxObjectRequestCount } objects out of ${thingsToReq.length }` )
+
+        filledBatch = [ ...res.data.resources.map( ( obj, i ) => { return { object: obj, layer: batch[ i ].layer } } ), ...filledBatch ]
+      }
+
+      let convertedCount = 0
+      filledBatch.forEach( ( pair, i ) => {
+        if ( !Converter.hasOwnProperty( pair.object.type ) )
+
+        else
+          Converter[ pair.object.type ]( { obj: pair.object, layer: pair.layer, camera: this.camera }, ( err, threeObj ) => {
+            threeObj.hash = pair.object.hash
+            threeObj.streamId = pair.object.streamId
+            threeObj.layerGuid = pair.object.layerGuid
+            threeObj.visible = pair.layer.visible
+            threeObj.isCurrent = true
+            threeObj.spkProperties = pair.object.properties
+            threeObj.name = pair.object.streamId + '::' + pair.object._id
+            threeObj._id = pair.object._id
+            this.objectsToAdd.push( threeObj )
+            if ( i >= filledBatch.length ) {
+              this.needsBoundsRefresh = true // will trigger render add to scene tap
+              bus.$emit( 'stream-load-progress', `Adding the objects to scene...` )
+            }
+          } )
       } )
+
     },
 
     render( ) {
       TWEEN.update( )
+      // adds 60 objects per second to the scene ;)
+      // should be enough! (prevents chugging on big loads)
+      if ( this.objectsToAdd.length > 0 && this.needsBoundsRefresh ) {
+        this.scene.add( this.objectsToAdd[ 0 ] )
+        this.objectsToAdd.splice( 0, 1 )
+
+        if ( this.objectsToAdd.length == 0 ) {
+          console.log( 'computing bounds refresh' )
+          this.computeSceneBoundingSphere( geometry => {
+            this.needsBoundsRefresh = false
+            this.sceneBoundingSphere = geometry.boundingSphere
+            this.zoomExtents( )
+            bus.$emit( 'object-load-finished' )
+            bus.$emit( 'stream-load-progress', `All ready.` )
+          } )
+        }
+      }
       this.animationId = requestAnimationFrame( this.render )
       this.renderer.render( this.scene, this.camera )
     },
@@ -123,6 +161,7 @@ export default {
       this.camera.updateProjectionMatrix( )
       this.renderer.setSize( window.innerWidth, window.innerHeight )
     },
+
     deselectObjects( ) {
       this.hoveredObjects.forEach( myObject => {
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
@@ -144,8 +183,6 @@ export default {
       this.hoveredObjects = [ ]
       this.hoveredObject = ''
       this.selectionBoxes = [ ]
-      this.showInfoBox = false
-      this.expandInfoBox = false
       let selectedObjectProperties = null
       this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
     },
@@ -159,8 +196,6 @@ export default {
 
       let intersects = this.raycaster.intersectObjects( scene.children )
       if ( intersects.length <= 0 ) {
-        this.showInfoBox = false
-        this.expandInfoBox = false
         return
       }
 
@@ -170,8 +205,6 @@ export default {
       } )
 
       if ( !selectedObject ) {
-        this.showInfoBox = false
-        this.expandInfoBox = false
         return
       }
       this.selectObject( selectedObject )
@@ -191,8 +224,6 @@ export default {
     },
     canvasClickedEvent( event ) {
       if ( event.which === 3 ) {
-        this.showInfoBox = false
-        this.expandInfoBox = false
         this.deselectObjects( )
         return
       }
@@ -251,7 +282,6 @@ export default {
       geometry.computeBoundingSphere( )
       cb( geometry )
     },
-
     zoomExtents( ) {
       let offset = this.sceneBoundingSphere.radius / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
       let vector = new THREE.Vector3( 0, 0, 1 )
@@ -265,13 +295,11 @@ export default {
         target: [ this.sceneBoundingSphere.center.x, this.sceneBoundingSphere.center.y, this.sceneBoundingSphere.center.z ]
       }, 100 )
     },
-
     setFar( ) {
       let camDistance = this.camera.position.distanceTo( this.sceneBoundingSphere.center )
       this.camera.far = 2 * this.sceneBoundingSphere.radius + camDistance
       this.camera.updateProjectionMatrix( )
     },
-
     setCamera( where, time ) {
       let self = this
       let duration = time ? time : 350
@@ -294,6 +322,10 @@ export default {
     this.animationId = null
     this.selectionBoxes = [ ]
     this.hoveredObjects = [ ]
+
+    this.objectsToAdd = [ ]
+    this.needsBoundsRefresh = false
+    this.loadFinishedPromise = null
 
     this.updateInProgress = false
 
@@ -359,8 +391,6 @@ export default {
     bus.$on( 'renderer-pop', ( ) => {
       console.log( "POP" )
       this.$refs.mycanvas.classList.toggle( 'pop' )
-      this.showInfoBox = false
-      this.expandInfoBox = false
     } )
     bus.$on( 'renderer-unpop', ( ) => {
       console.log( "UNPOP" )

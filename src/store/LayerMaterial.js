@@ -55,7 +55,8 @@ export default ( args ) => {
       side: THREE.DoubleSide,
       transparent: true,
       wireframe: false,
-      vertexColors: false
+      vertexColors: false,
+      opacity: 0.9
     } ),
     threeMeshVertexColorsMaterial: new THREE.MeshPhongMaterial( {
       color: new THREE.Color( args.color ? forceHex(args.color) : '#B3B3B3' ),
