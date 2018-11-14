@@ -42,15 +42,6 @@ export default {
       sceneBoundingSphere: null
     }
   },
-  watch: {
-    'isRotatingStuff': {
-      handler( newValue ) {
-        if ( newValue )
-          this.showInfoBox = false
-        this.expandInfoBox = false
-      }
-    }
-  },
   methods: {
     loadStream( ) {
       this.update( )
@@ -65,8 +56,10 @@ export default {
           if ( myObject.hasOwnProperty( '_id' ) ) {
             let found = this.allObjects.find( o => { return o._id === myObject._id && o.streamId === myObject.streamId } )
             if ( !found ) {
-              myObject.isCurrent = false
-              myObject.visible = false
+              scene.remove( myObject )
+              myObject.geometry.dispose()
+              myObject.material.dispose()
+              myObject = null
             }
           }
         }
@@ -107,39 +100,24 @@ export default {
                 threeObj.name = myObject.streamId + '::' + result.data.resource._id
                 threeObj._id = myObject._id
                 this.scene.add( threeObj )
-                if ( ++totalCount == thingsToReq.length) {
+                if ( ++totalCount == thingsToReq.length ) {
                   this.computeSceneBoundingSphere( geometry => {
-                  this.sceneBoundingSphere = geometry.boundingSphere
-                  return resolve( )
-                  })
+                    this.sceneBoundingSphere = geometry.boundingSphere
+                    return resolve( )
+                  } )
                 }
               } )
             } )
         }
       } )
     },
+
     render( ) {
       TWEEN.update( )
       this.animationId = requestAnimationFrame( this.render )
       this.renderer.render( this.scene, this.camera )
-
-      if ( ++this.frameSkipper == 20 ) {
-        if ( this.oldQuaternion._x === this.camera.quaternion._x && this.oldQuaternion._y === this.camera.quaternion._y && this.oldQuaternion._z === this.camera.quaternion._z && this.oldQuaternion._w === this.camera.quaternion._w ) {
-          this.isRotatingStuff = false
-        } else {
-          this.deselectObjects( )
-          this.isRotatingStuff = true
-        }
-        this.frameSkipper = 0
-      }
-      this.oldQuaternion = new THREE.Quaternion( ).copy( this.camera.quaternion )
-      window.camLoc = {
-        position: [ this.camera.position.x, this.camera.position.y, this.camera.position.z ],
-        rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
-        target: [ this.controls.target.x, this.controls.target.y, this.controls.target.z ]
-      }
-
     },
+
     resizeCanvas( ) {
       this.camera.aspect = window.innerWidth / window.innerHeight
       this.camera.updateProjectionMatrix( )
@@ -169,7 +147,7 @@ export default {
       this.showInfoBox = false
       this.expandInfoBox = false
       let selectedObjectProperties = null
-      this.$store.commit('SET_SELECTED_OBJECTS', {selectedObjectProperties})
+      this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
     },
     canvasHovered( event ) {
       if ( this.isRotatingStuff ) return
@@ -209,10 +187,7 @@ export default {
         properties: selectedObject.spkProperties
       }
       let selectedObjectProperties = this.selectedObjectsProperties
-      this.$store.commit('SET_SELECTED_OBJECTS', {selectedObjectProperties})
-      //this.showInfoBox = true
-      //this.$refs.infobox.style.left = window.innerWidth / 2 + 'px'
-      //this.$refs.infobox.style.top = window.innerHeight / 2 + 'px'
+      this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
     },
     canvasClickedEvent( event ) {
       if ( event.which === 3 ) {
@@ -222,14 +197,6 @@ export default {
         return
       }
       this.canvasHovered( event )
-      //if ( this.hoveredObject != '' ) {
-      //  this.showInfoBox = true
-      //  this.$refs.infobox.style.left = event.clientX - 20 + 'px'
-      //  this.$refs.infobox.style.top = event.clientY - 20 + 'px'
-      //} else {
-      //  this.showInfoBox = false
-      //  this.expandInfoBox = false
-      //}
     },
     selectBus( objectId ) {
       this.deselectObjects( )
@@ -286,23 +253,23 @@ export default {
     },
 
     zoomExtents( ) {
-        let offset = this.sceneBoundingSphere.radius / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
-        let vector = new THREE.Vector3( 0, 0, 1 )
-        let dir = vector.applyQuaternion( this.controls.object.quaternion );
-        let newPos = new THREE.Vector3( )
-        dir.multiplyScalar( offset * 1.25 )
-        newPos.addVectors( this.sceneBoundingSphere.center, dir )
-        this.setCamera( {
-          position: [ newPos.x, newPos.y, newPos.z ],
-          rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
-          target: [ this.sceneBoundingSphere.center.x, this.sceneBoundingSphere.center.y, this.sceneBoundingSphere.center.z ]
-        }, 100 )
+      let offset = this.sceneBoundingSphere.radius / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
+      let vector = new THREE.Vector3( 0, 0, 1 )
+      let dir = vector.applyQuaternion( this.controls.object.quaternion );
+      let newPos = new THREE.Vector3( )
+      dir.multiplyScalar( offset * 1.25 )
+      newPos.addVectors( this.sceneBoundingSphere.center, dir )
+      this.setCamera( {
+        position: [ newPos.x, newPos.y, newPos.z ],
+        rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
+        target: [ this.sceneBoundingSphere.center.x, this.sceneBoundingSphere.center.y, this.sceneBoundingSphere.center.z ]
+      }, 100 )
     },
 
-    setFar () {
-        let camDistance = this.camera.position.distanceTo(this.sceneBoundingSphere.center)
-        this.camera.far = 2*this.sceneBoundingSphere.radius + camDistance
-        this.camera.updateProjectionMatrix()
+    setFar( ) {
+      let camDistance = this.camera.position.distanceTo( this.sceneBoundingSphere.center )
+      this.camera.far = 2 * this.sceneBoundingSphere.radius + camDistance
+      this.camera.updateProjectionMatrix( )
     },
 
     setCamera( where, time ) {
@@ -350,11 +317,11 @@ export default {
     this.OrbitControls = OrbitControlsDef( THREE )
     this.controls = new this.OrbitControls( this.camera, this.renderer.domElement )
 
-    this.controls.addEventListener('change', this.setFar)
+    this.controls.addEventListener( 'change', this.setFar )
 
     this.computeSceneBoundingSphere( geometry => {
-        this.sceneBoundingSphere = geometry.boundingSphere
-    })
+      this.sceneBoundingSphere = geometry.boundingSphere
+    } )
 
     this.render( )
     window.addEventListener( 'resize', this.resizeCanvas )
@@ -465,7 +432,7 @@ export default {
 }
 
 
-@media ( max-width: 768px) {
+@media (max-width: 768px) {
   .expanded-info-box {
     position: fixed;
     top: auto;
