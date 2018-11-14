@@ -111,8 +111,9 @@ export default {
 
       let convertedCount = 0
       filledBatch.forEach( ( pair, i ) => {
+        convertedCount++
         if ( !Converter.hasOwnProperty( pair.object.type ) )
-
+          throw new Error( `Objects of type ${pair.object.type} not supported.` )
         else
           Converter[ pair.object.type ]( { obj: pair.object, layer: pair.layer, camera: this.camera }, ( err, threeObj ) => {
             threeObj.hash = pair.object.hash
@@ -124,9 +125,17 @@ export default {
             threeObj.name = pair.object.streamId + '::' + pair.object._id
             threeObj._id = pair.object._id
             this.objectsToAdd.push( threeObj )
-            if ( i >= filledBatch.length ) {
-              this.needsBoundsRefresh = true // will trigger render add to scene tap
-              bus.$emit( 'stream-load-progress', `Adding the objects to scene...` )
+            this.scene.add( threeObj )
+            if ( convertedCount >= filledBatch.length ) {
+              this.needsBoundsRefresh = true
+              console.log( "asdfafasfadf - doneeeee" )
+
+              this.computeSceneBoundingSphere( geometry => {
+                this.needsBoundsRefresh = false
+                this.sceneBoundingSphere = geometry.boundingSphere
+                this.zoomExtents( )
+                bus.$emit( 'stream-load-progress', `All ready.` )
+              } )
             }
           } )
       } )
@@ -135,23 +144,7 @@ export default {
 
     render( ) {
       TWEEN.update( )
-      // adds 60 objects per second to the scene ;)
-      // should be enough! (prevents chugging on big loads)
-      if ( this.objectsToAdd.length > 0 && this.needsBoundsRefresh ) {
-        this.scene.add( this.objectsToAdd[ 0 ] )
-        this.objectsToAdd.splice( 0, 1 )
 
-        if ( this.objectsToAdd.length == 0 ) {
-          console.log( 'computing bounds refresh' )
-          this.computeSceneBoundingSphere( geometry => {
-            this.needsBoundsRefresh = false
-            this.sceneBoundingSphere = geometry.boundingSphere
-            this.zoomExtents( )
-            bus.$emit( 'object-load-finished' )
-            bus.$emit( 'stream-load-progress', `All ready.` )
-          } )
-        }
-      }
       this.animationId = requestAnimationFrame( this.render )
       this.renderer.render( this.scene, this.camera )
     },
@@ -242,6 +235,11 @@ export default {
     },
     dropStream( streamId ) {
       this.scene.children = this.scene.children.filter( child => !child.name.includes( streamId ) )
+      this.computeSceneBoundingSphere( geometry => {
+        this.needsBoundsRefresh = false
+        this.sceneBoundingSphere = geometry.boundingSphere
+        this.zoomExtents( )
+      } )
     },
     zoomToObject( hash ) {
       if ( this.hoveredObject ) {
@@ -282,7 +280,7 @@ export default {
       geometry.computeBoundingSphere( )
       cb( geometry )
     },
-    zoomExtents( ) {
+    zoomExtents( duration ) {
       let offset = this.sceneBoundingSphere.radius / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
       let vector = new THREE.Vector3( 0, 0, 1 )
       let dir = vector.applyQuaternion( this.controls.object.quaternion );
@@ -293,7 +291,7 @@ export default {
         position: [ newPos.x, newPos.y, newPos.z ],
         rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
         target: [ this.sceneBoundingSphere.center.x, this.sceneBoundingSphere.center.y, this.sceneBoundingSphere.center.z ]
-      }, 100 )
+      }, 250 )
     },
     setFar( ) {
       let camDistance = this.camera.position.distanceTo( this.sceneBoundingSphere.center )
