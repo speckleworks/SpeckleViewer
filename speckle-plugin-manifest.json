@@ -1,0 +1,9 @@
+{
+  "name": "Speckle Viewer",
+  "version":"0.1.12",
+  "desc": "This plugins allows you to view streams in your browser, amongst other things.",
+  "serveFrom": "/view",
+  "author": "Speckle Project Contributors",
+  "contact":"hello@speckle.works",
+  "homepage":"https://speckle.works"
+}

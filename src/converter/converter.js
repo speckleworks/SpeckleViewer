@@ -72,7 +72,6 @@ export default {
 
   Line( args, cb ) {
     let geometry = new THREE.Geometry( )
-    console.log( args )
     geometry.vertices.push( new THREE.Vector3( args.obj.value[ 0 ], args.obj.value[ 1 ], args.obj.value[ 2 ] ) )
     geometry.vertices.push( new THREE.Vector3( args.obj.value[ 3 ], args.obj.value[ 4 ], args.obj.value[ 5 ] ) )
     let line = new THREE.Line( geometry, args.layer.threeLineMaterial )
@@ -189,7 +188,7 @@ export default {
   },
 
   Box( args, cb ) {
-    console.log(args.obj)
+    // console.log(args.obj)
     let width = args.obj.xSize.end - args.obj.xSize.start
     let height = args.obj.ySize.end - args.obj.ySize.start
     let depth = args.obj.zSize.end - args.obj.zSize.start
@@ -297,8 +296,8 @@ export default {
   },
 
   Abstract( args, cb ) {
-    console.log( 'Soon™', args.obj.type )
-    console.log( args.obj )
+    // console.log( 'Soon™', args.obj.type )
+    // console.log( args.obj )
     let loader = new THREE.FontLoader( )
     if ( args.obj._type.includes( 'Dimension' ) ) {
       let dimProps = args.obj.properties
@@ -333,14 +332,14 @@ export default {
       planeToPlane(ext1Geo, worldXY, dimProps.Plane)
       let ext1line = new THREE.Line( ext1Geo, args.layer.threeLineMaterial )
       cb( null, ext1line)
-      
+
       //extension line 1 dot
       let ext1dotGeo = new THREE.CircleGeometry(dimProps.ArrowSize/3, 32)
       ext1dotGeo.translate(dimProps.ExtensionLine1End.properties.X, dimProps.DimensionLinePoint.properties.Y, 0)
       planeToPlane(ext1dotGeo, worldXY, dimProps.Plane)
       let ext1dot = new THREE.Mesh(ext1dotGeo, args.layer.threeLineMaterial)
       cb (null, ext1dot)
-      
+
       //2nd extension line
       let ext2Geo = new THREE.Geometry( )
       ext2Geo.vertices.push( new THREE.Vector3( dimProps.ExtensionLine2End.properties.X, dimProps.ExtensionLine2End.properties.Y + extLineOffset, 0 ))

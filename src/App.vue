@@ -1,19 +1,19 @@
 <template>
   <div id="app">
-      <div>
-        <md-dialog :md-active.sync="showSettings">
-          <md-dialog-title>Settings</md-dialog-title>
-          <md-list class='md-inset'>
-                <md-subheader>Global settings for the Speckle Viewer</md-subheader>
-                <md-list-item>
-                  <md-switch class='md-primary' v-model="viewerSettings.autoRefresh"> Automatic refresh on Stream update?</md-switch>
-                </md-list-item>
-          </md-list>
-          <md-dialog-actions>
-            <md-button class="md-primary" @click="showSettings=false; saveSettings(viewerSettings)">Save</md-button>
-          </md-dialog-actions>
-        </md-dialog>
-      </div>
+    <div>
+      <md-dialog :md-active.sync="showSettings">
+        <md-dialog-title>Settings</md-dialog-title>
+        <md-list class='md-inset'>
+          <md-subheader>Global settings for the Speckle Viewer</md-subheader>
+          <md-list-item>
+            <md-switch class='md-primary' v-model="viewerSettings.autoRefresh"> Automatic refresh on Stream update?</md-switch>
+          </md-list-item>
+        </md-list>
+        <md-dialog-actions>
+          <md-button class="md-primary" @click="showSettings=false; saveSettings(viewerSettings)">Save</md-button>
+        </md-dialog-actions>
+      </md-dialog>
+    </div>
     <md-app>
       <md-app-toolbar class="md-primary md-dense" style='z-index: 10'>
         <div class="md-toolbar-row">
@@ -30,14 +30,30 @@
             </md-button>
             <md-button class='md-icon-button' @click.native='zoomExt'>
               <md-icon>zoom_out_map</md-icon>
-              <md-tooltip v-if="!isIOS" md-direction="top">Zoom Extents</md-tooltip>
+              <md-tooltip v-if="!isIOS" md-direction="top">Zoom Extents / To Selected Object</md-tooltip>
             </md-button>
-            <md-button class='md-icon-button' @click.native='toggleObjectDetails()'>
+            <md-button v-show='selectedObjects!=null' class='md-icon-button' @click.native='toggleObjectDetails()'>
               <md-icon>list</md-icon>
               <md-tooltip v-if="!isIOS" md-direction="top">Show details for selected objects</md-tooltip>
             </md-button>
+            <p class="md-caption" style="color:white" v-show='selectedObjects!=null'>{{selectedObjects ? selectedObjects.hash : ''}}</p>
+            <!-- <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'> -->
+            <!--   <md-icon>videocam</md-icon> -->
+            <!--   <md-tooltip md-direction="top">Set camera view</md-tooltip> -->
+            <!-- </md-button> -->
+            <!-- <md-field v-if=showViewSelect class='view-field'> -->
+            <!--   <label for='view'>View</label> -->
+            <!--   <md-select v-model="view" name="view" id="view"> -->
+            <!--     <md-option value="top">Top</md-option> -->
+            <!--     <md-option value="front">Front</md-option> -->
+            <!--     <md-option value="right">Right</md-option> -->
+            <!--     <md-option value="3d">Perspective</md-option> -->
+            <!--   </md-select> -->
+            <!-- </md-field> -->
+            <!-- <search-bar class="md-toolbar-section-start"></search-bar> -->
           </div>
           <div class="md-toolbar-section-end">
+            <p> {{ progressMessage }}</p>
             <md-button class='md-icon-button' @click='showSettings =! showSettings'>
               <md-icon>settings</md-icon>
               <md-tooltip v-if="!isIOS" md-direction="top">Global settings for the Speckle viewer</md-tooltip>
@@ -69,12 +85,7 @@
             <md-button class="md-primary" @click="addReceiver(addStreamString)">Add</md-button>
           </md-dialog-actions>
         </md-dialog>
-        <md-dialog v-show="selectedObjects!=null"
-          style="position: absolute;" 
-          :md-close-on-esc="false"
-          :md-click-outside-to-close="false"
-          :md-backdrop="false"
-          v-drag :md-active.sync="showObjectDetails">
+        <md-dialog v-show="selectedObjects!=null" style="position: absolute;" :md-close-on-esc="false" :md-click-outside-to-close="false" :md-backdrop="false" v-drag :md-active.sync="showObjectDetails">
           <md-button class="md-mini md-flat md-icon-button" @click="showObjectDetails=false">
             <md-icon>close</md-icon>
           </md-button>
@@ -119,12 +130,16 @@ export default {
       showObjectDetails: false,
       view: '3d',
       viewerSettings: {},
-      snackbarMessage: null
+      snackbarMessage: null,
+      progressMessage: 'All is ready.'
     }
   },
   methods: {
     zoomExt( ) {
-      bus.$emit( 'zext' )
+      if ( !this.selectedObjects )
+        bus.$emit( 'zext' )
+      else
+        bus.$emit( 'zoomToObject' )
     },
     zoomToObject( ) {
       bus.$emit( 'zoomToObject' )
@@ -150,13 +165,12 @@ export default {
       }
     },
     addReceiver( streamId ) {
-      if (!streamId)
-      {
+      if ( !streamId ) {
         this.snackbarMessage = 'Invalid streamId'
         return this.showSnackbar = true
       }
       console.log( 'Adding a receiver', streamId )
-      if ( this.$store.getters.receiverById( streamId ) ){
+      if ( this.$store.getters.receiverById( streamId ) ) {
         this.snackbarMessage = 'That stream is already loaded'
         return this.showSnackbar = true
       }
@@ -172,50 +186,27 @@ export default {
       }
       this.$store.commit( 'ADD_RECEIVER', { receiver } )
     },
-    saveSettings (settings) {
-      window.localStorage.setItem('viewerSettings', JSON.stringify(settings))
+    saveSettings( settings ) {
+      window.localStorage.setItem( 'viewerSettings', JSON.stringify( settings ) )
       this.$store.commit( 'SET_VIEWER_SETTINGS', { settings } )
     },
-    snackbarUpdate (message) {
+    snackbarUpdate( message ) {
       this.snackbarMessage = message
       this.showSnackbar = true
     },
-    toggleObjectDetails () {
-      if (!this.selectedObjects)
-      {
-        return this.snackbarUpdate("No objects selected")
+    toggleObjectDetails( ) {
+      if ( !this.selectedObjects ) {
+        return this.snackbarUpdate( "No objects selected" )
       }
-      this.snackbarUpdate("You can drag the info panel around the screen")
+      this.snackbarUpdate( "You can drag the info panel around the screen" )
       this.showObjectDetails = true
     }
   },
   created( ) {
     this.createReceivers( )
-    this.$http.get( this.$store.state.server )
-      .then( response => {
-        var account = localStorage.getItem( 'userAccount' )
-        var jwtToken = localStorage.getItem( 'userJwtToken' )
-        if ( !jwtToken || jwtToken == '' )
-          throw new Error( 'no login details found' )
-        return this.$http.get( this.$store.state.server + '/accounts', {
-          headers: {
-            Authorization: JSON.parse( jwtToken )
-          }
-        } )
-      } )
-      .then( response => {
-        if ( response.status != 200 ) throw new Error( response )
-        let args = {
-          guest: false,
-          account: response.data
-        }
-        localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
-      } )
-      .catch( err => {
-        console.warn( err )
-      } )
-    if (window.localStorage.getItem('viewerSettings') !== null ) {
-      this.$store.commit('SET_VIEWER_SETTINGS', {settings: JSON.parse(window.localStorage.getItem('viewerSettings'))})
+
+    if ( window.localStorage.getItem( 'viewerSettings' ) !== null ) {
+      this.$store.commit( 'SET_VIEWER_SETTINGS', { settings: JSON.parse( window.localStorage.getItem( 'viewerSettings' ) ) } )
     }
     this.viewerSettings = this.$store.getters.viewerSettings
   },
@@ -240,12 +231,15 @@ export default {
     objects( ) {
       return this.$store.getters.allObjects
     },
-    selectedObjects() {
+    selectedObjects( ) {
       return this.$store.getters.selectedObjects
     }
   },
-  mounted () {
-    bus.$on( 'snackbar-update', this.snackbarUpdate)
+  mounted( ) {
+    bus.$on( 'snackbar-update', this.snackbarUpdate )
+    bus.$on( 'stream-load-progress', message => {
+      this.progressMessage = message
+    } )
   }
 }
 
@@ -255,13 +249,15 @@ export default {
   height: 100vh;
   border: 1px solid rgba(#000, .12);
 }
+
 .view-field {
   width: auto;
 }
 
-.md-menu-content{
-  max-height:none;
+.md-menu-content {
+  max-height: none;
 }
+
 #app {
   position: fixed;
   top: 0;
@@ -271,13 +267,5 @@ export default {
 }
 
 #main {}
-
-#bottom-bar {
-  /*  position: absolute;
-  top: 10px;
-  bottom: 0;
-  left: 0;
-  width: 100%;*/
-}
 
 </style>
