@@ -27,6 +27,9 @@ export default {
     layerMaterials( ) {
       return this.$store.getters.allLayerMaterials
     },
+    defaultLayerMaterial( ) {
+      return this.$store.getters.defaultLayerMaterial
+    },
     propertiesToDisplay( ) {
       return this.selectedObjectsProperties.properties
     }
@@ -35,171 +38,172 @@ export default {
     return {
       selectedObjectsProperties: [ { hash: null, properties: {} } ],
       hoveredObject: '',
-      showInfoBox: false,
-      expandInfoBox: false,
       isRotatingStuff: false,
       isInitLoad: false,
       sceneBoundingSphere: null
     }
   },
-  watch: {
-    'isRotatingStuff': {
-      handler( newValue ) {
-        if ( newValue )
-          this.showInfoBox = false
-        this.expandInfoBox = false
-      }
-    }
-  },
   methods: {
     loadStream( ) {
       this.update( )
-        .then( ( ) => {
-          this.zoomExtents( )
-        } )
     },
-    update( ) {
-      return new Promise( ( resolve, reject ) => {
-        // hides the objects that are no longer in any stream's object list
-        for ( let myObject of this.scene.children ) {
-          if ( myObject.hasOwnProperty( '_id' ) ) {
-            let found = this.allObjects.find( o => { return o._id === myObject._id && o.streamId === myObject.streamId } )
-            if ( !found ) {
-              myObject.isCurrent = false
-              myObject.visible = false
-            }
+    async update( ) {
+      // removes the objects that are no longer in any stream's object list
+      // TODO: remove them from the vuejs store as well (free for GC?)
+      for ( let myObject of this.scene.children ) {
+        if ( myObject.hasOwnProperty( '_id' ) ) {
+          let found = this.allObjects.find( o => { return o._id === myObject._id && o.streamId === myObject.streamId } )
+          if ( !found ) {
+            scene.remove( myObject )
+            myObject.geometry.dispose( )
+            // myObject.material.dispose( ) // don't dispose material as they're used across?
+            myObject = null
           }
         }
+      }
 
-        // creates a list of objects to request from the server and makes the previously requested ones visible
-        let thingsToReq = [ ]
-        for ( let myObject of this.allObjects ) {
-          let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
-          if ( !sceneObj ) {
-            let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-            thingsToReq.push( { object: myObject, layer: layer } )
-          } else {
-            // makes things visible
-            if ( sceneObj.visible === false ) {
-              sceneObj.visible = true
-              sceneObj.isCurrent = true
-              sceneObj.spkProperties = myObject.properties
-            }
+      // creates a list of objects to request from the server and makes the previously requested ones visible
+      let thingsToReq = [ ]
+      for ( let myObject of this.allObjects ) {
+        let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
+        if ( !sceneObj ) {
+          let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
+          if ( !layer ) layer = this.defaultLayerMaterial
+          thingsToReq.push( { object: myObject, layer: layer } )
+        } else {
+          // makes things visible; this should no longer be the case (as we're removing the objects fully above ¯\_(ツ)_/¯
+          if ( sceneObj.visible === false ) {
+            sceneObj.visible = true
+            sceneObj.isCurrent = true
+            sceneObj.spkProperties = myObject.properties
           }
         }
+      }
 
-        //
-        let totalCount = 0
-        for ( let pair of thingsToReq ) {
-          let myObject = pair.object
-          let layer = pair.layer
-          this.$http.get( this.$store.state.server + '/objects/' + myObject._id + '?omit=base64,rawData' )
-            .then( result => {
-              if ( !Converter.hasOwnProperty( result.data.resource.type ) )
-                throw new Error( 'Cannot convert this object: ' + result.data.resource.type + ',' + myObject._id )
-              Converter[ result.data.resource.type ]( { obj: result.data.resource, layer: layer, camera: this.camera }, ( err, threeObj ) => {
-                threeObj.hash = result.data.resource.hash
-                threeObj.streamId = myObject.streamId
-                threeObj.layerGuid = myObject.layerGuid
-                threeObj.visible = layer.visible
-                threeObj.isCurrent = true
-                threeObj.spkProperties = result.data.resource.properties
-                threeObj.name = myObject.streamId + '::' + result.data.resource._id
-                threeObj._id = myObject._id
-                this.scene.add( threeObj )
-                if ( ++totalCount == thingsToReq.length) {
-                  this.computeSceneBoundingSphere( geometry => {
-                  this.sceneBoundingSphere = geometry.boundingSphere
-                  return resolve( )
-                  })
-                }
+      let totalCount = 0
+      let requestBatches = [ ]
+      let maxObjectRequestCount = 25
+      let bucket = [ ]
+      for ( var i = 0; i < thingsToReq.length; i++ ) {
+        bucket.push( thingsToReq[ i ] )
+        if ( i % maxObjectRequestCount == 0 && i != 0 ) {
+          requestBatches.push( [ ...bucket ] )
+          bucket = [ ]
+        }
+      }
+      if ( bucket.length != 0 )
+        requestBatches.push( bucket )
+
+      let filledBatch = [ ]
+      let k = 1
+      for ( const batch of requestBatches ) {
+        let res = await this.$http.post( this.$store.state.server + '/objects/getbulk?omit=base64,rawData', batch.map( item => item.object._id ) )
+        res.data.resources.forEach( ( obj, i ) => {
+          obj.streamId = batch[ i ].object.streamId;
+          obj.layerGuid = batch[ i ].object.layerGuid
+        } )
+        if ( requestBatches.length > 0 && batch.length > 0 )
+          bus.$emit( 'stream-load-progress', `Got ${ k++ * maxObjectRequestCount } objects out of ${thingsToReq.length }` )
+
+        filledBatch = [ ...res.data.resources.map( ( obj, i ) => { return { object: obj, layer: batch[ i ].layer } } ), ...filledBatch ]
+      }
+
+      let convertedCount = 0
+      filledBatch.forEach( ( pair, i ) => {
+        convertedCount++
+        if ( !Converter.hasOwnProperty( pair.object.type ) )
+          throw new Error( `Objects of type ${pair.object.type} not supported.` )
+        else
+          Converter[ pair.object.type ]( { obj: pair.object, layer: pair.layer, camera: this.camera }, ( err, threeObj ) => {
+            threeObj.hash = pair.object.hash
+            threeObj.streamId = pair.object.streamId
+            threeObj.layerGuid = pair.object.layerGuid
+            threeObj.visible = pair.layer.visible
+            threeObj.isCurrent = true
+            threeObj.spkProperties = pair.object.properties
+            threeObj.name = pair.object.streamId + '::' + pair.object._id
+            threeObj._id = pair.object._id
+
+            let color = null
+            try {
+              color = pair.object.properties.spkColor
+            } catch( e ) { }
+
+            if ( color ) {
+              // override material
+              let color = pair.object.properties.spkColor
+              if ( threeObj instanceof THREE.Mesh ) {
+                threeObj.material = new THREE.MeshPhongMaterial( {
+                  color: new THREE.Color( color.hex ),
+                  specular: new THREE.Color( '#FFECB3' ),
+                  shininess: 30,
+                  side: THREE.DoubleSide,
+                  transparent: true,
+                  wireframe: false,
+                  opacity: color.a
+                } )
+              }
+              if ( threeObj instanceof THREE.Line ) {
+                threeObj.material = new THREE.LineBasicMaterial( {
+                  color: new THREE.Color( color.hex ),
+                  linewidth: 1,
+                  opacity: color.a
+                } )
+              }
+              if ( threeObj instanceof THREE.Points ) {
+                threeObj.material = new THREE.PointsMaterial( {
+                  color: new THREE.Color( color.hex ),
+                  sizeAttenuation: false,
+                  transparent: true,
+                  size: 3,
+                  opacity: color.a
+                } )
+              }
+            }
+            this.scene.add( threeObj )
+            if ( convertedCount >= filledBatch.length ) {
+              this.needsBoundsRefresh = true
+              this.computeSceneBoundingSphere( geometry => {
+                this.needsBoundsRefresh = false
+                this.sceneBoundingSphere = geometry.boundingSphere
+                this.zoomExtents( )
+                bus.$emit( 'stream-load-progress', `All ready.` )
               } )
-            } )
-        }
+            }
+          } )
       } )
     },
+
     render( ) {
       TWEEN.update( )
+
       this.animationId = requestAnimationFrame( this.render )
       this.renderer.render( this.scene, this.camera )
-
-      if ( ++this.frameSkipper == 20 ) {
-        if ( this.oldQuaternion._x === this.camera.quaternion._x && this.oldQuaternion._y === this.camera.quaternion._y && this.oldQuaternion._z === this.camera.quaternion._z && this.oldQuaternion._w === this.camera.quaternion._w ) {
-          this.isRotatingStuff = false
-        } else {
-          this.deselectObjects( )
-          this.isRotatingStuff = true
-        }
-        this.frameSkipper = 0
-      }
-      this.oldQuaternion = new THREE.Quaternion( ).copy( this.camera.quaternion )
-      window.camLoc = {
-        position: [ this.camera.position.x, this.camera.position.y, this.camera.position.z ],
-        rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
-        target: [ this.controls.target.x, this.controls.target.y, this.controls.target.z ]
-      }
-
     },
+
     resizeCanvas( ) {
       this.camera.aspect = window.innerWidth / window.innerHeight
       this.camera.updateProjectionMatrix( )
       this.renderer.setSize( window.innerWidth, window.innerHeight )
     },
+
     deselectObjects( ) {
       this.hoveredObjects.forEach( myObject => {
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-        switch ( myObject.type ) {
-          case 'Line':
-            myObject.material = layer.threeLineMaterial
-            break
-          case 'Mesh':
-            if ( myObject.hasVertexColors )
-              myObject.material = layer.threeMeshVertexColorsMaterial
-            else
-              myObject.material = layer.threeMeshMaterial
-            break
-          case 'Point':
-            myObject.material = layer.threePointMaterial
-            break
-        }
+
+        myObject.material = myObject.originalMaterial
       } )
       this.hoveredObjects = [ ]
       this.hoveredObject = ''
       this.selectionBoxes = [ ]
-      this.showInfoBox = false
-      this.expandInfoBox = false
       let selectedObjectProperties = null
-      this.$store.commit('SET_SELECTED_OBJECTS', {selectedObjectProperties})
-    },
-    canvasHovered( event ) {
-      if ( this.isRotatingStuff ) return
-      this.deselectObjects( )
-
-      // preselect object
-      let mouse = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1 )
-      this.raycaster.setFromCamera( mouse, this.camera )
-
-      let intersects = this.raycaster.intersectObjects( scene.children )
-      if ( intersects.length <= 0 ) {
-        this.showInfoBox = false
-        this.expandInfoBox = false
-        return
-      }
-
-      let selectedObject = null
-      intersects.reverse( ).forEach( obj => {
-        if ( obj.object.material.visible ) selectedObject = obj.object
-      } )
-
-      if ( !selectedObject ) {
-        this.showInfoBox = false
-        this.expandInfoBox = false
-        return
-      }
-      this.selectObject( selectedObject )
+      if ( this.$store.getters.selectedObjects != null )
+        this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
     },
     selectObject( selectedObject ) {
+      selectedObject.originalMaterial = selectedObject.material
       selectedObject.material = this.hoverMaterial
+
       this.hoveredObjects.push( selectedObject )
       this.hoveredObject = selectedObject.hash
 
@@ -209,27 +213,34 @@ export default {
         properties: selectedObject.spkProperties
       }
       let selectedObjectProperties = this.selectedObjectsProperties
-      this.$store.commit('SET_SELECTED_OBJECTS', {selectedObjectProperties})
-      //this.showInfoBox = true
-      //this.$refs.infobox.style.left = window.innerWidth / 2 + 'px'
-      //this.$refs.infobox.style.top = window.innerHeight / 2 + 'px'
+      this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
     },
     canvasClickedEvent( event ) {
       if ( event.which === 3 ) {
-        this.showInfoBox = false
-        this.expandInfoBox = false
         this.deselectObjects( )
         return
       }
-      this.canvasHovered( event )
-      //if ( this.hoveredObject != '' ) {
-      //  this.showInfoBox = true
-      //  this.$refs.infobox.style.left = event.clientX - 20 + 'px'
-      //  this.$refs.infobox.style.top = event.clientY - 20 + 'px'
-      //} else {
-      //  this.showInfoBox = false
-      //  this.expandInfoBox = false
-      //}
+      if ( this.isRotatingStuff ) return
+      this.deselectObjects( )
+
+      // preselect object
+      let mouse = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1 )
+      this.raycaster.setFromCamera( mouse, this.camera )
+
+      let intersects = this.raycaster.intersectObjects( scene.children )
+      if ( intersects.length <= 0 ) {
+        return
+      }
+
+      let selectedObject = null
+      intersects.reverse( ).forEach( obj => {
+        if ( obj.object.material.visible ) selectedObject = obj.object
+      } )
+
+      if ( !selectedObject ) {
+        return
+      }
+      this.selectObject( selectedObject )
     },
     selectBus( objectId ) {
       this.deselectObjects( )
@@ -244,6 +255,11 @@ export default {
     },
     dropStream( streamId ) {
       this.scene.children = this.scene.children.filter( child => !child.name.includes( streamId ) )
+      this.computeSceneBoundingSphere( geometry => {
+        this.needsBoundsRefresh = false
+        this.sceneBoundingSphere = geometry.boundingSphere
+        this.zoomExtents( )
+      } )
     },
     zoomToObject( hash ) {
       if ( this.hoveredObject ) {
@@ -284,27 +300,24 @@ export default {
       geometry.computeBoundingSphere( )
       cb( geometry )
     },
-
-    zoomExtents( ) {
-        let offset = this.sceneBoundingSphere.radius / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
-        let vector = new THREE.Vector3( 0, 0, 1 )
-        let dir = vector.applyQuaternion( this.controls.object.quaternion );
-        let newPos = new THREE.Vector3( )
-        dir.multiplyScalar( offset * 1.25 )
-        newPos.addVectors( this.sceneBoundingSphere.center, dir )
-        this.setCamera( {
-          position: [ newPos.x, newPos.y, newPos.z ],
-          rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
-          target: [ this.sceneBoundingSphere.center.x, this.sceneBoundingSphere.center.y, this.sceneBoundingSphere.center.z ]
-        }, 100 )
+    zoomExtents( duration ) {
+      let offset = this.sceneBoundingSphere.radius / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
+      let vector = new THREE.Vector3( 0, 0, 1 )
+      let dir = vector.applyQuaternion( this.controls.object.quaternion );
+      let newPos = new THREE.Vector3( )
+      dir.multiplyScalar( offset * 1.25 )
+      newPos.addVectors( this.sceneBoundingSphere.center, dir )
+      this.setCamera( {
+        position: [ newPos.x, newPos.y, newPos.z ],
+        rotation: [ this.camera.rotation.x, this.camera.rotation.y, this.camera.rotation.z ],
+        target: [ this.sceneBoundingSphere.center.x, this.sceneBoundingSphere.center.y, this.sceneBoundingSphere.center.z ]
+      }, 250 )
     },
-
-    setFar () {
-        let camDistance = this.camera.position.distanceTo(this.sceneBoundingSphere.center)
-        this.camera.far = 2*this.sceneBoundingSphere.radius + camDistance
-        this.camera.updateProjectionMatrix()
+    setFar_t( ) {
+      let camDistance = this.camera.position.distanceTo( this.sceneBoundingSphere.center )
+      this.camera.far = 2 * this.sceneBoundingSphere.radius + camDistance
+      this.camera.updateProjectionMatrix( )
     },
-
     setCamera( where, time ) {
       let self = this
       let duration = time ? time : 350
@@ -328,6 +341,9 @@ export default {
     this.selectionBoxes = [ ]
     this.hoveredObjects = [ ]
 
+    this.needsBoundsRefresh = false
+    this.loadFinishedPromise = null
+
     this.updateInProgress = false
 
     this.hoverMaterial = new THREE.MeshPhongMaterial( { color: new THREE.Color( '#FFFF66' ), specular: new THREE.Color( '#FFECB3' ), shininess: 0, side: THREE.DoubleSide, transparent: true, opacity: 1 } )
@@ -339,6 +355,7 @@ export default {
     this.$refs.mycanvas.appendChild( this.renderer.domElement )
 
     this.scene = new THREE.Scene( )
+    window.scene = this.scene
 
     this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 100000 );
     this.camera.up.set( 0, 0, 1 )
@@ -350,11 +367,11 @@ export default {
     this.OrbitControls = OrbitControlsDef( THREE )
     this.controls = new this.OrbitControls( this.camera, this.renderer.domElement )
 
-    this.controls.addEventListener('change', this.setFar)
+    this.controls.addEventListener( 'change', this.setFar_t )
 
     this.computeSceneBoundingSphere( geometry => {
-        this.sceneBoundingSphere = geometry.boundingSphere
-    })
+      this.sceneBoundingSphere = geometry.boundingSphere
+    } )
 
     this.render( )
     window.addEventListener( 'resize', this.resizeCanvas )
@@ -392,8 +409,6 @@ export default {
     bus.$on( 'renderer-pop', ( ) => {
       console.log( "POP" )
       this.$refs.mycanvas.classList.toggle( 'pop' )
-      this.showInfoBox = false
-      this.expandInfoBox = false
     } )
     bus.$on( 'renderer-unpop', ( ) => {
       console.log( "UNPOP" )
@@ -465,7 +480,7 @@ export default {
 }
 
 
-@media ( max-width: 768px) {
+@media (max-width: 768px) {
   .expanded-info-box {
     position: fixed;
     top: auto;
