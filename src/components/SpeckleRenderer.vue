@@ -124,12 +124,44 @@ export default {
             threeObj.spkProperties = pair.object.properties
             threeObj.name = pair.object.streamId + '::' + pair.object._id
             threeObj._id = pair.object._id
-            this.objectsToAdd.push( threeObj )
+
+            if ( pair.object.properties.spkColor ) {
+              // override material
+              let color = pair.object.properties.spkColor
+              threeObj.opacity = color.a
+
+              if ( threeObj instanceof THREE.Mesh ) {
+                threeObj.material = new THREE.MeshPhongMaterial( {
+                  color: new THREE.Color( color.hex ),
+                  specular: new THREE.Color( '#FFECB3' ),
+                  shininess: 30,
+                  side: THREE.DoubleSide,
+                  transparent: true,
+                  wireframe: false
+                } )
+              }
+
+              if ( threeObj instanceof THREE.Line ) {
+                threeObj.material = new THREE.LineBasicMaterial( {
+                  color: new THREE.Color( color.hex ),
+                  linewidth: 1
+                } )
+
+              }
+              if ( threeObj instanceof THREE.Points ) {
+                threeObj.material = new THREE.PointsMaterial( {
+                  color: new THREE.Color( color.hex ),
+                  sizeAttenuation: false,
+                  transparent: true,
+                  size: 3
+                } )
+              }
+            }
+
+
             this.scene.add( threeObj )
             if ( convertedCount >= filledBatch.length ) {
               this.needsBoundsRefresh = true
-              console.log( "asdfafasfadf - doneeeee" )
-
               this.computeSceneBoundingSphere( geometry => {
                 this.needsBoundsRefresh = false
                 this.sceneBoundingSphere = geometry.boundingSphere
@@ -293,7 +325,7 @@ export default {
         target: [ this.sceneBoundingSphere.center.x, this.sceneBoundingSphere.center.y, this.sceneBoundingSphere.center.z ]
       }, 250 )
     },
-    setFar( ) {
+    setFar_t( ) {
       let camDistance = this.camera.position.distanceTo( this.sceneBoundingSphere.center )
       this.camera.far = 2 * this.sceneBoundingSphere.radius + camDistance
       this.camera.updateProjectionMatrix( )
@@ -321,7 +353,6 @@ export default {
     this.selectionBoxes = [ ]
     this.hoveredObjects = [ ]
 
-    this.objectsToAdd = [ ]
     this.needsBoundsRefresh = false
     this.loadFinishedPromise = null
 
@@ -347,7 +378,7 @@ export default {
     this.OrbitControls = OrbitControlsDef( THREE )
     this.controls = new this.OrbitControls( this.camera, this.renderer.domElement )
 
-    this.controls.addEventListener( 'change', this.setFar )
+    this.controls.addEventListener( 'change', this.setFar_t )
 
     this.computeSceneBoundingSphere( geometry => {
       this.sceneBoundingSphere = geometry.boundingSphere
