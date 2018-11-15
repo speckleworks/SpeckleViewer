@@ -2,7 +2,7 @@
 <div>
   <md-button class='md-icon-button md-primary md-raised' @click.native='showNewReceiver=true' v-show='!showNewReceiver'>
     <md-icon>add</md-icon>
-    <md-tooltip md-direction='right'>Add a new stream.</md-tooltip>
+    <md-tooltip v-if="!isIOS" md-direction='right'>Add a new stream.</md-tooltip>
   </md-button>
 
   <md-card class='paddedcard' style="margin-bottom:20px;" v-show='showNewReceiver'>
@@ -21,6 +21,9 @@
 export default {
   name: 'NewReceiver',
   computed: {
+    isIOS ( ) {
+      return (typeof window.orientation !== "undefined") && (navigator.userAgent.indexOf('OS X') !== -1)
+    },
   },
   data() {
     return {

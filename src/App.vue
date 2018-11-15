@@ -22,19 +22,19 @@
               <md-icon style='color: black'>
                 {{ showAccounts ? "close" : "menu"}}
               </md-icon>
-              <md-tooltip md-direction="bottom">Menu</md-tooltip>
+              <md-tooltip v-if="!isIOS" md-direction="bottom">Menu</md-tooltip>
             </md-button>
             <md-button class='md-icon-button' @click.native='showAddStreamDialog=true'>
               <md-icon>add</md-icon>
-              <md-tooltip md-direction="top">Add a stream to the viewer</md-tooltip>
+              <md-tooltip v-if="!isIOS" md-direction="top">Add a stream to the viewer</md-tooltip>
             </md-button>
             <md-button class='md-icon-button' @click.native='zoomExt'>
               <md-icon>zoom_out_map</md-icon>
-              <md-tooltip md-direction="top">Zoom Extents / To Selected Object </md-tooltip>
+              <md-tooltip v-if="!isIOS" md-direction="top">Zoom Extents / To Selected Object</md-tooltip>
             </md-button>
             <md-button v-show='selectedObjects!=null' class='md-icon-button' @click.native='toggleObjectDetails()'>
               <md-icon>list</md-icon>
-              <md-tooltip md-direction="top">Show details for selected objects</md-tooltip>
+              <md-tooltip v-if="!isIOS" md-direction="top">Show details for selected objects</md-tooltip>
             </md-button>
             <p class="md-caption" style="color:white" v-show='selectedObjects!=null'>{{selectedObjects ? selectedObjects.hash : ''}}</p>
             <!-- <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'> -->
@@ -56,10 +56,11 @@
             <p> {{ progressMessage }}</p>
             <md-button class='md-icon-button' @click='showSettings =! showSettings'>
               <md-icon>settings</md-icon>
+              <md-tooltip v-if="!isIOS" md-direction="top">Global settings for the Speckle viewer</md-tooltip>
             </md-button>
             <a href="https://speckle.works">
               <img src='https://speckle.works/img/logos/logo-xs.png' width="17"/>
-              <md-tooltip md-direction="left">Speckle.Works!</md-tooltip>
+              <md-tooltip v-if="!isIOS" md-direction="left">Speckle.Works!</md-tooltip>
             </a>
           </div>
         </div>
@@ -220,6 +221,9 @@ export default {
     },
     isMobileView( ) {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test( navigator.userAgent ) && window.innerWidth < 768
+    },
+    isIOS ( ) {
+      return (typeof window.orientation !== "undefined") && (navigator.userAgent.indexOf('OS X') !== -1)
     },
     receivers( ) {
       return this.$store.getters.allReceivers
