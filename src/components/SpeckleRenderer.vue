@@ -81,7 +81,6 @@ export default {
       }
 
       let totalCount = 0
-
       let requestBatches = [ ]
       let maxObjectRequestCount = 25
       let bucket = [ ]
@@ -125,11 +124,14 @@ export default {
             threeObj.name = pair.object.streamId + '::' + pair.object._id
             threeObj._id = pair.object._id
 
-            if ( pair.object.properties.spkColor ) {
+            let color = null
+            try {
+              color = pair.object.properties.spkColor
+            } catch( e ) { }
+
+            if ( color ) {
               // override material
               let color = pair.object.properties.spkColor
-              threeObj.opacity = color.a
-
               if ( threeObj instanceof THREE.Mesh ) {
                 threeObj.material = new THREE.MeshPhongMaterial( {
                   color: new THREE.Color( color.hex ),
@@ -137,28 +139,27 @@ export default {
                   shininess: 30,
                   side: THREE.DoubleSide,
                   transparent: true,
-                  wireframe: false
+                  wireframe: false,
+                  opacity: color.a
                 } )
               }
-
               if ( threeObj instanceof THREE.Line ) {
                 threeObj.material = new THREE.LineBasicMaterial( {
                   color: new THREE.Color( color.hex ),
-                  linewidth: 1
+                  linewidth: 1,
+                  opacity: color.a
                 } )
-
               }
               if ( threeObj instanceof THREE.Points ) {
                 threeObj.material = new THREE.PointsMaterial( {
                   color: new THREE.Color( color.hex ),
                   sizeAttenuation: false,
                   transparent: true,
-                  size: 3
+                  size: 3,
+                  opacity: color.a
                 } )
               }
             }
-
-
             this.scene.add( threeObj )
             if ( convertedCount >= filledBatch.length ) {
               this.needsBoundsRefresh = true
@@ -171,7 +172,6 @@ export default {
             }
           } )
       } )
-
     },
 
     render( ) {
@@ -190,28 +190,36 @@ export default {
     deselectObjects( ) {
       this.hoveredObjects.forEach( myObject => {
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-        switch ( myObject.type ) {
-          case 'Line':
-            myObject.material = layer.threeLineMaterial
-            break
-          case 'Mesh':
-            if ( myObject.hasVertexColors )
-              myObject.material = layer.threeMeshVertexColorsMaterial
-            else
-              myObject.material = layer.threeMeshMaterial
-            break
-          case 'Point':
-            myObject.material = layer.threePointMaterial
-            break
-        }
+
+        myObject.material = myObject.originalMaterial
       } )
       this.hoveredObjects = [ ]
       this.hoveredObject = ''
       this.selectionBoxes = [ ]
       let selectedObjectProperties = null
+      if ( this.$store.getters.selectedObjects != null )
+        this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
+    },
+    selectObject( selectedObject ) {
+      selectedObject.originalMaterial = selectedObject.material
+      selectedObject.material = this.hoverMaterial
+
+      this.hoveredObjects.push( selectedObject )
+      this.hoveredObject = selectedObject.hash
+
+      this.selectedObjectsProperties = {
+        hash: selectedObject.hash,
+        streamId: selectedObject.streamId,
+        properties: selectedObject.spkProperties
+      }
+      let selectedObjectProperties = this.selectedObjectsProperties
       this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
     },
-    canvasHovered( event ) {
+    canvasClickedEvent( event ) {
+      if ( event.which === 3 ) {
+        this.deselectObjects( )
+        return
+      }
       if ( this.isRotatingStuff ) return
       this.deselectObjects( )
 
@@ -233,26 +241,6 @@ export default {
         return
       }
       this.selectObject( selectedObject )
-    },
-    selectObject( selectedObject ) {
-      selectedObject.material = this.hoverMaterial
-      this.hoveredObjects.push( selectedObject )
-      this.hoveredObject = selectedObject.hash
-
-      this.selectedObjectsProperties = {
-        hash: selectedObject.hash,
-        streamId: selectedObject.streamId,
-        properties: selectedObject.spkProperties
-      }
-      let selectedObjectProperties = this.selectedObjectsProperties
-      this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
-    },
-    canvasClickedEvent( event ) {
-      if ( event.which === 3 ) {
-        this.deselectObjects( )
-        return
-      }
-      this.canvasHovered( event )
     },
     selectBus( objectId ) {
       this.deselectObjects( )
@@ -367,6 +355,7 @@ export default {
     this.$refs.mycanvas.appendChild( this.renderer.domElement )
 
     this.scene = new THREE.Scene( )
+    window.scene = this.scene
 
     this.camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 100000 );
     this.camera.up.set( 0, 0, 1 )
