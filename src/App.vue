@@ -135,7 +135,7 @@ export default {
   },
   methods: {
     zoomExt( ) {
-      if(! this.selectedObjects )
+      if ( !this.selectedObjects )
         bus.$emit( 'zext' )
       else
         bus.$emit( 'zoomToObject' )
@@ -203,29 +203,7 @@ export default {
   },
   created( ) {
     this.createReceivers( )
-    this.$http.get( this.$store.state.server )
-      .then( response => {
-        var account = localStorage.getItem( 'userAccount' )
-        var jwtToken = localStorage.getItem( 'userJwtToken' )
-        if ( !jwtToken || jwtToken == '' )
-          throw new Error( 'no login details found' )
-        return this.$http.get( this.$store.state.server + '/accounts', {
-          headers: {
-            Authorization: JSON.parse( jwtToken )
-          }
-        } )
-      } )
-      .then( response => {
-        if ( response.status != 200 ) throw new Error( response )
-        let args = {
-          guest: false,
-          account: response.data
-        }
-        localStorage.setItem( 'userAccount', JSON.stringify( response.data ) )
-      } )
-      .catch( err => {
-        console.warn( err )
-      } )
+
     if ( window.localStorage.getItem( 'viewerSettings' ) !== null ) {
       this.$store.commit( 'SET_VIEWER_SETTINGS', { settings: JSON.parse( window.localStorage.getItem( 'viewerSettings' ) ) } )
     }
@@ -257,7 +235,7 @@ export default {
     bus.$on( 'snackbar-update', this.snackbarUpdate )
     bus.$on( 'stream-load-progress', message => {
       this.progressMessage = message
-    })
+    } )
   }
 }
 

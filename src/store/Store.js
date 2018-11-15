@@ -73,7 +73,6 @@ export default new Vuex.Store( {
       state.jwtToken = jwtToken
     },
     SET_USER( state, { account } ) {
-      console.log( account )
       state.user = account
     },
 
