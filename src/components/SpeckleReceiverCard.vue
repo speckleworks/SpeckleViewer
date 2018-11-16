@@ -5,7 +5,7 @@
         <div class="md-title">{{spkreceiver.name}}</div>
         <div class="md-caption">{{spkreceiver.streamId}}</div>
       </md-card-header-text>
-      <md-button class="md-icon-button xxx-md-raised" v-on:click='dropStream(spkreceiver.streamId)'>
+      <md-button class="md-icon-button xxx-md-raised" v-on:click='removeReceiver(spkreceiver.streamId)'>
         <md-icon>close</md-icon>
       </md-button>
       <md-button v-show='expired' class='md-icon-button md-dense md-accent md-raised' @click.native='getAndSetStream()'>
@@ -21,11 +21,9 @@
           <p>Units: <strong>{{spkreceiver.baseProperties.units}}</strong></p>
         </md-tab>
         <md-tab id="tab-layers" md-label="Layers" xxx-md-icon='layers'>
-          <!-- <md-list> -->
           <div xxxlass='md-inset' v-for='layer in layers' :key='layer.guid'>
             <speckle-receiver-layer :spklayer='layer' :streamid='spkreceiver.streamId'></speckle-receiver-layer>
           </div>
-          <!-- </md-list> -->
         </md-tab>
         <md-tab id="tab-controllers" md-label="Controllers" xxx-md-icon='sliders'>
           <md-list-item class='md-inset' v-for='controller in controllers' :key='controller.guid'>
@@ -34,79 +32,17 @@
           <div v-if='!controllers || !controllers.length'>
             <p>No controllers are broadcasting for this stream.</p>
             <md-button v-if='!controllers || !controllers.length' class='md-dense md-raised' @click.native='getControllers()'>
-              <!-- <md-icon>refresh</md-icon> -->
               refresh
             </md-button>
           </div>
         </md-tab>
         <md-tab id="tab-history" md-label="History" xxx-md-icon='sliders'>
-          <!-- {{spkreceiver.children}} -->
           <p v-show='spkreceiver.children.length == 0' class='md-caption'>This stream has no history.</p>
-          <history-item v-for='streamId in historyStreams' :key='streamId' :streamid='streamId' :selected='streamId==selectedHistoryItem' v-on:selectme='historySelect'></history-item>
+          <history-item v-for='streamId in historyStreams' :key='streamId' :streamid='streamId' :selected='streamId==selectedHistoryItem' v-on:selectme='historySelect' v-on:restore='restoreLatest'></history-item>
         </md-tab>
-        <!-- <md-tab id="tab-favorites" md-label="Favorites"></md-tab> -->
       </md-tabs>
     </md-card-content>
   </md-card>
-  <!-- <md-toolbar class="md-transparent md-dense" md-elevation="0">
-      <span class="md-toolbar-section-end">
-        <md-button v-show='expired' class='md-icon-button md-dense md-accent' @click.native='getAndSetStream()'>
-          <md-icon>refresh</md-icon>
-          <md-tooltip v-if="!isIOS">Update available. Click to refresh.</md-tooltip>
-        </md-button>
-        <md-button v-if="streamParent" class="md-icon-button md-list-action md-dense" @click="revertToParent()">
-          <md-icon>undo</md-icon>
-          <md-tooltip v-if="!isIOS" md-delay="800">Revert to the parent stream</md-tooltip>
-        </md-button>
-        <md-button class="md-icon-button md-dense" @click.native='receiverExpanded = ! receiverExpanded'>
-          <md-icon>{{ receiverExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
-        </md-button>
-      </span>
-      <md-button class="md-icon-button md-list-action md-dense" v-on:click='dropStream(spkreceiver.streamId)'>
-        <md-icon>close</md-icon>
-        <md-tooltip v-if="!isIOS" md-delay="800">Remove this stream from the viewer</md-tooltip>
-      </md-button>
-      <span>{{spkreceiver.name}}</span>
-    </md-toolbar>
-    <md-progress-bar md-mode="indeterminate" v-show='showProgressBar'></md-progress-bar>
-    <md-list class='md-dense' v-show='receiverExpanded'>
-      <md-subheader class='md-inset'>
-        Layers
-        <md-button class="md-icon-button md-dense" @click.native='layersExpanded = ! layersExpanded'>
-          <md-icon>{{ layersExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
-        </md-button>
-      </md-subheader>
-      <md-list-item v-show='layersExpanded' class='md-inset' v-for='layer in layers' :key='layer.guid'>
-        <speckle-receiver-layer :spklayer='layer' :streamid='spkreceiver.streamId'></speckle-receiver-layer>
-      </md-list-item>
-      <md-subheader class='md-inset'>
-        Comments
-        <md-button class="md-icon-button md-dense" @click.native='commentsExpanded = ! commentsExpanded'>
-          <md-icon>{{ commentsExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
-        </md-button>
-      </md-subheader>
-      <md-list-item v-show='commentsExpanded' class='md-inset'>Soon™</md-list-item>
-      <md-subheader class='md-inset'>
-        History
-        <md-button class="md-icon-button md-dense" @click.native='historyExpanded = ! historyExpanded'>
-          <md-icon>{{ historyExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
-        </md-button>
-      </md-subheader>
-      <md-list-item v-show='historyExpanded' class='md-inset'>Soon™</md-list-item>
-      <md-subheader class='md-inset'>
-        Controllers
-        <md-button class='md-icon-button md-dense' @click.native='toggleControllers()'>
-          <md-icon>{{ controllersExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
-        </md-button>
-        <md-button v-if="controllersChecked" class='md-icon-button md-dense' @click.native='getControllers()'>
-          <md-icon>refresh</md-icon>
-        </md-button>
-      </md-subheader>
-      <md-list-item class='md-inset' v-if='controllersExpanded && (!controllers || !controllers.length)'>No controllers are broadcasting for this stream</md-list-item>
-      <md-list-item class='md-inset' v-if='controllersExpanded' v-for='controller in controllers' :key='controller.guid'>
-        <controller :controller='controller'></controller>
-      </md-list-item>
-    </md-list> -->
 </template>
 <script>
 import ReceiverClient from '../receiver/ClientReceiver'
@@ -188,10 +124,17 @@ export default {
     }
   },
   methods: {
+    restoreLatest( ) {
+      this.selectedHistoryItem = null
+      bus.$emit( 'toggle-dim-stream', { streamId: this.spkreceiver.streamId, dim: false } )
+    },
+
     historySelect( streamid ) {
       console.log( streamid )
       this.selectedHistoryItem = streamid
+      bus.$emit( 'toggle-dim-stream', { streamId: this.spkreceiver.streamId, dim: true } )
     },
+
     receiverError( err ) {
       this.error = err
       if ( err == 'Remote control is disabled for this sender' ) { // need a more elegant error handler for progress bar
@@ -199,6 +142,7 @@ export default {
       }
       bus.$emit( 'snackbar-update', err )
     },
+
     receiverReady( stream ) {
       this.streamParent = this.mySpkReceiver.stream.parent
       this.showProgressBar = false
@@ -208,10 +152,15 @@ export default {
         ...stream,
         layerMaterials: [ ]
       }
-      // stream.children.push( stream.streamId ) // hack to have the latest one latest
-      // this.selectedHistoryItem = stream.streamId
+
       this.$store.commit( 'INIT_RECEIVER_DATA', { payload } )
-      bus.$emit( 'renderer-load-stream' )
+      bus.$emit( 'load-stream-objects', stream.streamId )
+    },
+
+    removeReceiver( streamId ) {
+      this.$store.commit( 'DROP_RECEIVER', { streamId } )
+      bus.$emit( 'drop-stream-objects', streamId )
+      //this.$emit( 'drop', stream )
     },
 
     updateGlobal( ) {
@@ -222,12 +171,15 @@ export default {
     getAndSetStream( ) {
       this.showProgressBar = true
       this.expired = false
+
+      bus.$emit( 'drop-stream-objects', this.spkreceiver.streamId )
+
       this.mySpkReceiver.getStream( stream => {
         console.log( stream )
         let payload = { streamId: this.spkreceiver.streamId, name: stream.name, layers: stream.layers, objects: stream.objects }
         this.$store.commit( 'SET_RECEIVER_DATA', { payload } )
         this.showProgressBar = false
-        bus.$emit( 'renderer-update' )
+        bus.$emit( 'load-stream-objects', stream.streamId )
       } )
 
     },
@@ -251,9 +203,7 @@ export default {
       let payload = parsedMessage.comment
       this.$store.commit( 'ADD_COMMENT', { payload } )
     },
-    dropStream( stream ) {
-      this.$emit( 'drop', stream )
-    },
+
     toggleControllers( ) {
       this.controllersExpanded = !this.controllersExpanded
       if ( !this.controllersChecked ) {
@@ -282,7 +232,6 @@ export default {
       let message = { eventType: 'compute-request', requestParameters: requestParams }
       console.log( 'Sending computation request. requestParams:', requestParams )
       args.client.sendMessage( message, args.senderId )
-
     }, 500 ),
 
     revertToParent( ) {
@@ -332,5 +281,4 @@ export default {
 .receiver-tabs {
   padding: 0 !important;
 }
-
 </style>

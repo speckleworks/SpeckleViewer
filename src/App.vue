@@ -15,7 +15,7 @@
       </md-dialog>
     </div>
     <md-app>
-      <md-app-toolbar class="xxx-md-primary xxx-md-dense" style='z-index: 10'>
+      <md-app-toolbar class="md-transparent xxx-md-dense md-elevation-0 no-shadow" style='z-index: 10'>
         <div class="md-toolbar-row">
           <div class="md-toolbar-section-start">
             <md-button class='md-icon-button' @click.native='showAccounts=!showAccounts'>
@@ -36,7 +36,7 @@
               <md-icon>list</md-icon>
               <md-tooltip v-if="!isIOS" md-direction="top">Show details for selected objects</md-tooltip>
             </md-button>
-            <p class="md-caption" style="color:white" v-show='selectedObjects!=null'>{{selectedObjects ? selectedObjects.hash : ''}}</p>
+            <p class="md-caption" v-show='selectedObjects!=null'>{{selectedObjects ? selectedObjects.hash : ''}}</p>
             <!-- <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'> -->
             <!--   <md-icon>videocam</md-icon> -->
             <!--   <md-tooltip md-direction="top">Set camera view</md-tooltip> -->
@@ -274,5 +274,9 @@ export default {
 }
 
 #main {}
+
+.no-shadow {
+  box-shadow: none !important;
+}
 
 </style>

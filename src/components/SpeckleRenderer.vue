@@ -44,9 +44,6 @@ export default {
     }
   },
   methods: {
-    loadStream( ) {
-      this.update( )
-    },
     async update( ) {
       // removes the objects that are no longer in any stream's object list
       // TODO: remove them from the vuejs store as well (free for GC?)
@@ -189,16 +186,181 @@ export default {
 
     toggleLayer( args ) {
       this.scene.traverse( obj => {
-        if(!obj.hasOwnProperty('layerGuid')) return
-        if(obj.layerGuid == args.layerGuid)
+        if ( !obj.hasOwnProperty( 'layerGuids' ) ) return
+        if ( obj.layerGuids.indexOf( args.layerGuid ) >= 0 )
           obj.visible = args.state
-      })
+      } )
     },
 
+    dimStream( args ) {
+      this.scene.traverse( obj => {
+        if ( !obj.hasOwnProperty( 'streams' ) ) return
+        if ( obj.streams.indexOf(args.streamId) === -1 ) return
+        if ( args.dim && obj.material.opacity != 0.101010101 ) {
+          obj.material.prevOpacity = obj.material.opacity
+          obj.material.opacity = 0.101010101
+        } else if ( !args.dim ) {
+          obj.material.opacity = obj.material.prevOpacity
+        }
+      } )
+    },
+
+    async loadStream( streamId ) {
+      console.log( "loading stream" )
+
+      let res = await this.$http.get( `${this.$store.state.server}/streams/${streamId}?fields=objects,layers`, { headers: { 'Authorization': this.$store.state.jwtToken } } )
+      console.log( res )
+
+      let layers = res.data.resource.layers
+      let objs = res.data.resource.objects
+      let toRequest = [ ]
+
+      // check if object table matches layer table
+      let objCountLayers = 0
+      layers.forEach( l => objCountLayers += l.objectCount )
+      if ( objCountLayers != objs.length ) {
+        console.warn( `Malformed layer table in stream ${streamId}: ${objs.length} objs out of which ${objCountLayers} accounted for by layers.\nWill replace with one layer only that contains all objs.` )
+        layers = [ ]
+        layers.push( { guid: "gen-" + Date.now, name: "Default Layer", objectCount: objs.length, orderIndex: 0, startIndex: 0, topology: "" } )
+      }
+
+      console.log( layers )
+      console.log( objs.length )
+      // go through scene and see if there are any objects already there
+      objs.forEach( ( placeholder, i ) => {
+        let existingObject = scene.children.find( obj => {
+          if ( !obj.hasOwnProperty( '_id' ) ) return false
+          return obj._id === placeholder._id
+        } )
+        let layer = layers.find( layer => { return i >= layer.startIndex && i < ( layer.startIndex + layer.objectCount ) } )
+        // console.log( "found?", layer, i )
+        if ( !existingObject ) {
+          placeholder.layerGuids = [ layer.guid ]
+          placeholder.streams = [ streamId ]
+          toRequest.push( placeholder )
+        } else {
+          existingObject.layerGuids.push( layer.guid )
+          existingObject.streams.push( streamId ) // keep track of this object's streams
+        }
+      } )
+
+      // prepare buckets
+      let totalCount = 0,
+        requestBatches = [ ],
+        maxObjectRequestCount = 25,
+        bucket = [ ]
+      for ( var i = 0; i < toRequest.length; i++ ) {
+        bucket.push( toRequest[ i ] )
+        if ( i % maxObjectRequestCount == 0 && i != 0 ) {
+          requestBatches.push( [ ...bucket ] )
+          bucket = [ ]
+        }
+      }
+      if ( bucket.length != 0 ) requestBatches.push( bucket )
+
+      let filledBatch = [ ]
+      let k = 1
+      for ( const batch of requestBatches ) {
+        let res = await this.$http.post( this.$store.state.server + '/objects/getbulk?omit=base64,rawData', batch.map( item => item._id ) )
+        res.data.resources.forEach( ( obj, i ) => {
+          obj.streams = batch[ i ].streams
+          obj.layerGuids = batch[ i ].layerGuids
+        } )
+        if ( requestBatches.length > 0 && batch.length > 0 )
+          bus.$emit( 'stream-load-progress', `Got ${ k++ * maxObjectRequestCount } objects out of ${toRequest.length }` )
+        filledBatch = [ ...res.data.resources, ...filledBatch ]
+      }
+
+      let convertedCount = 0
+      filledBatch.forEach( object => {
+        if ( !Converter.hasOwnProperty( object.type ) )
+          return console.warn( `Objects of type ${object.type} not supported.` )
+        let layer = this.$store.getters.allLayerMaterials.find( l => object.layerGuids.indexOf( l.guid ) > -1 )
+        if ( !layer ) layer = this.defaultLayerMaterial
+        Converter[ object.type ]( { obj: object, layer: layer }, ( err, threeObj ) => {
+          convertedCount++
+          threeObj.hash = object.hash
+          threeObj.streams = object.streams
+          threeObj.layerGuids = object.layerGuids
+          threeObj._id = object._id
+          threeObj.spkProperties = object.properties
+          let color = null
+          try {
+            color = object.properties.spkColor
+          } catch ( e ) {}
+
+          if ( color ) {
+            // override material
+            let color = object.properties.spkColor
+            if ( threeObj instanceof THREE.Mesh ) {
+              threeObj.material = new THREE.MeshPhongMaterial( {
+                color: new THREE.Color( color.hex ),
+                specular: new THREE.Color( '#FFECB3' ),
+                shininess: 30,
+                side: THREE.DoubleSide,
+                transparent: true,
+                wireframe: false,
+                opacity: color.a
+              } )
+            }
+            if ( threeObj instanceof THREE.Line ) {
+              threeObj.material = new THREE.LineBasicMaterial( {
+                color: new THREE.Color( color.hex ),
+                linewidth: 1,
+                opacity: color.a
+              } )
+            }
+            if ( threeObj instanceof THREE.Points ) {
+              threeObj.material = new THREE.PointsMaterial( {
+                color: new THREE.Color( color.hex ),
+                sizeAttenuation: false,
+                transparent: true,
+                size: 3,
+                opacity: color.a
+              } )
+            }
+          }
+          this.scene.add( threeObj )
+          if ( convertedCount >= filledBatch.length ) {
+            this.needsBoundsRefresh = true
+            this.computeSceneBoundingSphere( geometry => {
+              this.needsBoundsRefresh = false
+              this.sceneBoundingSphere = geometry.boundingSphere
+              this.zoomExtents( )
+              bus.$emit( 'stream-load-progress', `All ready.` )
+            } )
+          }
+        } )
+      } )
+    },
+
+    dropStream( streamId ) {
+      console.log( 'dropping', streamId )
+      this.scene.children = this.scene.children.filter( object => {
+        // probably a scene object
+        if ( !object.hasOwnProperty( 'streams' ) )
+          return true
+        // is this object part of more streams?
+        if ( object.streams.indexOf( streamId ) >= 0 && object.streams.length == 1 )
+          return false
+        // now make sure we remove the tracking from the stream's pow
+        else {
+          object.streams = object.streams.filter( id => id != streamId )
+          return true
+        }
+      } )
+
+      this.computeSceneBoundingSphere( geometry => {
+        this.needsBoundsRefresh = false
+        this.sceneBoundingSphere = geometry.boundingSphere
+        this.zoomExtents( )
+      } )
+    },
+
+    // Selection methods
     deselectObjects( ) {
       this.hoveredObjects.forEach( myObject => {
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-
         myObject.material = myObject.originalMaterial
       } )
       this.hoveredObjects = [ ]
@@ -234,17 +396,14 @@ export default {
       // preselect object
       let mouse = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1 )
       this.raycaster.setFromCamera( mouse, this.camera )
-
       let intersects = this.raycaster.intersectObjects( scene.children )
       if ( intersects.length <= 0 ) {
         return
       }
-
       let selectedObject = null
       intersects.reverse( ).forEach( obj => {
         if ( obj.object.material.visible ) selectedObject = obj.object
       } )
-
       if ( !selectedObject ) {
         return
       }
@@ -261,14 +420,8 @@ export default {
       let child = this.scene.children.find( child => { return child.name.includes( objectId ) } )
       return child.hash
     },
-    dropStream( streamId ) {
-      this.scene.children = this.scene.children.filter( child => !child.name.includes( streamId ) )
-      this.computeSceneBoundingSphere( geometry => {
-        this.needsBoundsRefresh = false
-        this.sceneBoundingSphere = geometry.boundingSphere
-        this.zoomExtents( )
-      } )
-    },
+
+    // Renderer Camera Methods
     zoomToObject( hash ) {
       if ( this.hoveredObject ) {
         hash = this.hoveredObject
@@ -411,8 +564,12 @@ export default {
 
     bus.$on( 'renderer-update', debounce( this.update, 300 ) )
     bus.$on( 'renderer-setview', this.setCamera )
-    bus.$on( 'renderer-load-stream', this.loadStream )
+    bus.$on( 'renderer-load-stream', this.update )
     bus.$on( 'zext', this.zoomExtents )
+
+    bus.$on( 'toggle-dim-stream', this.dimStream )
+    bus.$on( 'load-stream-objects', this.loadStream )
+    bus.$on( 'drop-stream-objects', this.dropStream )
 
     bus.$on( 'renderer-pop', ( ) => {
       console.log( "POP" )

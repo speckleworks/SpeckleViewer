@@ -126,14 +126,7 @@ export default new Vuex.Store( {
       if ( objCountLayers != payload.objects.length ) {
         console.warn( `Malformed layer table in stream ${payload.streamId}: ${payload.objects.length} objs out of which ${objCountLayers}  accounted for by layers.\nWill replace with one layer only that contains all objects.` )
         payload.layers = [ ]
-        payload.layers.push( {
-          guid: "gen-" + Date.now,
-          name: "Default Layer (Gen)",
-          objectCount: payload.objects.length,
-          orderIndex: 0,
-          startIndex: 0,
-          topology: "",
-        } )
+        payload.layers.push( { guid: "gen-" + Date.now, name: "Default Layer", objectCount: payload.objects.length, orderIndex: 0, startIndex: 0, topology: "" } )
       }
 
       // set objects

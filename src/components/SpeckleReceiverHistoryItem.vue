@@ -1,7 +1,7 @@
 <template>
   <md-card style="margin-bottom: 4px; padding: 10px;" :class='{"md-elevation-0":true, "md-primary selected":selected}' md-with-hover @click.native='selectThis()'>
     <div class="md-layout md-alignment-center-center">
-      <div class="md-layout-item md-size-100">
+      <div class="md-layout-item md-size-80">
         <p class="md-layout-item">
           <strong>{{updatedAt}}</strong></span>
           <span v-if='!stream.isComputedResult'>
@@ -11,11 +11,12 @@
           <span v-if='stream.isComputedResult' class="md-caption">(computed result)</span>
         </p>
       </div>
-      <!--       <div class="md-layout-item" style="text-align: right" v-if='!stream.isComputedResult'>
-        <md-button class='md-icon-button md-dense md-primary md-raised' @click.native=''>
-          <md-icon>chevron_right</md-icon>
+      <div class="md-layout-item" style="text-align: right" v-if='selected'>
+        <md-button class='md-icon-button md-dense xxxmd-accent md-raised' @click.stop='$emit("restore")'>
+          <md-icon>refresh</md-icon>
+          <md-tooltip>Restore latest stream version.</md-tooltip>
         </md-button>
-      </div> -->
+      </div>
     </div>
   </md-card>
 </template>
@@ -63,8 +64,9 @@ export default {
 .selected {
   /*z-index: 100;*/
 }
-.slected.md-caption{
-  color:white !important;
+
+.slected.md-caption {
+  color: white !important;
 
 }
 
