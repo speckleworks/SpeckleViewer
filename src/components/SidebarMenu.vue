@@ -104,8 +104,8 @@
             <md-menu-item @click='logOut'>
               <span>Logout</span>
             </md-menu-item>
-            <md-menu-item @click="">
-              <span>Admin</span>
+            <md-menu-item>
+              <a href="#">Admin</a>
             </md-menu-item>
           </md-menu-content>
         </md-menu>
@@ -263,7 +263,7 @@ export default {
       return this.streams.filter( stream => stream.isComputedResult == false ).map( stream => `${stream.name} \ ${stream.streamId}` )
     },
     parentStreams( ) {
-      return this.streams.filter( stream => stream.isComputedResult == false )
+      return this.streams.filter( stream => stream.isComputedResult == false && stream.parent == null)
     },
     filteredStreams( ) {
       if ( this.searchFilter == null || this.searchFilter == '' )

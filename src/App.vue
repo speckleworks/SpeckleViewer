@@ -15,7 +15,7 @@
       </md-dialog>
     </div>
     <md-app>
-      <md-app-toolbar class="md-primary md-dense" style='z-index: 10'>
+      <md-app-toolbar class="xxx-md-primary xxx-md-dense" style='z-index: 10'>
         <div class="md-toolbar-row">
           <div class="md-toolbar-section-start">
             <md-button class='md-icon-button' @click.native='showAccounts=!showAccounts'>
@@ -180,7 +180,14 @@ export default {
         token: this.$store.getters.user.apitoken,
         objects: [ ],
         layers: [ ],
-        history: [ ],
+        children: [ ],
+        parent: null,
+        createdAt: null,
+        updatedAt: null,
+        baseProperties: {
+          units: null
+        },
+        comments: null,
         name: 'Loading ' + streamId + '...',
         layerMaterials: [ ]
       }

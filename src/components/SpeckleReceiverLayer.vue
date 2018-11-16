@@ -1,90 +1,78 @@
 <template>
   <div class='spk-layer'>
     <div class='layer-details'>
-    <span class="layer-name">
+      <span class="layer-name md-caption">
       {{ spklayer.name }} ({{spklayer.objectCount}} objs)
     </span>
-    <span class="layer-buttons"> 
-      <md-icon v-show='showPicker' @click.native='showColorPicker' :style='colorStyle'>color_lens</md-icon>
+      <span class="layer-buttons">
       <md-icon @click.native='toggleLayer'>{{ visible ? "visibility" : "visibility_off" }}</md-icon>
-      <md-icon @click.native='toggleObjects'>{{ objectsExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</md-icon>
     </span>
     </div>
-    <!-- <md-list v-show='objectsExpanded'>
-      <md-list-item class='md-inset' v-for='object in objects' :key='object.guid'>
-        <speckle-receiver-object :spkobj='object'></speckle-receiver-object>
-      </md-list-item>
-    </md-list> -->
   </div>
 </template>
-
 <script>
-
 import SpeckleReceiverObject from './SpeckleReceiverObject.vue'
 
 export default {
   name: 'SpkReceiverLayer',
-  props: { 
+  props: {
     spklayer: { type: Object },
     streamid: { type: String },
   },
   components: {
-    SpeckleReceiverObject  
+    SpeckleReceiverObject
   },
-  data() {
+  data( ) {
     return {
       visible: true,
       objectsExpanded: false,
     }
   },
   computed: {
-    layerMaterial() {
+    layerMaterial( ) {
       return this.spklayer.properties
     },
-    colorStyle() {
-      if( this.layerMaterial )
+    colorStyle( ) {
+      if ( this.layerMaterial )
         return 'color:' + this.spklayer.properties.color.hex
       return 'color:gray'
     },
-    showPicker() {
+    showPicker( ) {
       return this.showColorPicker
     },
-    objects() {
-      return this.$store.getters.objectsByLayer(this.spklayer.guid)
+    objects( ) {
+      return this.$store.getters.objectsByLayer( this.spklayer.guid )
     }
   },
   watch: {
-    layerName(){
+    layerName( ) {
       return this.spklayer.name
     },
-    objectCount(){
-      console.log(this.spklayer)
+    objectCount( ) {
+      console.log( this.spklayer )
       return this.spklayer.objectCount
     },
   },
   methods: {
-    showColorPicker() {
+    showColorPicker( ) {
       bus.$emit( 'show-color-picker', { layerGuid: this.spklayer.guid, streamId: this.streamid } )
     },
-    toggleLayer() {
-      this.visible = ! this.visible
-      this.layerMaterial.threeMeshMaterial.visible = this.visible
-      this.layerMaterial.threeMeshVertexColorsMaterial.visible = this.visible
-      this.layerMaterial.threeLineMaterial.visible = this.visible
-      this.layerMaterial.threeEdgesMaterial.visible = this.layerMaterial.showEdges ? this.visible : this.layerMaterial.threeEdgesMaterial.visible
-      this.layerMaterial.threePointMaterial.visible = this.visible
+    toggleLayer( ) {
+      this.visible = !this.visible
+      bus.$emit( 'toggle-layer', {
+        layerGuid: this.spklayer.guid,
+        state: this.visible
+      } )
     },
-    toggleObjects(){
-      this.objectsExpanded = ! this.objectsExpanded
+    toggleObjects( ) {
+      this.objectsExpanded = !this.objectsExpanded
     }
-  }, 
-  mounted() {
-  }
+  },
+  mounted( ) {}
 }
+
 </script>
-
 <style scoped>
-
 /*
 .spk-layer{
   border-bottom: 1px solid #E6E6E6;
@@ -117,4 +105,5 @@ export default {
   cursor: pointer;
 }
 */
+
 </style>

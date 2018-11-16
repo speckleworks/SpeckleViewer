@@ -8,24 +8,41 @@
       <md-button class="md-icon-button xxx-md-raised" v-on:click='dropStream(spkreceiver.streamId)'>
         <md-icon>close</md-icon>
       </md-button>
+      <md-button v-show='expired' class='md-icon-button md-dense md-accent md-raised' @click.native='getAndSetStream()'>
+        <md-icon>refresh</md-icon>
+        <md-tooltip v-if="!isIOS">Update available. Click to refresh.</md-tooltip>
+      </md-button>
     </md-card-header>
-    <!--     <md-card-actions>
-      <md-button class='md-accent'>Logout</md-button>
-      <md-button class='md-primaryxxx'>Admin</md-button>
-    </md-card-actions> -->
     <md-card-content>
-      <md-tabs xxx-class='md-primary'>
-<!--         <md-tab id="tab-home" md-label="Comments" xxx-md-icon='comment'>
-          <p class='md-caption'> No comments yet. </p>
-        </md-tab> -->
-        <md-tab id="tab-pages" md-label="Layers" xxx-md-icon='layers'>
+      <md-tabs>
+        <md-tab id="tab-info" md-label="Info" xxx-md-icon='info'>
+          <p>Created on: <strong>{{createdAt}}</strong></p>
+          <p>Modified on: <strong>{{createdAt}}</strong></p>
+          <p>Units: <strong>{{spkreceiver.baseProperties.units}}</strong></p>
+        </md-tab>
+        <md-tab id="tab-layers" md-label="Layers" xxx-md-icon='layers'>
           <!-- <md-list> -->
-            <div xxxlass='md-inset' v-for='layer in layers' :key='layer.guid'>
-              <speckle-receiver-layer :spklayer='layer' :streamid='spkreceiver.streamId'></speckle-receiver-layer>
-            </div>
+          <div xxxlass='md-inset' v-for='layer in layers' :key='layer.guid'>
+            <speckle-receiver-layer :spklayer='layer' :streamid='spkreceiver.streamId'></speckle-receiver-layer>
+          </div>
           <!-- </md-list> -->
         </md-tab>
-        <md-tab id="tab-posts" md-label="Controllers" xxx-md-icon='sliders'>
+        <md-tab id="tab-controllers" md-label="Controllers" xxx-md-icon='sliders'>
+          <md-list-item class='md-inset' v-for='controller in controllers' :key='controller.guid'>
+            <controller :controller='controller'></controller>
+          </md-list-item>
+          <div v-if='!controllers || !controllers.length'>
+            <p>No controllers are broadcasting for this stream.</p>
+            <md-button v-if='!controllers || !controllers.length' class='md-dense md-raised' @click.native='getControllers()'>
+              <!-- <md-icon>refresh</md-icon> -->
+              refresh
+            </md-button>
+          </div>
+        </md-tab>
+        <md-tab id="tab-history" md-label="History" xxx-md-icon='sliders'>
+          <!-- {{spkreceiver.children}} -->
+          <p v-show='spkreceiver.children.length == 0' class='md-caption'>This stream has no history.</p>
+          <history-item v-for='streamId in historyStreams' :key='streamId' :streamid='streamId' :selected='streamId==selectedHistoryItem' v-on:selectme='historySelect'></history-item>
         </md-tab>
         <!-- <md-tab id="tab-favorites" md-label="Favorites"></md-tab> -->
       </md-tabs>
@@ -90,12 +107,12 @@
         <controller :controller='controller'></controller>
       </md-list-item>
     </md-list> -->
-  </div>
 </template>
 <script>
 import ReceiverClient from '../receiver/ClientReceiver'
 import SpeckleReceiverLayer from './SpeckleReceiverLayer.vue'
 import SpeckleReceiverComments from './SpeckleReceiverComments.vue'
+import HistoryItem from './SpeckleReceiverHistoryItem.vue'
 import Controller from './Controller.vue'
 
 import Converter from '../converter/converter'
@@ -107,10 +124,17 @@ export default {
   components: {
     SpeckleReceiverLayer,
     SpeckleReceiverComments,
-    Controller
+    Controller,
+    HistoryItem
   },
   props: [ 'spkreceiver' ],
   computed: {
+    historyStreams( ) {
+      return this.spkreceiver.children.reverse( )
+    },
+    createdAt( ) {
+      return new Date( this.spkreceiver.createdAt ).toLocaleString( )
+    },
     username( ) {
       return this.$store.getters.user.name
     },
@@ -140,7 +164,8 @@ export default {
       viewerSettings: {},
       controllers: [ ],
       controllersChecked: false,
-      streamParent: null
+      streamParent: null,
+      selectedHistoryItem: null
     }
   },
   watch: {
@@ -163,6 +188,10 @@ export default {
     }
   },
   methods: {
+    historySelect( streamid ) {
+      console.log( streamid )
+      this.selectedHistoryItem = streamid
+    },
     receiverError( err ) {
       this.error = err
       if ( err == 'Remote control is disabled for this sender' ) { // need a more elegant error handler for progress bar
@@ -170,15 +199,18 @@ export default {
       }
       bus.$emit( 'snackbar-update', err )
     },
-
-    receiverReady( name, layers, objects, history, layerMaterials ) {
+    receiverReady( stream ) {
       this.streamParent = this.mySpkReceiver.stream.parent
       this.showProgressBar = false
       this.objLoadProgress = 0
-      let payload = { streamId: this.spkreceiver.streamId, name: name, layers: layers, objects: objects, layerMaterials: layerMaterials }
 
+      let payload = {
+        ...stream,
+        layerMaterials: [ ]
+      }
+      // stream.children.push( stream.streamId ) // hack to have the latest one latest
+      // this.selectedHistoryItem = stream.streamId
       this.$store.commit( 'INIT_RECEIVER_DATA', { payload } )
-
       bus.$emit( 'renderer-load-stream' )
     },
 
@@ -237,6 +269,7 @@ export default {
       this.senderId = wsMessage.senderId
       this.controllers = wsMessage.args.controllers
     },
+
     sendComputeRequest: _.debounce( args => {
       console.log( 'sendComputeRequest args:', args )
       let requestParams = args.controllers.map( controller => {
@@ -251,12 +284,14 @@ export default {
       args.client.sendMessage( message, args.senderId )
 
     }, 500 ),
+
     revertToParent( ) {
       this.streamParent = null
       this.getAndSetStream( )
       bus.$emit( 'snackbar-update', "Restoring parent stream" )
     }
   },
+
   mounted( ) {
     this.viewerSettings = this.$store.getters.viewerSettings
     console.log( 'Stream receiver mounted for streamid: ' + this.spkreceiver.streamId )

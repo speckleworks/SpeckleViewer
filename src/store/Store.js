@@ -80,7 +80,7 @@ export default new Vuex.Store( {
       state.receivers = receivers
     },
     ADD_RECEIVER( state, { receiver } ) {
-      state.receivers.push( receiver )
+      state.receivers.unshift( receiver )
     },
 
     ADD_COMMENT( state, { payload } ) {
@@ -108,9 +108,19 @@ export default new Vuex.Store( {
     },
 
     INIT_RECEIVER_DATA( state, { payload } ) {
-      let target = state.receivers.find( rec => rec.streamId === payload.streamId )
-      target.name = payload.name
 
+      console.log( payload )
+
+      let target = state.receivers.find( rec => rec.streamId === payload.streamId )
+
+      target.name = payload.name
+      target.children = payload.children
+      target.createdAt = payload.createdAt
+      target.updatedAt = payload.updatedAt
+      target.comments = payload.comments
+      target.baseProperties = payload.baseProperties
+
+      // check if object table matches layer table
       let objCountLayers = 0
       payload.layers.forEach( l => objCountLayers += l.objectCount )
       if ( objCountLayers != payload.objects.length ) {
@@ -136,6 +146,8 @@ export default new Vuex.Store( {
           _id: obj._id
         }
       } )
+
+      // create layers magic
       target.layers = payload.layers.map( layer => {
         if ( layer.properties === undefined || layer.properties.threeMeshMaterial === undefined ) {
           layer.properties = new LMat( { guid: layer.guid, streamId: target.streamId, color: layer.properties ? layer.properties.color.hex : null } )

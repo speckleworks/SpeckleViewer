@@ -20,7 +20,8 @@ export default class SpeckleReceiver extends EventEmitter {
     this.wsReconnectionAttempts = 0
 
     this.setupClient( cb => this.setupWebsockets( cb => this.getStream( cb => {
-      this.emit( 'ready', this.stream.name, this.stream.layers, this.stream.objects, [ ], [ ] )
+      // this.emit( 'ready', this.stream.name, this.stream.layers, this.stream.objects, [ ], [ ] )
+      this.emit('ready', this.stream )
       this.setupWsReconnecter( )
     } ) ) )
   }
@@ -60,7 +61,7 @@ export default class SpeckleReceiver extends EventEmitter {
         case 'compute-response':
           this.childStreamId = parsedMessage.args.streamId
           this.getChildStream( cb => {
-            this.emit( 'ready', this.stream.name, this.stream.layers, this.stream.objects, [ ], [ ] )
+            this.emit( 'ready', this.stream )
           } )
           break
         default:
@@ -112,7 +113,6 @@ export default class SpeckleReceiver extends EventEmitter {
   getStream( cb ) {
     axios.get( this.baseUrl + '/streams/' + this.streamId, { headers: { 'Auth': this.auth } } )
       .then( response => {
-        console.log( response.data )
         this.stream = response.data.resource
         cb( this.stream )
       } )

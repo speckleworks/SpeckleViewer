@@ -127,7 +127,7 @@ export default {
             let color = null
             try {
               color = pair.object.properties.spkColor
-            } catch( e ) { }
+            } catch ( e ) {}
 
             if ( color ) {
               // override material
@@ -185,6 +185,14 @@ export default {
       this.camera.aspect = window.innerWidth / window.innerHeight
       this.camera.updateProjectionMatrix( )
       this.renderer.setSize( window.innerWidth, window.innerHeight )
+    },
+
+    toggleLayer( args ) {
+      this.scene.traverse( obj => {
+        if(!obj.hasOwnProperty('layerGuid')) return
+        if(obj.layerGuid == args.layerGuid)
+          obj.visible = args.state
+      })
     },
 
     deselectObjects( ) {
@@ -423,6 +431,11 @@ export default {
     bus.$on( 'renderer-drop-stream', ( streamId ) => {
       this.dropStream( streamId )
     } )
+    bus.$on( 'toggle-layer', ( args ) => {
+      this.toggleLayer( args )
+    } )
+
+
     document.addEventListener( 'keydown', ( event ) => {
       const keyName = event.key;
       if ( keyName == ' ' ) this.zoomExtents( )
