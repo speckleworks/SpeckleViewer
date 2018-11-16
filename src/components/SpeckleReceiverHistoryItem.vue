@@ -1,6 +1,6 @@
 <template>
-  <md-card style="margin-bottom: 4px; padding: 10px;" :class='{"md-elevation-0":true, "md-primary selected":selected}' md-with-hover @click.native='selectThis()'>
-    <div class="md-layout md-alignment-center-center">
+  <md-card style="margin-bottom: 4px; padding: 10px; cursor: pointer;" :class='{"md-elevation-0":true, "md-primary selected":selected}' md-with-hover @click.native='selectThis()'>
+    <div class="md-layout md-alignment-center-left">
       <div class="md-layout-item md-size-80">
         <p class="md-layout-item">
           <strong>{{updatedAt}}</strong></span>

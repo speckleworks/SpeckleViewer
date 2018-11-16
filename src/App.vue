@@ -22,7 +22,6 @@
               <md-icon xxx-style='color: black'>
                 {{ showAccounts ? "arrow_left" : "menu"}}
               </md-icon>
-              <md-tooltip v-if="!isIOS" md-direction="bottom">Menu</md-tooltip>
             </md-button>
             <md-button class='md-icon-button' @click.native='showAddStreamDialog=true'>
               <md-icon>add</md-icon>
@@ -36,7 +35,6 @@
               <md-icon>list</md-icon>
               <md-tooltip v-if="!isIOS" md-direction="top">Show details for selected objects</md-tooltip>
             </md-button>
-            <p class="md-caption" v-show='selectedObjects!=null'>{{selectedObjects ? selectedObjects.hash : ''}}</p>
             <!-- <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'> -->
             <!--   <md-icon>videocam</md-icon> -->
             <!--   <md-tooltip md-direction="top">Set camera view</md-tooltip> -->
@@ -65,8 +63,8 @@
           </div>
         </div>
       </md-app-toolbar>
-      <md-app-drawer :md-active.sync="showAccounts" style='xxx-z-index:100; padding:14px; box-sizing:border-box; background-color:#448aff;' class='md-scrollbar md-elevation-4 md-primary' md-persistent="full">
-        <sidebar-menu v-on:add="addReceiver"></sidebar-menu>
+      <md-app-drawer :md-active.sync="showAccounts" style='padding:14px; box-sizing:border-box; background-color:#448aff;' class='md-scrollbar md-elevation-4 md-primary' md-persistent="full">
+        <sidebar-menu v-on:addreceiver="addReceiver"></sidebar-menu>
       </md-app-drawer>
       <md-app-content>
         <speckle-renderer></speckle-renderer>
@@ -134,6 +132,23 @@ export default {
       progressMessage: 'All is ready.'
     }
   },
+  computed: {
+    isMobileView( ) {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test( navigator.userAgent ) && window.innerWidth < 768
+    },
+    isIOS( ) {
+      return ( typeof window.orientation !== "undefined" ) && ( navigator.userAgent.indexOf( 'OS X' ) !== -1 )
+    },
+    receivers( ) {
+      return this.$store.getters.allReceivers
+    },
+    objects( ) {
+      return this.$store.getters.allObjects
+    },
+    selectedObjects( ) {
+      return this.$store.getters.selectedObjects
+    }
+  },
   methods: {
     zoomExt( ) {
       if ( !this.selectedObjects )
@@ -143,26 +158,6 @@ export default {
     },
     zoomToObject( ) {
       bus.$emit( 'zoomToObject' )
-    },
-    createReceivers( ) {
-      if ( this.receiversCreated ) return
-      if ( this.$store.state.initStreams.length != 0 ) {
-        let receivers = this.$store.state.initStreams
-          .filter( id => id != "" )
-          .map( id => {
-            return {
-              serverUrl: this.$store.state.server,
-              streamId: id,
-              token: this.$store.getters.user.apitoken,
-              objects: [ ],
-              layers: [ ],
-              history: [ ],
-              name: 'Loading ' + id + '...',
-              layerMaterials: [ ]
-            }
-          } )
-        this.$store.commit( 'ADD_RECEIVERS', { receivers } )
-      }
     },
     addReceiver( streamId ) {
       if ( !streamId ) {
@@ -210,43 +205,25 @@ export default {
     }
   },
   created( ) {
-    this.createReceivers( )
+    // this.createReceivers( )
 
     if ( window.localStorage.getItem( 'viewerSettings' ) !== null ) {
       this.$store.commit( 'SET_VIEWER_SETTINGS', { settings: JSON.parse( window.localStorage.getItem( 'viewerSettings' ) ) } )
     }
+
     this.viewerSettings = this.$store.getters.viewerSettings
-  },
-  computed: {
-    searchobjects( ) {
-      let objects = this.$store.getters.allObjects
-      if ( objects.length === 0 ) return [ ]
-      let objectIds = objects.map( ( obj ) => {
-        return obj.type + ' ' + obj._id
-      } )
-      return objectIds
-    },
-    isMobileView( ) {
-      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test( navigator.userAgent ) && window.innerWidth < 768
-    },
-    isIOS ( ) {
-      return (typeof window.orientation !== "undefined") && (navigator.userAgent.indexOf('OS X') !== -1)
-    },
-    receivers( ) {
-      return this.$store.getters.allReceivers
-    },
-    objects( ) {
-      return this.$store.getters.allObjects
-    },
-    selectedObjects( ) {
-      return this.$store.getters.selectedObjects
-    }
-  },
-  mounted( ) {
+
+    this.$store.state.initStreams.forEach( streamId => {
+      this.addReceiver( streamId )
+    })
+
+
     bus.$on( 'snackbar-update', this.snackbarUpdate )
     bus.$on( 'stream-load-progress', message => {
       this.progressMessage = message
     } )
+  },
+  mounted( ) {
   }
 }
 
@@ -257,14 +234,6 @@ export default {
   border: 1px solid rgba(#000, .12);
 }
 
-.view-field {
-  width: auto;
-}
-
-.md-menu-content {
-  max-height: none;
-}
-
 #app {
   position: fixed;
   top: 0;
@@ -273,10 +242,16 @@ export default {
   height: 100%;
 }
 
-#main {}
-
 .no-shadow {
   box-shadow: none !important;
+}
+
+.no-margin {
+  margin: 0 !important;
+}
+
+.md-card.md-with-hover{
+  cursor: default;
 }
 
 </style>

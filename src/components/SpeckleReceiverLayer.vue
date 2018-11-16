@@ -1,14 +1,16 @@
 <template>
-  <div class='spk-layer'>
-    <div class='layer-details'>
-      <span class="layer-name md-caption">
-      {{ spklayer.name }} ({{spklayer.objectCount}} objs)
-    </span>
-      <span class="layer-buttons">
-      <md-icon @click.native='toggleLayer'>{{ visible ? "visibility" : "visibility_off" }}</md-icon>
-    </span>
+  <md-card style="margin-bottom: 4px; padding: 10px; cursor: pointer;" class='md-elevation-0' md-with-hover @click.native='toggleLayer'>
+    <div class='md-layout md-alignment-center-center' >
+      <div class='md-layout-item md-size-70'>
+        {{ spklayer.name }} <span class="md-caption">({{spklayer.objectCount}} objs)</span>
+      </div>
+      <div class="md-layout-item" style="text-align: right">
+        <md-button class='md-dense md-icon-button md-primary' @click.native='toggleLayer'>
+          <md-icon>{{ visible ? "visibility" : "visibility_off" }}</md-icon>
+        </md-button>
+      </div>
     </div>
-  </div>
+  </md-card>
 </template>
 <script>
 import SpeckleReceiverObject from './SpeckleReceiverObject.vue'
@@ -73,37 +75,4 @@ export default {
 
 </script>
 <style scoped>
-/*
-.spk-layer{
-  border-bottom: 1px solid #E6E6E6;
-  position: relative;
-}
-.spk-layer:last-of-type{
-  border-bottom: 0;
-}
-.layer-details {
-  position: relative;
-  display: inline-block;
-  font-size: 12px;
-}
-.layer-name {
-  float: left;
-  display: inline-block;
-  width: 70%;
-  overflow: hidden;
-}
-.layer-buttons {
-  text-align: right;
-  float: left;
-  display: inline-block;
-  width: 30%;
-  box-sizing: border-box;
-  color: #666666;
-}
-
-.layer-buttons .md-icon {
-  cursor: pointer;
-}
-*/
-
 </style>

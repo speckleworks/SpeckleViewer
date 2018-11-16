@@ -9,14 +9,12 @@ Vue.use( Vuex )
 export default new Vuex.Store( {
   state: {
     server: null,
-    auth: false,
-    token: null,
+    jwtToken: '',
+    user: {},
     mobile: false,
     initStreams: [ ],
     receivers: [ ],
     comments: [ ],
-    user: {},
-    jwtToken: '',
     viewerSettings: {},
     selectedObjects: [ ]
   },

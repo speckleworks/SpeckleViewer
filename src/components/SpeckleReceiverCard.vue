@@ -30,8 +30,8 @@
             <controller :controller='controller'></controller>
           </md-list-item>
           <div v-if='!controllers || !controllers.length'>
-            <p>No controllers are broadcasting for this stream.</p>
-            <md-button v-if='!controllers || !controllers.length' class='md-dense md-raised' @click.native='getControllers()'>
+            <p class='md-caption'>No controllers are broadcasting for this stream.</p>
+            <md-button v-if='!controllers || !controllers.length' class='md-dense md-raised no-margin' @click.native='getControllers()'>
               refresh
             </md-button>
           </div>
@@ -45,25 +45,34 @@
   </md-card>
 </template>
 <script>
-import ReceiverClient from '../receiver/ClientReceiver'
+import ClientReceiver from '../receiver/ClientReceiver'
 import SpeckleReceiverLayer from './SpeckleReceiverLayer.vue'
-import SpeckleReceiverComments from './SpeckleReceiverComments.vue'
 import HistoryItem from './SpeckleReceiverHistoryItem.vue'
 import Controller from './Controller.vue'
 
-import Converter from '../converter/converter'
-import * as THREE from 'three'
 import debounce from 'debounce'
 
 export default {
   name: 'SpeckleReceiver',
   components: {
     SpeckleReceiverLayer,
-    SpeckleReceiverComments,
     Controller,
     HistoryItem
   },
   props: [ 'spkreceiver' ],
+  data( ) {
+    return {
+      comments: 'Hello World. How Are you? Testing testing 123.',
+      expired: false,
+      debounceCount: 0,
+      senderId: null,
+      viewerSettings: {},
+      controllers: [ ],
+      controllersChecked: false,
+      streamParent: null,
+      selectedHistoryItem: null
+    }
+  },
   computed: {
     historyStreams( ) {
       return this.spkreceiver.children.reverse( )
@@ -84,38 +93,12 @@ export default {
       return ( typeof window.orientation !== "undefined" ) && ( navigator.userAgent.indexOf( 'OS X' ) !== -1 )
     },
   },
-  data( ) {
-    return {
-      showProgressBar: true,
-      objLoadProgress: 100,
-      comments: 'Hello World. How Are you? Testing testing 123.',
-      receiverExpanded: false,
-      layersExpanded: false,
-      commentsExpanded: false,
-      historyExpanded: false,
-      controllersExpanded: false,
-      expired: false,
-      debounceCount: 0,
-      senderId: null,
-      viewerSettings: {},
-      controllers: [ ],
-      controllersChecked: false,
-      streamParent: null,
-      selectedHistoryItem: null
-    }
-  },
   watch: {
     'controllers': {
       handler( values ) {
         // prevents init requests etc.
         if ( this.debounceCount >= 5 ) {
-          let args = {
-            controllers: this.controllers,
-            layers: this.spkreceiver.layers,
-            client: this.mySpkReceiver,
-            senderId: this.senderId
-          }
-          this.showProgressBar = true
+          let args = { controllers: this.controllers, layers: this.spkreceiver.layers, client: this.mySpkReceiver, senderId: this.senderId }
           this.sendComputeRequest( args )
         }
         this.debounceCount++
@@ -138,20 +121,15 @@ export default {
     receiverError( err ) {
       this.error = err
       if ( err == 'Remote control is disabled for this sender' ) { // need a more elegant error handler for progress bar
-        this.showProgressBar = false
+
       }
       bus.$emit( 'snackbar-update', err )
     },
 
     receiverReady( stream ) {
       this.streamParent = this.mySpkReceiver.stream.parent
-      this.showProgressBar = false
-      this.objLoadProgress = 0
 
-      let payload = {
-        ...stream,
-        layerMaterials: [ ]
-      }
+      let payload = { ...stream }
 
       this.$store.commit( 'INIT_RECEIVER_DATA', { payload } )
       bus.$emit( 'load-stream-objects', stream.streamId )
@@ -169,7 +147,6 @@ export default {
     },
 
     getAndSetStream( ) {
-      this.showProgressBar = true
       this.expired = false
 
       bus.$emit( 'drop-stream-objects', this.spkreceiver.streamId )
@@ -178,7 +155,7 @@ export default {
         console.log( stream )
         let payload = { streamId: this.spkreceiver.streamId, name: stream.name, layers: stream.layers, objects: stream.objects }
         this.$store.commit( 'SET_RECEIVER_DATA', { payload } )
-        this.showProgressBar = false
+
         bus.$emit( 'load-stream-objects', stream.streamId )
       } )
 
@@ -191,10 +168,6 @@ export default {
       } )
     },
 
-    objLoadProgressEv( loaded ) {
-      this.objLoadProgress = ( loaded + 1 ) / this.objects.length * 100
-    },
-
     broadcastReceived( message ) {
       console.log( 'broadcastReceived message:', message )
       let parsedMessage = JSON.parse( message.args )
@@ -204,13 +177,6 @@ export default {
       this.$store.commit( 'ADD_COMMENT', { payload } )
     },
 
-    toggleControllers( ) {
-      this.controllersExpanded = !this.controllersExpanded
-      if ( !this.controllersChecked ) {
-        this.controllersChecked = true
-        this.getControllers( )
-      }
-    },
     getControllers( ) {
       console.log( 'Getting controllers for ' + this.spkreceiver.streamId )
       this.mySpkReceiver.broadcast( { eventType: 'get-definition-io' } )
@@ -246,7 +212,7 @@ export default {
     console.log( 'Stream receiver mounted for streamid: ' + this.spkreceiver.streamId )
     this.name = 'loading ' + this.spkreceiver.streamId
 
-    this.mySpkReceiver = new ReceiverClient( {
+    this.mySpkReceiver = new ClientReceiver( {
       baseUrl: this.spkreceiver.serverUrl,
       streamId: this.spkreceiver.streamId,
       token: this.spkreceiver.token
@@ -262,23 +228,4 @@ export default {
 
 </script>
 <style>
-.md-list .md-subheader.md-inset {
-  padding-left: 32px;
-}
-
-.md-list-item.md-inset .md-list-item-content {
-  padding-left: 48px;
-}
-
-.line-height-adjustment {
-  line-height: 30px;
-}
-
-.receiver {
-  margin-bottom: 10px;
-}
-
-.receiver-tabs {
-  padding: 0 !important;
-}
 </style>

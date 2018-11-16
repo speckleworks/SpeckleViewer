@@ -38,16 +38,19 @@
           <md-icon>search</md-icon>
         </md-field>
         <md-list>
-          <md-list-item v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
-            <div class="md-list-item-text">
-              <span>{{stream.name}}</span>
-              <span>{{stream.streamId}}</span>
+          <div v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
+            <div class="md-layout md-alignment-center-left" style="margin-bottom:10px;">
+              <div class="md-layout-item md-size-70" >
+                <span>{{stream.name}}</span>
+                <span class='md-caption'>{{stream.streamId}}</span>
+              </div>
+              <div class="md-layout-item md-size-30" style='text-align: right'>
+                <md-button class="md-icon-button xxxmd-dense md-raised" v-on:click='$emit("addreceiver", stream.streamId)'>
+                  <md-icon>add</md-icon>
+                </md-button>
+              </div>
             </div>
-            <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(stream.streamId)'>
-              <md-icon>add</md-icon>
-              <md-tooltip v-if="!isIOS" md-delay="800">Add this stream to the viewer</md-tooltip>
-            </md-button>
-          </md-list-item>
+          </div>
         </md-list>
       </md-card-content>
     </md-card>
@@ -148,9 +151,6 @@ export default {
       } )
   },
   computed: {
-    simpleStreams( ) {
-      return this.streams.filter( stream => stream.isComputedResult == false ).map( stream => `${stream.name} \ ${stream.streamId}` )
-    },
     parentStreams( ) {
       return this.streams.filter( stream => stream.isComputedResult == false && stream.parent == null )
     },
@@ -163,39 +163,10 @@ export default {
     },
     paginatedStreams( ) {
       return this.filteredStreams.slice( 0, this.itemsPerPage )
-    },
-    isIOS( ) {
-      return ( typeof window.orientation !== "undefined" ) && ( navigator.userAgent.indexOf( 'OS X' ) !== -1 )
-    },
+    }
   }
 }
 
 </script>
 <style scoped>
-.user-menu {}
-
-.md-list-item-expand {
-  border: 0 !important;
-}
-
-.md-list-item-content>.md-icon:first-child {
-  margin-right: 8px;
-}
-
-.md-divider.md-inset {
-  margin-left: 32px;
-}
-
-.md-drawer {
-  width: auto;
-}
-
-.md-field {
-  margin-bottom: 0px;
-}
-
-.login-error {
-  color: #FF0000 !important;
-}
-
 </style>

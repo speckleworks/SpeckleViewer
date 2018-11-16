@@ -171,31 +171,10 @@ export default {
       } )
     },
 
-    render( ) {
-      TWEEN.update( )
-
-      this.animationId = requestAnimationFrame( this.render )
-      this.renderer.render( this.scene, this.camera )
-    },
-
-    resizeCanvas( ) {
-      this.camera.aspect = window.innerWidth / window.innerHeight
-      this.camera.updateProjectionMatrix( )
-      this.renderer.setSize( window.innerWidth, window.innerHeight )
-    },
-
-    toggleLayer( args ) {
-      this.scene.traverse( obj => {
-        if ( !obj.hasOwnProperty( 'layerGuids' ) ) return
-        if ( obj.layerGuids.indexOf( args.layerGuid ) >= 0 )
-          obj.visible = args.state
-      } )
-    },
-
     dimStream( args ) {
       this.scene.traverse( obj => {
         if ( !obj.hasOwnProperty( 'streams' ) ) return
-        if ( obj.streams.indexOf(args.streamId) === -1 ) return
+        if ( obj.streams.indexOf( args.streamId ) === -1 ) return
         if ( args.dim && obj.material.opacity != 0.101010101 ) {
           obj.material.prevOpacity = obj.material.opacity
           obj.material.opacity = 0.101010101
@@ -355,6 +334,43 @@ export default {
         this.sceneBoundingSphere = geometry.boundingSphere
         this.zoomExtents( )
       } )
+    },
+
+    // proper load unload methods
+
+    loadObjects( args ) {
+
+    },
+
+    unloadObjects( args ) {
+
+    },
+
+    // visibility methods
+    toggleLayer( args ) {
+      this.scene.traverse( obj => {
+        if ( !obj.hasOwnProperty( 'layerGuids' ) ) return
+        if ( obj.layerGuids.indexOf( args.layerGuid ) >= 0 )
+          obj.visible = args.state
+      } )
+    },
+
+    toggleGhostObjects( args ) {
+
+    },
+
+    // Base Render Methods
+    render( ) {
+      TWEEN.update( )
+
+      this.animationId = requestAnimationFrame( this.render )
+      this.renderer.render( this.scene, this.camera )
+    },
+
+    resizeCanvas( ) {
+      this.camera.aspect = window.innerWidth / window.innerHeight
+      this.camera.updateProjectionMatrix( )
+      this.renderer.setSize( window.innerWidth, window.innerHeight )
     },
 
     // Selection methods
@@ -611,63 +627,6 @@ export default {
   /*z-index: 10;*/
   transition: all .2s ease;
   background-color: aliceblue;
-}
-
-#render-window.pop {
-  top: -15%;
-}
-
-.object-info {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  z-index: 10;
-  user-select: none;
-}
-
-.expand-button {
-  z-index: 42;
-  margin: 0px !important;
-}
-
-
-.expanded-info-box {
-  border-color: grey;
-  position: absolute;
-  top: 0;
-  left: 35px;
-  /*max-width: 400px;*/
-  max-height: 300px;
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
-  user-select: auto;
-  z-index: 40;
-  box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-
-@media (max-width: 768px) {
-  .expanded-info-box {
-    position: fixed;
-    top: auto;
-    bottom: 50px;
-    left: 2%;
-    width: 96%;
-    max-width: 96%;
-    height: 30%;
-    background-color: white;
-    z-index: 44;
-    overflow-x: auto;
-  }
-}
-
-.tree-view-wrapper {
-  font-family: auto;
-  overflow: hidden !important;
 }
 
 </style>
