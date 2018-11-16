@@ -1,6 +1,6 @@
 <template>
   <div>
-    <md-toolbar class="md-primary">
+    <!--     <md-toolbar class="md-primary">
       <span class="md-toolbar-section-end">
         <md-button class="md-icon-button" @click="showAccountsStuff=!showAccountsStuff">
           <md-icon>{{showAccountsStuff ? "keyboard_arrow_up" : "keyboard_arrow_down"}}</md-icon>
@@ -8,11 +8,10 @@
       </span>
       <span class="md-title" v-if='showLogin'>Login</span>
       <span class="md-title" v-else>Hello <strong>{{user.name}}!</strong></span>
-    </md-toolbar>
-    <login-screen v-if='showLogin && showAccountsStuff' v-on:success='loggedIn'></login-screen>
-    <div class="user-menu" v-if='!showLogin && showAccountsStuff'>
-      <md-list>
-        <md-list-item md-expand>
+    </md-toolbar> -->
+    <!--     <div class="user-menu" v-if='!showLogin && showAccountsStuff'>
+      <md-list> -->
+    <!--         <md-list-item md-expand>
           <md-icon>person</md-icon>
           <span class="md-list-item-text">My Account</span>
           <md-list class='md-triple-line md-dense' slot='md-expand'>
@@ -27,16 +26,16 @@
               </md-button>
             </md-list-item>
           </md-list>
-        </md-list-item>
-        <md-list-item md-expand>
+        </md-list-item> -->
+    <!--         <md-list-item md-expand>
           <md-icon>import_export</md-icon>
           <span class="md-list-item-text">My Streams</span>
-          <md-list class='md-double-line md-dense' slot='md-expand' :md-expand-single="true" >
-            <md-list-item> 
+          <md-list class='md-double-line md-dense' slot='md-expand' :md-expand-single="true">
+            <md-list-item>
               <md-field md-clearable>
                 <md-icon>search</md-icon>
-            <label>Filter your streams</label>
-            <md-input v-model='searchFilter'></md-input>
+                <label>Filter your streams</label>
+                <md-input v-model='searchFilter' @focus="showStreamList = true" @blur="showStreamList = false"></md-input>
               </md-field>
             </md-list-item>
             <md-list-item>
@@ -69,32 +68,76 @@
                 <md-tooltip v-if="!isIOS" md-delay="800">Add this stream to the viewer</md-tooltip>
               </md-button>
             </md-list-item>
-
-            <!--               <md-button class="md-icon-button md-list-action md-dense" v-on:click='shareStream(stream.streamId)'>
-              <md-icon>share</md-icon>
-              <md-tooltip md-delay="800">Copy stream address to clipboard</md-tooltip>
-              </md-button> -->
           </md-list>
-        </md-list-item>
-      </md-list>
-    </div>
-    <md-toolbar class="md-accent md-elevation-4" md-elevation="0">
+        </md-list-item> -->
+    <!--       </md-list>
+    </div> -->
+    <!--     <md-toolbar class="md-accent md-elevation-4" md-elevation="0">
       <span class="md-toolbar-section-end">
         <md-button class="md-icon-button" @click="showCurrentStreamStuff=!showCurrentStreamStuff">
           <md-icon>{{showCurrentStreamStuff ? "keyboard_arrow_up" : "keyboard_arrow_down"}}</md-icon>
         </md-button>
       </span>
       <span class="md-title">Current <strong>Streams</strong></span>
-    </md-toolbar>
-    <md-list v-show='showCurrentStreamStuff'>
-      <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in $store.state.receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
-    </md-list>
-    <span v-show='$store.state.receivers.length === 0 && showCurrentStreamStuff' class='md-subheading' style="padding: 10px">No streams present.</span>
+    </md-toolbar> -->
+    <md-card style='margin-bottom:20px;' md-with-hover v-if='showLogin'>
+      <md-card-header>
+        <md-card-header-text>
+          <div class="md-title">Login</div>
+          <div class="md-caption">{{$store.state.server}}</div>
+        </md-card-header-text>
+      </md-card-header>
+      <login-screen  v-on:success='loggedIn'></login-screen>
+    </md-card>
+    <md-card v-if='!showLogin' class='md-elevation-0' md-with-hover>
+      <md-card-header>
+        <md-card-header-text>
+          <div class="md-title">Hello, {{user.name}}!</div>
+          <div class="md-caption">{{user.email}} | {{$store.state.server}}</div>
+          <!-- <div class="md-caption">{{$store.state.server}}</div> -->
+        </md-card-header-text>
+        <md-menu xxx-md-size="dense" md-direction="bottom-end">
+          <md-button class="md-icon-button" md-menu-trigger>
+            <md-icon>more_vert</md-icon>
+          </md-button>
+          <md-menu-content>
+            <md-menu-item @click='logOut'>
+              <span>Logout</span>
+            </md-menu-item>
+            <md-menu-item @click="">
+              <span>Admin</span>
+            </md-menu-item>
+          </md-menu-content>
+        </md-menu>
+      </md-card-header>
+      <md-card-content style='background: white;'>
+        <md-field class='md-dense md-raised' md-layout="box">
+          <label>Search through your {{parentStreams.length}} streams.</label>
+          <md-input v-model="searchFilter"></md-input>
+          <md-icon>search</md-icon>
+        </md-field>
+        <md-list>
+          <md-list-item v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
+            <div class="md-list-item-text">
+              <span>{{stream.name}}</span>
+              <span>{{stream.streamId}}</span>
+            </div>
+            <md-button class="md-icon-button md-list-action md-dense" v-on:click='addStream(stream.streamId)'>
+              <md-icon>add</md-icon>
+              <md-tooltip v-if="!isIOS" md-delay="800">Add this stream to the viewer</md-tooltip>
+            </md-button>
+          </md-list-item>
+        </md-list>
+      </md-card-content>
+    </md-card>
+    <br>
+    <speckle-receiver v-on:drop="dropReceiver" v-for='receiver in $store.state.receivers' :key='receiver.streamId' :spkreceiver='receiver'></speckle-receiver>
+    <span v-show='$store.state.receivers.length === 0 && showCurrentStreamStuff' class='md-caption' style="padding: 10px">No streams loaded.</span>
   </div>
 </template>
 <script>
 import LoginScreen from './LoginScreen.vue'
-import SpeckleReceiver from './SpeckleReceiver.vue'
+import SpeckleReceiver from './SpeckleReceiverCard.vue'
 
 export default {
   name: 'UserMenu',
@@ -121,7 +164,9 @@ export default {
       searchFilter: null,
       startIndex: 0,
       itemsPerPage: 5,
-      streamAddition: null
+      streamAddition: null,
+      showStreamList: false,
+      selectedStream: null
     }
   },
   methods: {
@@ -161,16 +206,16 @@ export default {
     getStreams( ) {
       var jwtToken = localStorage.getItem( 'token' )
       this.$http.get( this.$store.state.server + '/streams', {
-        headers: {
-          Authorization: jwtToken
-        }
-      } )
+          headers: {
+            Authorization: jwtToken
+          }
+        } )
         .then( response => {
           this.streams = response.data.resources.reverse( )
         } )
     },
-    updateStreamList() {
-      this.getStreams()
+    updateStreamList( ) {
+      this.getStreams( )
     },
     addStream( stream ) {
       this.$emit( 'add', stream )
@@ -214,12 +259,15 @@ export default {
       } )
   },
   computed: {
+    simpleStreams( ) {
+      return this.streams.filter( stream => stream.isComputedResult == false ).map( stream => `${stream.name} \ ${stream.streamId}` )
+    },
     parentStreams( ) {
-      return this.streams.filter(stream => stream.isComputedResult == false)
+      return this.streams.filter( stream => stream.isComputedResult == false )
     },
     filteredStreams( ) {
       if ( this.searchFilter == null || this.searchFilter == '' )
-        return this.parentStreams
+        return [ ]
       else {
         //this.startIndex = 0
         return this.parentStreams.filter( stream => stream.name.toLowerCase( ).includes( this.searchFilter.toLowerCase( ) ) || stream.streamId.toLowerCase( ).includes( this.searchFilter.toLowerCase( ) ) )
@@ -236,8 +284,8 @@ export default {
       if ( this.startIndex == 0 ) return 1
       return this.startIndex / this.itemsPerPage + 1
     },
-    isIOS ( ) {
-      return (typeof window.orientation !== "undefined") && (navigator.userAgent.indexOf('OS X') !== -1)
+    isIOS( ) {
+      return ( typeof window.orientation !== "undefined" ) && ( navigator.userAgent.indexOf( 'OS X' ) !== -1 )
     },
   }
 }

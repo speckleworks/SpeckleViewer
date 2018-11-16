@@ -20,15 +20,15 @@ export default class SpeckleReceiver extends EventEmitter {
     this.wsReconnectionAttempts = 0
 
     this.setupClient( cb => this.setupWebsockets( cb => this.getStream( cb => {
-      this.emit( 'ready', this.stream.name, this.stream.layers, this.stream.objects, [], [] )
-      this.setupWsReconnecter()
+      this.emit( 'ready', this.stream.name, this.stream.layers, this.stream.objects, [ ], [ ] )
+      this.setupWsReconnecter( )
     } ) ) )
   }
 
-  setupWsReconnecter () {
-    this.wsConnectionChecker = setInterval( () => {
-      if( ( !this.ws || this.ws.readyState == 3 ) && ( this.wsReconnectionAttempts < 20 ) ) {
-        this.setupWebsockets()
+  setupWsReconnecter( ) {
+    this.wsConnectionChecker = setInterval( ( ) => {
+      if ( ( !this.ws || this.ws.readyState == 3 ) && ( this.wsReconnectionAttempts < 20 ) ) {
+        this.setupWebsockets( )
         this.wsReconnectionAttempts++
       }
     }, 2000 )
@@ -39,20 +39,20 @@ export default class SpeckleReceiver extends EventEmitter {
 
     this.ws.onopen = ( ) => {
       console.log( 'Websocket connection opened for', this.streamId )
-      cb()
+      if ( cb ) cb( )
     }
 
     this.ws.onmessage = message => {
       if ( message.data === 'ping' ) return this.ws.send( 'alive' )
       let parsedMessage = JSON.parse( message.data )
-      switch( parsedMessage.args.eventType ) {
+      switch ( parsedMessage.args.eventType ) {
         case 'update-global':
           this.emit( 'update-global' )
           console.log( 'GLOBAL UPDATE YO' )
           break
         case 'update-meta':
           this.emit( 'update-meta' )
-          console.log( 'METAMETA UPDATE YO')
+          console.log( 'METAMETA UPDATE YO' )
           break
         case 'compute-request-error':
           this.emit( 'error', parsedMessage.args.response )
@@ -60,12 +60,12 @@ export default class SpeckleReceiver extends EventEmitter {
         case 'compute-response':
           this.childStreamId = parsedMessage.args.streamId
           this.getChildStream( cb => {
-            this.emit( 'ready', this.stream.name, this.stream.layers, this.stream.objects, [], [] )
-          })
+            this.emit( 'ready', this.stream.name, this.stream.layers, this.stream.objects, [ ], [ ] )
+          } )
           break
         default:
           console.log( 'Custom event received:', parsedMessage.args.eventType )
-          this.emit( parsedMessage.args.eventType, parsedMessage)
+          this.emit( parsedMessage.args.eventType, parsedMessage )
           break;
       }
     }
@@ -87,18 +87,18 @@ export default class SpeckleReceiver extends EventEmitter {
   }
 
   broadcast( message ) {
-    if( !this.streamId )
+    if ( !this.streamId )
       throw new Error( 'No streamId, where should I broadcast?' )
     this.ws.send( JSON.stringify( {
       eventName: 'broadcast',
       senderId: this.clientId,
       streamId: this.streamId,
-      args:  message
+      args: message
     } ) )
   }
 
-  sendMessage( args, recipientId  ) {
-    console.log(args)
+  sendMessage( args, recipientId ) {
+    console.log( args )
     this.ws.send( JSON.stringify( {
       eventName: 'message',
       senderId: this.clientId,
@@ -139,19 +139,19 @@ export default class SpeckleReceiver extends EventEmitter {
     axios.get( this.baseUrl + '/streams/' + this.streamId + '?fields=name,layers', { headers: { 'Auth': this.auth } } )
       .then( response => {
         cb( responseName.data.resource.name, response.data.resource.layers )
-      })
+      } )
       .catch( err => {
         console.error( err )
-      })
+      } )
   }
 
   getObject( objectId ) {
     axios.get( this.baseUrl + '/objects/' + objectId )
       .then( response => {
 
-      })
+      } )
       .catch( err => {
         console.log( err )
-      })
+      } )
   }
 }

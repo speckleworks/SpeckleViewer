@@ -18,7 +18,7 @@ export default new Vuex.Store( {
     user: {},
     jwtToken: '',
     viewerSettings: {},
-    selectedObjects: []
+    selectedObjects: [ ]
   },
   getters: {
     isMobile: state => state.mobile,
@@ -110,6 +110,21 @@ export default new Vuex.Store( {
     INIT_RECEIVER_DATA( state, { payload } ) {
       let target = state.receivers.find( rec => rec.streamId === payload.streamId )
       target.name = payload.name
+
+      let objCountLayers = 0
+      payload.layers.forEach( l => objCountLayers += l.objectCount )
+      if ( objCountLayers != payload.objects.length ) {
+        console.warn( `Malformed layer table in stream ${payload.streamId}: ${payload.objects.length} objs out of which ${objCountLayers}  accounted for by layers.\nWill replace with one layer only that contains all objects.` )
+        payload.layers = [ ]
+        payload.layers.push( {
+          guid: "gen-" + Date.now,
+          name: "Default Layer (Gen)",
+          objectCount: payload.objects.length,
+          orderIndex: 0,
+          startIndex: 0,
+          topology: "",
+        } )
+      }
 
       // set objects
       target.objects = payload.objects.map( ( obj, index ) => {

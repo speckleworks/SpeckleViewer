@@ -1,38 +1,39 @@
 <template>
-  <md-autocomplete v-if='objects.length>0'
-    class="search"
-    v-model="selection"
-    v-on:input='select(selection)'
-    :md-options="objects"
-    md-layout="box">
+  <!-- <div style="margin-left: 20px; padding:2px; background: white">
+    <md-chips class='md-primary' v-model="fruits" md-placeholder="Add filter conditions!">
+    </md-chips>
+  </div> -->
+  <md-autocomplete  class="search" v-model="selection" v-on:input='select(selection)' md-layout="box">
     <label>Search...</label>
   </md-autocomplete>
-</template>
 
+<!--   <md-field md-clearable md-layout="box" style='color: white !important'>
+      <label>Cleareable</label>
+      <md-input v-model="initial"></md-input>
+    </md-field> -->
+</template>
 <script>
 export default {
   name: 'SearchBar',
-  props:{
-    objects: { type: Array }
-  },
-  data() {
+  data( ) {
     return {
       selection: null,
-      searchVisible: false
+      searchVisible: false,
+      fruits: [ 'area>10' ]
     }
   },
   methods: {
-    toggleSearchBar() {
-      this.searchVisible = ! this.searchVisible
+    toggleSearchBar( ) {
+      this.searchVisible = !this.searchVisible
     },
-    select(selection) {
-      bus.$emit('select-bus', selection)
+    select( selection ) {
+      bus.$emit( 'select-bus', selection )
     }
   },
 }
-</script>
 
+</script>
 <style scoped>
-.search {
-}
+.search {}
+
 </style>

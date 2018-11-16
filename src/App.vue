@@ -18,9 +18,9 @@
       <md-app-toolbar class="md-primary md-dense" style='z-index: 10'>
         <div class="md-toolbar-row">
           <div class="md-toolbar-section-start">
-            <md-button class='md-icon-button md-raised' @click.native='showAccounts=!showAccounts'>
-              <md-icon style='color: black'>
-                {{ showAccounts ? "close" : "menu"}}
+            <md-button class='md-icon-button' @click.native='showAccounts=!showAccounts'>
+              <md-icon xxx-style='color: black'>
+                {{ showAccounts ? "arrow_left" : "menu"}}
               </md-icon>
               <md-tooltip v-if="!isIOS" md-direction="bottom">Menu</md-tooltip>
             </md-button>
@@ -65,7 +65,7 @@
           </div>
         </div>
       </md-app-toolbar>
-      <md-app-drawer :md-active.sync="showAccounts" style='z-index:100' class='md-elevation-4' md-persistent="full">
+      <md-app-drawer :md-active.sync="showAccounts" style='xxx-z-index:100; padding:14px; box-sizing:border-box; background-color:#448aff;' class='md-scrollbar md-elevation-4 md-primary' md-persistent="full">
         <sidebar-menu v-on:add="addReceiver"></sidebar-menu>
       </md-app-drawer>
       <md-app-content>
@@ -124,7 +124,7 @@ export default {
       showAddStreamDialog: false,
       addStreamString: null,
       showStreamList: false,
-      showAccounts: false,
+      showAccounts: true,
       showViewSelect: false,
       showSettings: false,
       showObjectDetails: false,
