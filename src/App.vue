@@ -183,8 +183,7 @@ export default {
           units: null
         },
         comments: null,
-        name: 'Loading ' + streamId + '...',
-        layerMaterials: [ ]
+        name: 'Loading ' + streamId + '...'
       }
       this.$store.commit( 'ADD_RECEIVER', { receiver } )
     },

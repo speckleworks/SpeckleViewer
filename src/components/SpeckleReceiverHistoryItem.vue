@@ -47,7 +47,7 @@ export default {
   },
   mounted( ) {
     console.log( 'history was created, getting streams!' )
-    axios.get( this.$store.state.server + '/streams/' + this.streamid + '?fields=name,updatedAt,isComputedResult', { headers: { 'Auth': this.$store.state.jwtToken } } )
+    axios.get( this.$store.state.server + '/streams/' + this.streamid + '?fields=name,updatedAt,isComputedResult' )
       .then( response => {
         this.stream.updatedAt = response.data.resource.updatedAt
         this.stream.name = response.data.resource.name

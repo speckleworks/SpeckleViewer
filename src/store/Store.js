@@ -15,8 +15,9 @@ export default new Vuex.Store( {
     initStreams: [ ],
     receivers: [ ],
     comments: [ ],
-    viewerSettings: {},
-    selectedObjects: [ ]
+    viewerSettings: { },
+    selectedObjects: [ ],
+    inRenderObjects: [ ]
   },
   getters: {
     isMobile: state => state.mobile,
@@ -61,6 +62,10 @@ export default new Vuex.Store( {
   },
   actions: {},
   mutations: {
+    ADD_INRENDER_OBJS( state, objects ) { },
+    REMOVE_INRENDER_OBJS( state, objects ) {
+      state.inRenderObjects = state.inRenderObjects.filter( id => objects.indexOf(id) === -1 )
+    },
     SET_VIEWER_SETTINGS( state, { settings } ) {
       state.viewerSettings = settings
     },
@@ -102,12 +107,9 @@ export default new Vuex.Store( {
       l.threeMeshMaterial.opacity = payload.a
       l.threeLineMaterial.opacity = payload.a
       l.threePointMaterial.opacity = payload.a
-
     },
 
     INIT_RECEIVER_DATA( state, { payload } ) {
-
-      console.log( payload )
 
       let target = state.receivers.find( rec => rec.streamId === payload.streamId )
 

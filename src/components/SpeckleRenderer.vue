@@ -313,15 +313,17 @@ export default {
       } )
     },
 
-    dropStream( streamId ) {
-      console.log( 'dropping', streamId )
+    removeStreamObjects( streamId ) {
+      let removedIds = [ ]
       this.scene.children = this.scene.children.filter( object => {
         // probably a scene object
         if ( !object.hasOwnProperty( 'streams' ) )
           return true
         // is this object part of more streams?
-        if ( object.streams.indexOf( streamId ) >= 0 && object.streams.length == 1 )
+        if ( object.streams.indexOf( streamId ) >= 0 && object.streams.length == 1 ) {
+          removedIds.push( object._id )
           return false
+        }
         // now make sure we remove the tracking from the stream's pow
         else {
           object.streams = object.streams.filter( id => id != streamId )
@@ -329,6 +331,7 @@ export default {
         }
       } )
 
+      this.$store.commit( 'REMOVE_INRENDER_OBJS', removedIds )
       this.computeSceneBoundingSphere( geometry => {
         this.needsBoundsRefresh = false
         this.sceneBoundingSphere = geometry.boundingSphere
@@ -337,13 +340,98 @@ export default {
     },
 
     // proper load unload methods
+    // 1. loads objects into the scene
+    async loadObjects( args ) {
+      console.info( 'loading objects' )
+      let toRequest = args.toRequest,
+        zExt = true
+      try { zExt = args.zoomExt } catch ( e ) {}
+      // prepare buckets
+      let totalCount = 0,
+        requestBatches = [ ],
+        maxObjectRequestCount = 25,
+        bucket = [ ]
+      for ( var i = 0; i < toRequest.length; i++ ) {
+        bucket.push( toRequest[ i ] )
+        if ( i % maxObjectRequestCount == 0 && i != 0 ) {
+          requestBatches.push( [ ...bucket ] )
+          bucket = [ ]
+        }
+      }
+      if ( bucket.length != 0 ) requestBatches.push( bucket )
 
-    loadObjects( args ) {
+      console.info( `Made ${requestBatches.length} batches` )
 
+      // request the objects from the server
+      let filledBatch = [ ],
+        k = 1
+      for ( const batch of requestBatches ) {
+        let res = await this.$http.post( this.$store.state.server + '/objects/getbulk?omit=base64,rawData', batch.map( item => item._id ) )
+        res.data.resources.forEach( ( obj, i ) => {
+          obj.streams = batch[ i ].streams
+          obj.layerGuids = batch[ i ].layerGuids
+        } )
+        if ( requestBatches.length > 0 && batch.length > 0 )
+          bus.$emit( 'stream-load-progress', `Got ${ k++ * maxObjectRequestCount } objects out of ${toRequest.length }` )
+        filledBatch = [ ...res.data.resources, ...filledBatch ]
+      }
+
+      // convert the objects and add them to the scene
+      let convertedCount = 0
+      filledBatch.forEach( object => {
+        if ( !Converter.hasOwnProperty( object.type ) )
+          return console.warn( `Objects of type ${object.type} not supported.` )
+        let layer = this.$store.getters.allLayerMaterials.find( l => object.layerGuids.indexOf( l.guid ) > -1 )
+        if ( !layer ) layer = this.defaultLayerMaterial
+        Converter[ object.type ]( { obj: object, layer: layer }, ( err, threeObj ) => {
+          convertedCount++
+          threeObj.hash = object.hash
+          threeObj.streams = object.streams
+          threeObj.layerGuids = object.layerGuids
+          threeObj._id = object._id
+          threeObj.properties = object.properties
+
+          let color = null
+          try { color = object.properties.spkColor } catch ( e ) {}
+          if ( color ) {
+            if ( threeObj instanceof THREE.Mesh ) threeObj.material = this.getMeshMaterial( color )
+            if ( threeObj instanceof THREE.Line ) threeObj.material = this.getLineMaterial( color )
+            if ( threeObj instanceof THREE.Points ) threeObj.material = this.getPointsMaterial( color )
+          }
+          this.scene.add( threeObj )
+          this.$store.state.inRenderObjects.push( object._id )
+          if ( convertedCount >= filledBatch.length ) {
+            this.needsBoundsRefresh = true
+            this.computeSceneBoundingSphere( geometry => {
+              this.needsBoundsRefresh = false
+              this.sceneBoundingSphere = geometry.boundingSphere
+              if ( zExt ) this.zoomExtents( )
+              bus.$emit( 'stream-load-progress', `All ready.` )
+            } )
+          }
+        } )
+      } )
     },
 
-    unloadObjects( args ) {
+    // 2. updates object tracking (streams and layers)
+    updateObjectProps( toUp ) {
+      toUp.forEach( newObj => {
+        let found = this.scene.children.filter( obj => obj.hasOwnProperty( '_id' ) ).find( obj => obj._id === newObj._id )
+        found.streams = [ ...newObj.streams, ...found.streams ]
+        found.layerGuids = [ ...newObj.layerGuids, ...found.layerGuids ]
+      } )
+    },
 
+    unloadObjects( objectIds ) {
+      this.scene.children = this.scene.children.filter( object => {
+        // probably a scene object
+        if ( !object.hasOwnProperty( '_id' ) )
+          return true
+        if ( objectIds.indexOf( object._id ) !== -1 )
+          return false
+        return true
+      } )
+      this.computeSceneBoundingSphere( geometry => this.sceneBoundingSphere = geometry.boundingSphere )
     },
 
     // visibility methods
@@ -357,6 +445,35 @@ export default {
 
     toggleGhostObjects( args ) {
 
+    },
+
+    // Custom color material generators
+    getMeshMaterial( color ) {
+      return new THREE.MeshPhongMaterial( {
+        color: new THREE.Color( color.hex ),
+        specular: new THREE.Color( '#FFECB3' ),
+        shininess: 30,
+        side: THREE.DoubleSide,
+        transparent: true,
+        wireframe: false,
+        opacity: color.a
+      } )
+    },
+    getLineMaterial( color ) {
+      return new THREE.LineBasicMaterial( {
+        color: new THREE.Color( color.hex ),
+        linewidth: 1,
+        opacity: color.a
+      } )
+    },
+    getPointsMaterial( color ) {
+      return new THREE.PointsMaterial( {
+        color: new THREE.Color( color.hex ),
+        sizeAttenuation: false,
+        transparent: true,
+        size: 3,
+        opacity: color.a
+      } )
     },
 
     // Base Render Methods
@@ -396,7 +513,7 @@ export default {
       this.selectedObjectsProperties = {
         hash: selectedObject.hash,
         streamId: selectedObject.streamId,
-        properties: selectedObject.spkProperties
+        properties: selectedObject.properties
       }
       let selectedObjectProperties = this.selectedObjectsProperties
       this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
@@ -585,7 +702,11 @@ export default {
 
     bus.$on( 'toggle-dim-stream', this.dimStream )
     bus.$on( 'load-stream-objects', this.loadStream )
-    bus.$on( 'drop-stream-objects', this.dropStream )
+    bus.$on( 'drop-stream-objects', this.removeStreamObjects )
+
+    bus.$on( 'r-load-objects', this.loadObjects )
+    bus.$on( 'r-unload-objects', this.unloadObjects )
+    bus.$on( 'r-update-props', this.updateObjectProps )
 
     bus.$on( 'renderer-pop', ( ) => {
       console.log( "POP" )
@@ -602,7 +723,7 @@ export default {
       this.zoomToObject( )
     } )
     bus.$on( 'renderer-drop-stream', ( streamId ) => {
-      this.dropStream( streamId )
+      this.removeStreamObjects( streamId )
     } )
     bus.$on( 'toggle-layer', ( args ) => {
       this.toggleLayer( args )

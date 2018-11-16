@@ -8,7 +8,7 @@
       <md-button class="md-icon-button xxx-md-raised" v-on:click='removeReceiver(spkreceiver.streamId)'>
         <md-icon>close</md-icon>
       </md-button>
-      <md-button v-show='expired' class='md-icon-button md-dense md-accent md-raised' @click.native='getAndSetStream()'>
+      <md-button v-show='expired' class='md-icon-button md-dense md-accent md-raised' @click.native='refreshStreamObjects()'>
         <md-icon>refresh</md-icon>
         <md-tooltip v-if="!isIOS">Update available. Click to refresh.</md-tooltip>
       </md-button>
@@ -89,6 +89,9 @@ export default {
     sliders( ) {
       return this.controllers.filter( c => c.InputType === 'Slider' )
     },
+    inRenderObjects( ) {
+      return this.$store.state.inRenderObjects
+    },
     isIOS( ) {
       return ( typeof window.orientation !== "undefined" ) && ( navigator.userAgent.indexOf( 'OS X' ) !== -1 )
     },
@@ -121,18 +124,32 @@ export default {
     receiverError( err ) {
       this.error = err
       if ( err == 'Remote control is disabled for this sender' ) { // need a more elegant error handler for progress bar
-
       }
       bus.$emit( 'snackbar-update', err )
     },
 
-    receiverReady( stream ) {
-      this.streamParent = this.mySpkReceiver.stream.parent
+    async receiverReady( stream ) {
+      try {
+        let res = await this.$http.get( this.$store.state.server + '/streams/' + this.spkreceiver.streamId )
+        let payload = { ...res.data.resource }
+        let stream = payload
 
-      let payload = { ...stream }
+        this.$store.commit( 'INIT_RECEIVER_DATA', { payload } )
+        // set basics
+        stream.objects.forEach( ( obj, i ) => {
+          obj.streams = [ stream.streamId ]
+          let layer = stream.layers.find( layer => { return i >= layer.startIndex && i < ( layer.startIndex + layer.objectCount ) } )
+          obj.layerGuids = [ layer.guid ]
+        } )
 
-      this.$store.commit( 'INIT_RECEIVER_DATA', { payload } )
-      bus.$emit( 'load-stream-objects', stream.streamId )
+        let toRequest = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) === -1 )
+        let toUpdateProps = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) !== -1 )
+        console.log( toRequest )
+        bus.$emit( 'r-load-objects', { toRequest : toRequest, zoomExt: true } )
+        bus.$emit( 'r-update-props', toUpdateProps )
+      } catch ( e ) {
+        console.warn( e )
+      }
     },
 
     removeReceiver( streamId ) {
@@ -143,44 +160,48 @@ export default {
 
     updateGlobal( ) {
       console.info( 'live update event' )
-      this.viewerSettings.autoRefresh ? this.getAndSetStream( ) : this.expired = true
+      this.viewerSettings.autoRefresh ? this.refreshStreamObjects( ) : this.expired = true
     },
 
-    getAndSetStream( ) {
-      this.expired = false
+    async refreshStreamObjects( ) {
+      console.log( 'updating stream' )
+      try {
+        let res = await this.$http.get( this.$store.state.server + '/streams/' + this.spkreceiver.streamId )
+        let stream = res.data.resource
 
-      bus.$emit( 'drop-stream-objects', this.spkreceiver.streamId )
+        // set basics
+        stream.objects.forEach( ( obj, i ) => {
+          obj.streams = [ stream.streamId ]
+          let layer = stream.layers.find( layer => { return i >= layer.startIndex && i < ( layer.startIndex + layer.objectCount ) } )
+          obj.layerGuids = [ layer.guid ]
+        } )
 
-      this.mySpkReceiver.getStream( stream => {
-        console.log( stream )
-        let payload = { streamId: this.spkreceiver.streamId, name: stream.name, layers: stream.layers, objects: stream.objects }
-        this.$store.commit( 'SET_RECEIVER_DATA', { payload } )
+        let toUnload = this.spkreceiver.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) == null )
+        bus.$emit( 'r-unload-objects', toUnload.map( o => o._id ) )
 
-        bus.$emit( 'load-stream-objects', stream.streamId )
-      } )
+        let toRequest = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) === -1 )
+        let toUpdateProps = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) !== -1 )
 
+        let payload = { ...res.data.resource }
+        this.$store.commit( 'INIT_RECEIVER_DATA', { payload } )
+
+        bus.$emit( 'r-load-objects', { toRequest : toRequest, zoomExt: false }  )
+        bus.$emit( 'r-update-props', toUpdateProps )
+        this.expired = false
+      } catch ( e ) {
+        console.warn( e )
+      }
     },
 
-    updateMeta( ) {
-      this.mySpkReceiver.getStreamNameAndLayers( ( name, layers ) => {
-        let payload = { streamId: this.spkreceiver.streamId, name: name, layers: layers }
-        this.$store.commit( 'SET_RECEIVER_METADATA', { payload } )
-      } )
-    },
+    async updateMeta( ) {
 
-    broadcastReceived( message ) {
-      console.log( 'broadcastReceived message:', message )
-      let parsedMessage = JSON.parse( message.args )
-      console.log( 'broadcastReceived parsedMessage:', parsedMessage )
-      if ( parsedMessage.event != 'comment-added' ) return
-      let payload = parsedMessage.comment
-      this.$store.commit( 'ADD_COMMENT', { payload } )
     },
 
     getControllers( ) {
       console.log( 'Getting controllers for ' + this.spkreceiver.streamId )
       this.mySpkReceiver.broadcast( { eventType: 'get-definition-io' } )
     },
+
     addControllers( wsMessage ) {
       this.senderId = wsMessage.senderId
       this.controllers = wsMessage.args.controllers
