@@ -70,7 +70,8 @@ export default {
       controllers: [ ],
       controllersChecked: false,
       streamParent: null,
-      selectedHistoryItem: null
+      selectedHistoryItem: null,
+      selectedHistoryStream: null
     }
   },
   computed: {
@@ -111,21 +112,53 @@ export default {
   },
   methods: {
     restoreLatest( ) {
+      let prevHistoryObjs = this.selectedHistoryStream.objects.map( o => o._id )
+      bus.$emit( 'r-unload-objects', { objs: prevHistoryObjs, streamId: this.selectedHistoryStream.streamId } )
+
+      let toUnGhost = this.spkreceiver.objects.map( o => o._id )
+      bus.$emit( 'r-unghost-objects', toUnGhost )
       this.selectedHistoryItem = null
-      bus.$emit( 'toggle-dim-stream', { streamId: this.spkreceiver.streamId, dim: false } )
     },
 
-    historySelect( streamid ) {
-      console.log( streamid )
-      this.selectedHistoryItem = streamid
-      bus.$emit( 'toggle-dim-stream', { streamId: this.spkreceiver.streamId, dim: true } )
-    },
+    async historySelect( streamId ) {
+      if( this.selectedHistoryItem === streamId ) return
+      console.log( `History selection ${streamId}` )
 
-    receiverError( err ) {
-      this.error = err
-      if ( err == 'Remote control is disabled for this sender' ) { // need a more elegant error handler for progress bar
+      // unload previous selected history objects
+      if ( this.selectedHistoryItem !== null ) {
+        let prevHistoryObjs = this.selectedHistoryStream.objects.map( o => o._id )
+        bus.$emit( 'r-unload-objects', { objs: prevHistoryObjs, streamId: this.selectedHistoryStream.streamId } )
       }
-      bus.$emit( 'snackbar-update', err )
+
+      let res = await this.$http.get( `${this.$store.state.server}/streams/${streamId}` )
+      let stream = res.data.resource
+
+      // ghost original stream only if we didn't ghost it before
+      // if ( this.selectedHistoryItem === null ) {
+        let toGhost = this.spkreceiver.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) == null ).map( o => o._id )
+        bus.$emit( 'r-ghost-objects', toGhost )
+
+        let toUnGhost = this.spkreceiver.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) != null ).map( o => o._id )
+        bus.$emit( 'r-unghost-objects', toUnGhost )
+      // }
+
+      this.selectedHistoryItem = streamId
+      this.selectedHistoryStream = stream
+
+      // set basics
+      stream.objects.forEach( ( obj, i ) => {
+        obj.streams = [ stream.streamId ]
+        let layer = stream.layers.find( layer => { return i >= layer.startIndex && i < ( layer.startIndex + layer.objectCount ) } )
+        obj.layerGuids = [ layer.guid ]
+      } )
+
+      let toRequest = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) === -1 )
+      bus.$emit( 'r-load-objects', { toRequest: toRequest, zoomExt: false } )
+
+      let toUpdateProps = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) !== -1 )
+      bus.$emit( 'r-update-props', toUpdateProps )
+
+      // console.log( 'ghost, request, update', toGhost, toRequest, toUpdateProps )
     },
 
     async receiverReady( stream ) {
@@ -144,23 +177,12 @@ export default {
 
         let toRequest = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) === -1 )
         let toUpdateProps = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) !== -1 )
-        console.log( toRequest )
-        bus.$emit( 'r-load-objects', { toRequest : toRequest, zoomExt: true } )
+
+        bus.$emit( 'r-load-objects', { toRequest: toRequest, zoomExt: true } )
         bus.$emit( 'r-update-props', toUpdateProps )
       } catch ( e ) {
         console.warn( e )
       }
-    },
-
-    removeReceiver( streamId ) {
-      this.$store.commit( 'DROP_RECEIVER', { streamId } )
-      bus.$emit( 'drop-stream-objects', streamId )
-      //this.$emit( 'drop', stream )
-    },
-
-    updateGlobal( ) {
-      console.info( 'live update event' )
-      this.viewerSettings.autoRefresh ? this.refreshStreamObjects( ) : this.expired = true
     },
 
     async refreshStreamObjects( ) {
@@ -176,8 +198,8 @@ export default {
           obj.layerGuids = [ layer.guid ]
         } )
 
-        let toUnload = this.spkreceiver.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) == null )
-        bus.$emit( 'r-unload-objects', toUnload.map( o => o._id ) )
+        let toUnload = this.spkreceiver.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) == null ).map( o => o._id )
+        bus.$emit( 'r-unload-objects', { objs: toUnload, streamId: stream.streamId } )
 
         let toRequest = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) === -1 )
         let toUpdateProps = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) !== -1 )
@@ -185,12 +207,23 @@ export default {
         let payload = { ...res.data.resource }
         this.$store.commit( 'INIT_RECEIVER_DATA', { payload } )
 
-        bus.$emit( 'r-load-objects', { toRequest : toRequest, zoomExt: false }  )
+        bus.$emit( 'r-load-objects', { toRequest: toRequest, zoomExt: false } )
         bus.$emit( 'r-update-props', toUpdateProps )
         this.expired = false
       } catch ( e ) {
         console.warn( e )
       }
+    },
+
+    removeReceiver( streamId ) {
+      let toUnload = this.spkreceiver.objects.map( o => o._id )
+      bus.$emit( 'r-unload-objects', { objs: toUnload, streamId: this.spkreceiver.streamId } )
+      this.$store.commit( 'DROP_RECEIVER', { streamId } )
+    },
+
+    updateGlobal( ) {
+      console.info( 'live update event' )
+      this.viewerSettings.autoRefresh ? this.refreshStreamObjects( ) : this.expired = true
     },
 
     async updateMeta( ) {
@@ -205,6 +238,13 @@ export default {
     addControllers( wsMessage ) {
       this.senderId = wsMessage.senderId
       this.controllers = wsMessage.args.controllers
+    },
+
+    receiverError( err ) {
+      this.error = err
+      if ( err == 'Remote control is disabled for this sender' ) { // need a more elegant error handler for progress bar
+      }
+      bus.$emit( 'snackbar-update', err )
     },
 
     sendComputeRequest: _.debounce( args => {

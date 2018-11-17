@@ -41,7 +41,6 @@ export default {
   },
   methods: {
     selectThis( ) {
-      console.log( 'seel' )
       this.$emit( 'selectme', this.streamid )
     }
   },

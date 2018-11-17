@@ -5,9 +5,9 @@
         {{ spklayer.name }} <span class="md-caption">({{spklayer.objectCount}} objs)</span>
       </div>
       <div class="md-layout-item" style="text-align: right">
-        <md-button class='md-dense md-icon-button md-primary' @click.native='toggleLayer'>
-          <md-icon>{{ visible ? "visibility" : "visibility_off" }}</md-icon>
-        </md-button>
+        <!-- <md-button class='md-dense md-icon-button md-primary' @click.native='toggleLayer'> -->
+          <md-icon class='md-primary'>{{ visible ? "visibility" : "visibility_off" }}</md-icon>
+        <!-- </md-button> -->
       </div>
     </div>
   </md-card>
