@@ -166,7 +166,7 @@ export default {
         if ( obj.hasOwnProperty( 'ghostMaterial' ) ) return // means it's already ghosted
         if ( objIds.indexOf( obj._id ) !== -1 ) {
           obj.ghostMaterial = obj.material // keep old ref
-          obj.material = obj.material.clone() // break ref
+          obj.material = obj.material.clone( ) // break ref
           obj.material.opacity = 0.3 // change opacity
           obj.material.wireframe = true
         }
@@ -177,7 +177,7 @@ export default {
       this.scene.traverse( obj => {
         if ( !obj.hasOwnProperty( '_id' ) || !obj.hasOwnProperty( 'ghostMaterial' ) ) return
         if ( objIds.indexOf( obj._id ) !== -1 ) {
-          obj.material.dispose() // only leaky bladders, no leaky memory please
+          obj.material.dispose( ) // only leaky bladders, no leaky memory please
           obj.material = obj.ghostMaterial // go back
           delete obj.ghostMaterial
         }
@@ -442,41 +442,17 @@ export default {
     window.THREE = THREE
     window.scene = this.scene
 
-    bus.$on( 'renderer-update', debounce( this.update, 300 ) )
-    bus.$on( 'renderer-setview', this.setCamera )
-    bus.$on( 'renderer-load-stream', this.update )
-    bus.$on( 'zext', this.zoomExtents )
-
-    bus.$on( 'toggle-dim-stream', this.dimStream )
-    bus.$on( 'load-stream-objects', this.loadStream )
-    bus.$on( 'drop-stream-objects', this.removeStreamObjects )
-
     bus.$on( 'r-load-objects', this.loadObjects )
     bus.$on( 'r-unload-objects', this.unloadObjects )
     bus.$on( 'r-update-props', this.updateObjectProps )
+
     bus.$on( 'r-ghost-objects', this.ghostObjects )
     bus.$on( 'r-unghost-objects', this.unghostObjects )
+    bus.$on( 'r-zoom-to-object', this.zoomToObject )
+    bus.$on( 'r-zoom-ext', this.zoomExt )
 
-    bus.$on( 'renderer-pop', ( ) => {
-      console.log( "POP" )
-      this.$refs.mycanvas.classList.toggle( 'pop' )
-    } )
-    bus.$on( 'renderer-unpop', ( ) => {
-      console.log( "UNPOP" )
-      this.$refs.mycanvas.classList.toggle( 'pop' )
-    } )
-    bus.$on( 'select-bus', ( objectId ) => {
-      this.selectBus( objectId )
-    } )
-    bus.$on( 'zoomToObject', ( ) => {
-      this.zoomToObject( )
-    } )
-    bus.$on( 'renderer-drop-stream', ( streamId ) => {
-      this.removeStreamObjects( streamId )
-    } )
-    bus.$on( 'toggle-layer', ( args ) => {
-      this.toggleLayer( args )
-    } )
+    bus.$on( 'select-bus', this.selectBus )
+    bus.$on( 'r-toggle-layer', this.toggleLayer )
 
 
     document.addEventListener( 'keydown', ( event ) => {

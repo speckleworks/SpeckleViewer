@@ -152,12 +152,12 @@ export default {
   methods: {
     zoomExt( ) {
       if ( !this.selectedObjects )
-        bus.$emit( 'zext' )
+        bus.$emit( 'r-zoom-ext' )
       else
-        bus.$emit( 'zoomToObject' )
+        bus.$emit( 'r-zoom-to-object' )
     },
     zoomToObject( ) {
-      bus.$emit( 'zoomToObject' )
+      bus.$emit( 'r-zoom-to-object' )
     },
     addReceiver( streamId ) {
       if ( !streamId ) {
@@ -204,8 +204,6 @@ export default {
     }
   },
   created( ) {
-    // this.createReceivers( )
-
     if ( window.localStorage.getItem( 'viewerSettings' ) !== null ) {
       this.$store.commit( 'SET_VIEWER_SETTINGS', { settings: JSON.parse( window.localStorage.getItem( 'viewerSettings' ) ) } )
     }

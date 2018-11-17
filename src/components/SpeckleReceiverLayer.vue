@@ -61,7 +61,7 @@ export default {
     },
     toggleLayer( ) {
       this.visible = !this.visible
-      bus.$emit( 'toggle-layer', {
+      bus.$emit( 'r-toggle-layer', {
         layerGuid: this.spklayer.guid,
         state: this.visible
       } )
