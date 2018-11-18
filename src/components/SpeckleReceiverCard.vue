@@ -51,7 +51,7 @@
           <p v-show='spkreceiver.children.length == 0' class='md-caption'>This stream has no history.</p>
           <history-item v-for='streamId in historyStreams' :key='streamId' :streamid='streamId' :selected='streamId==selectedHistoryItem' v-on:selectme='historySelect' v-on:restore='restoreLatest'></history-item>
           <br>
-          <p>Showing {{historyStreams.length}} out of {{spkreceiver.children.length}} history items.</p>
+          <p v-show='spkreceiver.children.length != 0'>Showing {{historyStreams.length}} out of {{spkreceiver.children.length}} history items.</p>
           <md-button v-if='historyStreams.length < spkreceiver.children.length' class='md-dense md-raised no-margin' @click.native='maxHistoryObjects+=10'>
             Load 10 more...
           </md-button>

@@ -32,11 +32,16 @@
         </md-menu>
       </md-card-header>
       <md-card-content style='background: white;'>
-        <md-field class='md-dense md-raised' md-layout="box">
-          <label>Search through your {{parentStreams.length}} streams.</label>
-          <md-input v-model="searchFilter"></md-input>
-          <md-icon>search</md-icon>
-        </md-field>
+        <div class='md-layout md-alignment-center-left'>
+          <md-button class='md-layout-item md-size-10 md-icon-button md-dense md-primary no-margin' @click.native='getStreams'>
+            <md-icon>refresh</md-icon>
+          </md-button>
+          <md-field class='md-layout-item md-dense md-raised' md-layout="box">
+            <label>Search through your {{parentStreams.length}} streams.</label>
+            <md-input v-model="searchFilter"></md-input>
+            <md-icon>search</md-icon>
+          </md-field>
+        </div>
         <md-list>
           <div v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
             <div class="md-layout md-alignment-center-left" style="margin-bottom:10px;">
@@ -73,10 +78,7 @@ export default {
   computed: {
     receivers( ) {
       return this.$store.getters.allReceivers
-    },
-    // linkToAdmin( ) {
-    //   return
-    // }
+    }
   },
   data( ) {
     return {
@@ -121,9 +123,6 @@ export default {
         .then( response => {
           this.streams = response.data.resources.reverse( )
         } )
-    },
-    updateStreamList( ) {
-      this.getStreams( )
     }
   },
   created( ) {
