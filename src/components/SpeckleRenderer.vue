@@ -449,7 +449,7 @@ export default {
     bus.$on( 'r-ghost-objects', this.ghostObjects )
     bus.$on( 'r-unghost-objects', this.unghostObjects )
     bus.$on( 'r-zoom-to-object', this.zoomToObject )
-    bus.$on( 'r-zoom-ext', this.zoomExt )
+    bus.$on( 'r-zoom-ext', this.zoomExtents )
 
     bus.$on( 'select-bus', this.selectBus )
     bus.$on( 'r-toggle-layer', this.toggleLayer )

@@ -121,26 +121,27 @@ export default {
     },
 
     async historySelect( streamId ) {
-      if( this.selectedHistoryItem === streamId ) return
+      if ( this.selectedHistoryItem === streamId ) return
       console.log( `History selection ${streamId}` )
 
-      // unload previous selected history objects
-      if ( this.selectedHistoryItem !== null ) {
-        let prevHistoryObjs = this.selectedHistoryStream.objects.map( o => o._id )
-        bus.$emit( 'r-unload-objects', { objs: prevHistoryObjs, streamId: this.selectedHistoryStream.streamId } )
-      }
-
+      // get the requested history stream
       let res = await this.$http.get( `${this.$store.state.server}/streams/${streamId}` )
       let stream = res.data.resource
 
-      // ghost original stream only if we didn't ghost it before
-      // if ( this.selectedHistoryItem === null ) {
-        let toGhost = this.spkreceiver.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) == null ).map( o => o._id )
-        bus.$emit( 'r-ghost-objects', toGhost )
+      // unload previous selected history objects  (TODO: check for overlaps with new stream)
+      if ( this.selectedHistoryItem !== null ) {
+        let toUnload = this.selectedHistoryStream.objects.map( o => o._id )
+        bus.$emit( 'r-unload-objects', { objs: toUnload, streamId: this.selectedHistoryStream.streamId } )
+      }
 
-        let toUnGhost = this.spkreceiver.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) != null ).map( o => o._id )
-        bus.$emit( 'r-unghost-objects', toUnGhost )
-      // }
+      // ghost objects from original
+      let toGhost = this.spkreceiver.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) == null ).map( o => o._id )
+      bus.$emit( 'r-ghost-objects', toGhost )
+
+      // unghost objects from original
+      let toUnGhost = this.spkreceiver.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) != null ).map( o => o._id )
+      bus.$emit( 'r-unghost-objects', toUnGhost )
+
 
       this.selectedHistoryItem = streamId
       this.selectedHistoryStream = stream
@@ -218,6 +219,10 @@ export default {
     removeReceiver( streamId ) {
       let toUnload = this.spkreceiver.objects.map( o => o._id )
       bus.$emit( 'r-unload-objects', { objs: toUnload, streamId: this.spkreceiver.streamId } )
+
+      if ( this.selectedHistoryItem !== null )
+        bus.$emit( 'r-unload-objects', { objs: this.selectedHistoryStream.objects.map( o => o._id ), streamId: this.selectedHistoryItem } )
+
       this.$store.commit( 'DROP_RECEIVER', { streamId } )
     },
 
