@@ -38,7 +38,7 @@
               <md-icon>refresh</md-icon>
               <md-tooltip>Refresh controller list.</md-tooltip>
             </md-button>&nbsp
-            <md-button v-if='currentComputeResponse!=null' class='md-dense md-raised no-margin' @click.native='getControllers()'>
+            <md-button v-if='currentComputeResponse!=null' class='md-dense md-raised no-margin' @click.native='restoreOriginal()'>
               Restore original
             </md-button>
           </div>
@@ -49,6 +49,11 @@
         <md-tab id="tab-history" md-label="History">
           <p v-show='spkreceiver.children.length == 0' class='md-caption'>This stream has no history.</p>
           <history-item v-for='streamId in historyStreams' :key='streamId' :streamid='streamId' :selected='streamId==selectedHistoryItem' v-on:selectme='historySelect' v-on:restore='restoreLatest'></history-item>
+          <br>
+          <p>Showing {{historyStreams.length}} out of {{spkreceiver.children.length}} history items.</p>
+          <md-button v-if='historyStreams.length < spkreceiver.children.length' class='md-dense md-raised no-margin' @click.native='maxHistoryObjects+=10'>
+            Load 10 more...
+          </md-button>
         </md-tab>
       </md-tabs>
     </md-card-content>
@@ -84,12 +89,13 @@ export default {
       selectedHistoryStream: null,
       currentComputeResponse: null,
       showComputeProgressBar: false,
-      computeInProgress: false
+      computeInProgress: false,
+      maxHistoryObjects: 10
     }
   },
   computed: {
     historyStreams( ) {
-      return this.spkreceiver.children.reverse( )
+      return this.spkreceiver.children.reverse( ).slice( 0, this.maxHistoryObjects )
     },
     createdAt( ) {
       return new Date( this.spkreceiver.createdAt ).toLocaleString( )
@@ -111,6 +117,7 @@ export default {
     },
   },
   methods: {
+    // returning  back from history
     restoreLatest( ) {
       let prevHistoryObjs = this.selectedHistoryStream.objects.map( o => o._id )
       bus.$emit( 'r-unload-objects', { objs: prevHistoryObjs, streamId: this.selectedHistoryStream.streamId } )
@@ -118,6 +125,15 @@ export default {
       let toUnGhost = this.spkreceiver.objects.map( o => o._id )
       bus.$emit( 'r-unghost-objects', toUnGhost )
       this.selectedHistoryItem = null
+    },
+
+    // returning back from controllers
+    restoreOriginal( ) {
+      let toUnload = this.currentComputeResponse.objects.map( o => o._id )
+      bus.$emit( 'r-unload-objects', { objs: toUnload, streamId: this.currentComputeResponse.streamId } )
+      this.spkreceiver.objects = [ ]
+      this.refreshStreamObjects( )
+      this.getControllers( )
     },
 
     async historySelect( streamId ) {
