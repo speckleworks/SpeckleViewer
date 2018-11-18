@@ -158,8 +158,6 @@ export default {
 
       let toUpdateProps = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) !== -1 )
       bus.$emit( 'r-update-props', toUpdateProps )
-
-      // console.log( 'ghost, request, update', toGhost, toRequest, toUpdateProps )
     },
 
     async receiverReady( stream ) {

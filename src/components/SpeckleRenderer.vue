@@ -168,8 +168,10 @@ export default {
         if ( objIds.indexOf( obj._id ) !== -1 ) {
           obj.ghostMaterial = obj.material // keep old ref
           obj.material = obj.material.clone( ) // break ref
-          obj.material.opacity = 0.3 // change opacity
-          obj.material.wireframe = true
+          obj.material.opacity = 0.1 // change opacity
+          obj.premultipliedAlpha = true
+          obj.renderOrder = 1
+          // obj.material.wireframe = true
         }
       } )
     },
@@ -180,6 +182,7 @@ export default {
         if ( objIds.indexOf( obj._id ) !== -1 ) {
           obj.material.dispose( ) // only leaky bladders, no leaky memory please
           obj.material = obj.ghostMaterial // go back
+          obj.renderOrder = 0
           delete obj.ghostMaterial
         }
       } )
@@ -283,19 +286,6 @@ export default {
         return
       }
       this.selectObject( selectedObject )
-    },
-
-    selectBus( objectId ) {
-      this.deselectObjects( )
-      let selectedObject = this.scene.children.find( child => { return child.name.includes( objectId ) } )
-      let hash = this.getHash( objectId )
-      this.zoomToObject( hash )
-      this.selectObject( selectedObject )
-    },
-
-    getHash( objectId ) {
-      let child = this.scene.children.find( child => { return child.name.includes( objectId ) } )
-      return child.hash
     },
 
     // Renderer Camera Methods
@@ -457,6 +447,10 @@ export default {
     bus.$on( 'r-unghost-objects', this.unghostObjects )
     bus.$on( 'r-zoom-to-object', this.zoomToObject )
     bus.$on( 'r-zoom-ext', this.zoomExtents )
+
+    bus.$on( 'r-deselect-objects', this.deselectObjects )
+
+
 
     bus.$on( 'select-bus', this.selectBus )
     bus.$on( 'r-toggle-layer', this.toggleLayer )
