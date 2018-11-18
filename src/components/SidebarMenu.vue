@@ -26,7 +26,7 @@
               <span>Logout</span>
             </md-menu-item>
             <md-menu-item>
-              <a href="#">Admin</a>
+              <a :href="linkToAdmin" target="_blank">Admin</a>
             </md-menu-item>
           </md-menu-content>
         </md-menu>
@@ -40,7 +40,7 @@
         <md-list>
           <div v-for='stream in paginatedStreams' :key='stream.id' class='md-inset'>
             <div class="md-layout md-alignment-center-left" style="margin-bottom:10px;">
-              <div class="md-layout-item md-size-70" >
+              <div class="md-layout-item md-size-70">
                 <span>{{stream.name}}</span>
                 <span class='md-caption'>{{stream.streamId}}</span>
               </div>
@@ -73,7 +73,10 @@ export default {
   computed: {
     receivers( ) {
       return this.$store.getters.allReceivers
-    }
+    },
+    // linkToAdmin( ) {
+    //   return
+    // }
   },
   data( ) {
     return {
@@ -82,6 +85,7 @@ export default {
       streams: [ ],
       searchFilter: null,
       itemsPerPage: 10,
+      linkToAdmin: this.$store.state.server.replace( '/api/v1', '/admin' )
     }
   },
   methods: {
