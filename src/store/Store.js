@@ -119,6 +119,7 @@ export default new Vuex.Store( {
       target.updatedAt = payload.updatedAt
       target.comments = payload.comments
       target.baseProperties = payload.baseProperties
+      target.owner = payload.owner
 
       // check if object table matches layer table
       let objCountLayers = 0

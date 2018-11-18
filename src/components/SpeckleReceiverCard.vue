@@ -19,6 +19,7 @@
           <p>Created on: <strong>{{createdAt}}</strong></p>
           <p>Modified on: <strong>{{createdAt}}</strong></p>
           <p>Units: <strong>{{spkreceiver.baseProperties.units}}</strong></p>
+          <p>Owner: <strong>{{owner.name}} {{owner.surname}}</strong></p>
         </md-tab>
         <md-tab id="tab-layers" md-label="Layers" xxx-md-icon='layers'>
           <div xxxlass='md-inset' v-for='layer in layers' :key='layer.guid'>
@@ -90,7 +91,8 @@ export default {
       currentComputeResponse: null,
       showComputeProgressBar: false,
       computeInProgress: false,
-      maxHistoryObjects: 10
+      maxHistoryObjects: 10,
+      owner: { name: null, surname: null }
     }
   },
   computed: {
@@ -195,6 +197,9 @@ export default {
 
         bus.$emit( 'r-load-objects', { toRequest: toRequest, zoomExt: true } )
         bus.$emit( 'r-update-props', toUpdateProps )
+
+        let ownerResp = await this.$http.get( `${this.$store.state.server}/accounts/${stream.owner}` )
+        this.owner = ownerResp.data.resource
       } catch ( e ) {
         console.warn( e )
       }

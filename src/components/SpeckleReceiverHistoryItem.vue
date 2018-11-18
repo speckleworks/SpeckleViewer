@@ -49,7 +49,6 @@ export default {
     }
   },
   mounted( ) {
-    console.log( 'history was created, getting streams!' )
     axios.get( this.$store.state.server + '/streams/' + this.streamid + '?fields=name,updatedAt,isComputedResult,globalMeasures' )
       .then( response => {
         this.stream.updatedAt = response.data.resource.updatedAt
