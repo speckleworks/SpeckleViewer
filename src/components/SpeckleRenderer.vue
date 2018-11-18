@@ -83,8 +83,14 @@ export default {
       // convert the objects and add them to the scene
       let convertedCount = 0
       filledBatch.forEach( object => {
-        if ( !Converter.hasOwnProperty( object.type ) )
+        if ( !Converter.hasOwnProperty( object.type ) ) {
+          convertedCount++
+          if ( convertedCount >= filledBatch.length ) {
+            this.computeSceneBoundingSphereAndZoomExt( zExt )
+            bus.$emit( 'stream-load-progress', `All ready.` )
+          }
           return console.warn( `Objects of type ${object.type} not supported.` )
+        }
         let layer = this.$store.getters.allLayerMaterials.find( l => object.layerGuids.indexOf( l.guid ) > -1 )
         if ( !layer ) layer = this.defaultLayerMaterial
         Converter[ object.type ]( { obj: object, layer: layer }, ( err, threeObj ) => {
@@ -105,13 +111,8 @@ export default {
           this.scene.add( threeObj )
           this.$store.state.inRenderObjects.push( object._id )
           if ( convertedCount >= filledBatch.length ) {
-            this.needsBoundsRefresh = true
-            this.computeSceneBoundingSphere( geometry => {
-              this.needsBoundsRefresh = false
-              this.sceneBoundingSphere = geometry.boundingSphere
-              if ( zExt ) this.zoomExtents( )
-              bus.$emit( 'stream-load-progress', `All ready.` )
-            } )
+            this.computeSceneBoundingSphereAndZoomExt( zExt )
+            bus.$emit( 'stream-load-progress', `All ready.` )
           }
         } )
       } )
@@ -326,6 +327,13 @@ export default {
       }, 100 )
     },
 
+    computeSceneBoundingSphereAndZoomExt( zExt ) {
+      this.computeSceneBoundingSphere( geometry => {
+        this.sceneBoundingSphere = geometry.boundingSphere
+        if ( zExt ) this.zoomExtents( )
+      } )
+    },
+
     computeSceneBoundingSphere( cb ) {
       let minX, minY, minZ, maxX, maxY, maxZ
 
@@ -382,7 +390,6 @@ export default {
     this.selectionBoxes = [ ]
     this.hoveredObjects = [ ]
 
-    this.needsBoundsRefresh = false
     this.loadFinishedPromise = null
 
     this.updateInProgress = false
