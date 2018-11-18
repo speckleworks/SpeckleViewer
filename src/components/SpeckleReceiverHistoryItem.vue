@@ -8,7 +8,11 @@
           <br>
           <span class="md-caption">{{streamid}}, {{stream.name}}</span>
           </span>
-          <span v-if='stream.isComputedResult' class="md-caption">(computed result)</span>
+          <div v-if='stream.isComputedResult'>
+            <span class="md-caption">Computed result <strong>{{streamid}}</strong></span>
+            <div class='md-caption' v-for='inp in stream.globalMeasures.input' :key='inp.name'>{{inp.name}}: <strong>{{inp.value}}</strong></div>
+            <!-- {{stream.globalMeasures}} -->
+          </div>
         </p>
       </div>
       <div class="md-layout-item" style="text-align: right" v-if='selected'>
@@ -46,11 +50,12 @@ export default {
   },
   mounted( ) {
     console.log( 'history was created, getting streams!' )
-    axios.get( this.$store.state.server + '/streams/' + this.streamid + '?fields=name,updatedAt,isComputedResult' )
+    axios.get( this.$store.state.server + '/streams/' + this.streamid + '?fields=name,updatedAt,isComputedResult,globalMeasures' )
       .then( response => {
         this.stream.updatedAt = response.data.resource.updatedAt
         this.stream.name = response.data.resource.name
         this.stream.isComputedResult = response.data.resource.isComputedResult
+        this.stream.globalMeasures = response.data.resource.globalMeasures
       } )
       .catch( err => {
         console.log( err )

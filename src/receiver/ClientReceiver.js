@@ -64,7 +64,6 @@ export default class SpeckleReceiver extends EventEmitter {
           this.emit( 'compute-response', this.childStreamId )
           break
         default:
-          console.info( 'Custom event received:', parsedMessage.args.eventType )
           this.emit( parsedMessage.args.eventType, parsedMessage )
           break;
       }

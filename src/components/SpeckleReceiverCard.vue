@@ -26,17 +26,27 @@
           </div>
         </md-tab>
         <md-tab id="tab-controllers" md-label="Controllers" xxx-md-icon='sliders'>
-          <md-list-item class='md-inset' v-for='controller in controllers' :key='controller.guid'>
-            <controller :controller='controller'></controller>
-          </md-list-item>
+          <div v-for='controller in controllers' :key='controller.guid'>
+            <controller :controller='controller' v-on:changed='controllersChanged' :enabled='!computeInProgress'></controller>
+          </div>
           <div v-if='!controllers || !controllers.length'>
-            <p class='md-caption'>No controllers are broadcasting for this stream.</p>
-            <md-button v-if='!controllers || !controllers.length' class='md-dense md-raised no-margin' @click.native='getControllers()'>
-              refresh
+            <p class='md-caption'>No controllers are broadcasting for this stream (make sure you "enable remote control" on the gh sender).</p>
+          </div>
+          <br>
+          <div style="text-align: right">
+            <md-button class='md-dense md-raised xxx-no-margin md-icon-button' @click.native='getControllers()'>
+              <md-icon>refresh</md-icon>
+              <md-tooltip>Refresh controller list.</md-tooltip>
+            </md-button>&nbsp
+            <md-button v-if='currentComputeResponse!=null' class='md-dense md-raised no-margin' @click.native='getControllers()'>
+              Restore original
             </md-button>
           </div>
+          <br>
+          <br>
+          <md-progress-bar md-mode="indeterminate" v-if='showComputeProgressBar'></md-progress-bar>
         </md-tab>
-        <md-tab id="tab-history" md-label="History" xxx-md-icon='sliders'>
+        <md-tab id="tab-history" md-label="History">
           <p v-show='spkreceiver.children.length == 0' class='md-caption'>This stream has no history.</p>
           <history-item v-for='streamId in historyStreams' :key='streamId' :streamid='streamId' :selected='streamId==selectedHistoryItem' v-on:selectme='historySelect' v-on:restore='restoreLatest'></history-item>
         </md-tab>
@@ -71,7 +81,10 @@ export default {
       controllersChecked: false,
       streamParent: null,
       selectedHistoryItem: null,
-      selectedHistoryStream: null
+      selectedHistoryStream: null,
+      currentComputeResponse: null,
+      showComputeProgressBar: false,
+      computeInProgress: false
     }
   },
   computed: {
@@ -96,19 +109,6 @@ export default {
     isIOS( ) {
       return ( typeof window.orientation !== "undefined" ) && ( navigator.userAgent.indexOf( 'OS X' ) !== -1 )
     },
-  },
-  watch: {
-    'controllers': {
-      handler( values ) {
-        // prevents init requests etc.
-        if ( this.debounceCount >= 5 ) {
-          let args = { controllers: this.controllers, layers: this.spkreceiver.layers, client: this.mySpkReceiver, senderId: this.senderId }
-          this.sendComputeRequest( args )
-        }
-        this.debounceCount++
-      },
-      deep: true
-    }
   },
   methods: {
     restoreLatest( ) {
@@ -218,8 +218,13 @@ export default {
       let toUnload = this.spkreceiver.objects.map( o => o._id )
       bus.$emit( 'r-unload-objects', { objs: toUnload, streamId: this.spkreceiver.streamId } )
 
+      // unload history, if any loaded
       if ( this.selectedHistoryItem !== null )
         bus.$emit( 'r-unload-objects', { objs: this.selectedHistoryStream.objects.map( o => o._id ), streamId: this.selectedHistoryItem } )
+
+      // unload compute response, if any loaded
+      if ( this.currentComputeResponse !== null )
+        bus.$emit( 'r-unload-objects', { objs: this.currentComputeResponse.objects.map( o => o._id ), streamId: this.currentComputeResponse.streamId } )
 
       this.$store.commit( 'DROP_RECEIVER', { streamId } )
     },
@@ -241,6 +246,50 @@ export default {
     addControllers( wsMessage ) {
       this.senderId = wsMessage.senderId
       this.controllers = wsMessage.args.controllers
+      // console.log( this.controllers )
+    },
+
+    controllersChanged( ) {
+      console.log( 'controllers changed', this.controllers )
+      this.showComputeProgressBar = true
+      let args = { controllers: this.controllers, layers: this.spkreceiver.layers, client: this.mySpkReceiver, senderId: this.senderId }
+      this.computeInProgress = true
+      this.sendComputeRequest( args )
+    },
+
+    async computeResponse( streamId ) {
+      console.log( `got ${streamId} as compute response` )
+
+      let res = await this.$http.get( this.$store.state.server + '/streams/' + streamId )
+      let stream = res.data.resource
+
+      let toUnload = this.spkreceiver.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) == null ).map( o => o._id )
+      bus.$emit( 'r-unload-objects', { objs: toUnload, streamId: this.spkreceiver.streamId } )
+
+      if ( this.currentComputeResponse != null ) {
+        // unload it
+        let toUnload = this.currentComputeResponse.objects.filter( obj => stream.objects.find( o => o._id === obj._id ) == null ).map( o => o._id )
+        bus.$emit( 'r-unload-objects', { objs: toUnload, streamId: this.currentComputeResponse.streamId } )
+      }
+
+      this.currentComputeResponse = stream
+
+      // set basics
+      stream.objects.forEach( ( obj, i ) => {
+        obj.streams = [ stream.streamId ]
+        let layer = stream.layers.find( layer => { return i >= layer.startIndex && i < ( layer.startIndex + layer.objectCount ) } )
+        obj.layerGuids = [ layer.guid ]
+      } )
+
+
+      let toRequest = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) === -1 )
+      let toUpdateProps = stream.objects.filter( obj => this.inRenderObjects.indexOf( obj._id ) !== -1 )
+
+      bus.$emit( 'r-load-objects', { toRequest: toRequest, zoomExt: false } )
+      bus.$emit( 'r-update-props', toUpdateProps )
+
+      this.showComputeProgressBar = false
+      this.computeInProgress = false
     },
 
     receiverError( err ) {
@@ -262,7 +311,7 @@ export default {
       let message = { eventType: 'compute-request', requestParameters: requestParams }
       console.log( 'Sending computation request. requestParams:', requestParams )
       args.client.sendMessage( message, args.senderId )
-    }, 500 ),
+    }, 700 ),
 
     revertToParent( ) {
       this.streamParent = null
@@ -287,6 +336,7 @@ export default {
     this.mySpkReceiver.on( 'update-meta', this.updateMeta )
     this.mySpkReceiver.on( 'update-global', this.updateGlobal )
     this.mySpkReceiver.on( 'get-def-io-response', this.addControllers )
+    this.mySpkReceiver.on( 'compute-response', this.computeResponse )
   }
 }
 
