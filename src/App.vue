@@ -156,15 +156,16 @@ export default {
       else
         bus.$emit( 'r-zoom-to-object' )
     },
+
     zoomToObject( ) {
       bus.$emit( 'r-zoom-to-object' )
     },
+
     addReceiver( streamId ) {
-      if ( !streamId ) {
-        this.snackbarMessage = 'Invalid streamId'
+      if ( !streamId || streamId === '' ) {
+        this.snackbarMessage = 'Invalid streamId.'
         return this.showSnackbar = true
       }
-      console.log( 'Adding a receiver', streamId )
       if ( this.$store.getters.receiverById( streamId ) ) {
         this.snackbarMessage = 'That stream is already loaded'
         return this.showSnackbar = true
@@ -182,19 +183,26 @@ export default {
         baseProperties: {
           units: null
         },
+        owner: {
+          name: null,
+          surname: null,
+        },
         comments: null,
         name: 'Loading ' + streamId + '...'
       }
       this.$store.commit( 'ADD_RECEIVER', { receiver } )
     },
+
     saveSettings( settings ) {
       window.localStorage.setItem( 'viewerSettings', JSON.stringify( settings ) )
       this.$store.commit( 'SET_VIEWER_SETTINGS', { settings } )
     },
+
     snackbarUpdate( message ) {
       this.snackbarMessage = message
       this.showSnackbar = true
     },
+
     toggleObjectDetails( ) {
       if ( !this.selectedObjects ) {
         return this.snackbarUpdate( "No objects selected" )
@@ -212,16 +220,14 @@ export default {
 
     this.$store.state.initStreams.forEach( streamId => {
       this.addReceiver( streamId )
-    })
-
+    } )
 
     bus.$on( 'snackbar-update', this.snackbarUpdate )
     bus.$on( 'stream-load-progress', message => {
       this.progressMessage = message
     } )
   },
-  mounted( ) {
-  }
+  mounted( ) {}
 }
 
 </script>
@@ -247,7 +253,7 @@ export default {
   margin: 0 !important;
 }
 
-.md-card.md-with-hover{
+.md-card.md-with-hover {
   cursor: default;
 }
 

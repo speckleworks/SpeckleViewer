@@ -1,7 +1,7 @@
 <template>
-  <md-card style="margin-bottom: 4px; padding: 10px; cursor: pointer;" :class='{"md-elevation-0":true, "md-primary selected":selected}' md-with-hover @click.native='selectThis()'>
+  <md-card style="margin-bottom: 4px; padding: 10px; cursor:default;" :class='{"md-elevation-0":true, "md-primary selected":selected}' md-with-hover>
     <div class="md-layout md-alignment-center-left">
-      <div class="md-layout-item md-size-80">
+      <div class="md-layout-item md-size-70" style="cursor: pointer" @click='selectThis()'>
         <p class="md-layout-item">
           <strong>{{updatedAt}}</strong></span>
           <span v-if='!stream.isComputedResult'>
@@ -15,17 +15,23 @@
           </div>
         </p>
       </div>
-      <div class="md-layout-item" style="text-align: right" v-if='selected'>
-        <md-button class='md-icon-button md-dense xxxmd-accent md-raised' @click.stop='$emit("restore")'>
+      <div class="md-layout-item md-size-15" style="text-align: right" >
+        <md-button v-if='selected' class='md-icon-button md-dense xxxmd-accent md-raised' @click.stop='$emit("restore")'>
           <md-icon>refresh</md-icon>
           <md-tooltip>Restore latest stream version.</md-tooltip>
         </md-button>
+      </div>
+      <div class="md-layout-item md-size-15" style="text-align: right">
+        <a class='md-icon-button md-dense xxxmd-accent md-raised' style='border-bottom:none; text-decoration: none !important' :href='href' target='_blank'>
+          <md-icon>open_in_new</md-icon>
+          <md-tooltip>Open in a new tab.</md-tooltip>
+        </a>
       </div>
     </div>
   </md-card>
 </template>
 <script>
-import axios from 'axios'
+import qp from 'query-parse'
 
 export default {
   name: 'HistoryItem',
@@ -33,6 +39,15 @@ export default {
   computed: {
     updatedAt( ) {
       return new Date( this.stream.updatedAt ).toLocaleString( )
+    },
+    href() {
+      let query = qp.toObject( window.location.href.split( '?' )[ 1 ] )
+      let reassembledQuery = window.location.href.split( '?' )[ 0 ]
+
+      if ( query.server )
+        reassembledQuery += `?server=${query.server}`
+      reassembledQuery += `&streams=${this.streamid}`
+      return reassembledQuery
     }
   },
   data( ) {
@@ -49,7 +64,7 @@ export default {
     }
   },
   mounted( ) {
-    axios.get( this.$store.state.server + '/streams/' + this.streamid + '?fields=name,updatedAt,isComputedResult,globalMeasures' )
+    this.$http.get( this.$store.state.server + '/streams/' + this.streamid + '?fields=name,updatedAt,isComputedResult,globalMeasures' )
       .then( response => {
         this.stream.updatedAt = response.data.resource.updatedAt
         this.stream.name = response.data.resource.name

@@ -61,6 +61,7 @@
   </md-card>
 </template>
 <script>
+import qp from 'query-parse'
 import ClientReceiver from '../receiver/ClientReceiver'
 import SpeckleReceiverLayer from './SpeckleReceiverLayer.vue'
 import HistoryItem from './SpeckleReceiverHistoryItem.vue'
@@ -200,6 +201,8 @@ export default {
 
         let ownerResp = await this.$http.get( `${this.$store.state.server}/accounts/${stream.owner}` )
         this.owner = ownerResp.data.resource
+
+        this.updateUrl( )
       } catch ( e ) {
         console.warn( e )
       }
@@ -248,6 +251,7 @@ export default {
         bus.$emit( 'r-unload-objects', { objs: this.currentComputeResponse.objects.map( o => o._id ), streamId: this.currentComputeResponse.streamId } )
 
       this.$store.commit( 'DROP_RECEIVER', { streamId } )
+      this.updateUrl( )
     },
 
     updateGlobal( ) {
@@ -256,7 +260,7 @@ export default {
     },
 
     async updateMeta( ) {
-
+      console.log( "todo: update metatada" )
     },
 
     getControllers( ) {
@@ -338,9 +342,30 @@ export default {
       this.streamParent = null
       this.getAndSetStream( )
       bus.$emit( 'snackbar-update', "Restoring parent stream" )
+    },
+
+    updateUrl( ) {
+      let streams = this.$store.getters.allReceivers.map( r => r.streamId ).join( ',' )
+      // check if we have a query first
+      if ( window.location.href.includes( '?' ) ) {
+        let query = window.location.href.split( '?' )
+        let queryObject = qp.toObject( query[ 1 ] )
+        let newQuery = '?'
+        // recreate the query:
+        // 1. include the server, if it was present
+        if ( queryObject.server )
+          newQuery += 'server=' + queryObject.server + '&'
+        // 2. add the streams list, if we actually have any receivers
+        if ( this.$store.getters.allReceivers.length !== 0 )
+          newQuery += 'streams=' + streams
+        // 3. get that in the url bar
+        history.replaceState( { spk: 'changed history' }, "Speckle Viewer Rocks", newQuery )
+      // if no query, just barge in and add the streams list, but do check if we have any streams to actually add
+      } else if ( this.$store.getters.allReceivers.length !== 0 ) {
+        history.replaceState( { spk: 'changed history' }, "Speckle Viewer Rocks", '?streams=' + streams )
+      }
     }
   },
-
   mounted( ) {
     this.viewerSettings = this.$store.getters.viewerSettings
     console.log( 'Stream receiver mounted for streamid: ' + this.spkreceiver.streamId )
