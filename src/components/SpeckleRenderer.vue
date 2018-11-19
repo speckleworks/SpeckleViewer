@@ -44,136 +44,180 @@ export default {
     }
   },
   methods: {
-    loadStream( ) {
-      this.update( )
-    },
-    async update( ) {
-      // removes the objects that are no longer in any stream's object list
-      // TODO: remove them from the vuejs store as well (free for GC?)
-      for ( let myObject of this.scene.children ) {
-        if ( myObject.hasOwnProperty( '_id' ) ) {
-          let found = this.allObjects.find( o => { return o._id === myObject._id && o.streamId === myObject.streamId } )
-          if ( !found ) {
-            scene.remove( myObject )
-            myObject.geometry.dispose( )
-            // myObject.material.dispose( ) // don't dispose material as they're used across?
-            myObject = null
-          }
-        }
-      }
-
-      // creates a list of objects to request from the server and makes the previously requested ones visible
-      let thingsToReq = [ ]
-      for ( let myObject of this.allObjects ) {
-        let sceneObj = this.scene.children.find( obj => { return obj.name === myObject.streamId + '::' + myObject._id } )
-        if ( !sceneObj ) {
-          let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-          if ( !layer ) layer = this.defaultLayerMaterial
-          thingsToReq.push( { object: myObject, layer: layer } )
-        } else {
-          // makes things visible; this should no longer be the case (as we're removing the objects fully above ¯\_(ツ)_/¯
-          if ( sceneObj.visible === false ) {
-            sceneObj.visible = true
-            sceneObj.isCurrent = true
-            sceneObj.spkProperties = myObject.properties
-          }
-        }
-      }
-
-      let totalCount = 0
-      let requestBatches = [ ]
-      let maxObjectRequestCount = 25
-      let bucket = [ ]
-      for ( var i = 0; i < thingsToReq.length; i++ ) {
-        bucket.push( thingsToReq[ i ] )
+    // proper load unload methods
+    // 1. loads objects into the scene
+    async loadObjects( args ) {
+      let toRequest = args.toRequest,
+        zExt = true
+      try { zExt = args.zoomExt } catch ( e ) {}
+      // prepare buckets
+      let totalCount = 0,
+        requestBatches = [ ],
+        maxObjectRequestCount = 25,
+        bucket = [ ]
+      for ( var i = 0; i < toRequest.length; i++ ) {
+        bucket.push( toRequest[ i ] )
         if ( i % maxObjectRequestCount == 0 && i != 0 ) {
           requestBatches.push( [ ...bucket ] )
           bucket = [ ]
         }
       }
-      if ( bucket.length != 0 )
-        requestBatches.push( bucket )
+      if ( bucket.length != 0 ) requestBatches.push( bucket )
 
-      let filledBatch = [ ]
-      let k = 1
+      console.info( `Made ${requestBatches.length} batches` )
+
+      // request the objects from the server
+      let filledBatch = [ ],
+        k = 1
       for ( const batch of requestBatches ) {
-        let res = await this.$http.post( this.$store.state.server + '/objects/getbulk?omit=base64,rawData', batch.map( item => item.object._id ) )
+        let res = await this.$http.post( this.$store.state.server + '/objects/getbulk?omit=base64,rawData', batch.map( item => item._id ) )
         res.data.resources.forEach( ( obj, i ) => {
-          obj.streamId = batch[ i ].object.streamId;
-          obj.layerGuid = batch[ i ].object.layerGuid
+          obj.streams = batch[ i ].streams
+          obj.layerGuids = batch[ i ].layerGuids
         } )
         if ( requestBatches.length > 0 && batch.length > 0 )
-          bus.$emit( 'stream-load-progress', `Got ${ k++ * maxObjectRequestCount } objects out of ${thingsToReq.length }` )
-
-        filledBatch = [ ...res.data.resources.map( ( obj, i ) => { return { object: obj, layer: batch[ i ].layer } } ), ...filledBatch ]
+          bus.$emit( 'stream-load-progress', `Got ${ k++ * maxObjectRequestCount } objects out of ${toRequest.length }` )
+        filledBatch = [ ...res.data.resources, ...filledBatch ]
       }
 
+      // convert the objects and add them to the scene
       let convertedCount = 0
-      filledBatch.forEach( ( pair, i ) => {
-        convertedCount++
-        if ( !Converter.hasOwnProperty( pair.object.type ) )
-          throw new Error( `Objects of type ${pair.object.type} not supported.` )
-        else
-          Converter[ pair.object.type ]( { obj: pair.object, layer: pair.layer, camera: this.camera }, ( err, threeObj ) => {
-            threeObj.hash = pair.object.hash
-            threeObj.streamId = pair.object.streamId
-            threeObj.layerGuid = pair.object.layerGuid
-            threeObj.visible = pair.layer.visible
-            threeObj.isCurrent = true
-            threeObj.spkProperties = pair.object.properties
-            threeObj.name = pair.object.streamId + '::' + pair.object._id
-            threeObj._id = pair.object._id
+      filledBatch.forEach( object => {
+        if ( !Converter.hasOwnProperty( object.type ) ) {
+          convertedCount++
+          if ( convertedCount >= filledBatch.length ) {
+            this.computeSceneBoundingSphereAndZoomExt( zExt )
+            bus.$emit( 'stream-load-progress', `All ready.` )
+          }
+          return console.warn( `Objects of type ${object.type} not supported.` )
+        }
+        let layer = this.$store.getters.allLayerMaterials.find( l => object.layerGuids.indexOf( l.guid ) > -1 )
+        if ( !layer ) layer = this.defaultLayerMaterial
+        Converter[ object.type ]( { obj: object, layer: layer }, ( err, threeObj ) => {
+          convertedCount++
+          threeObj.hash = object.hash
+          threeObj.streams = object.streams
+          threeObj.layerGuids = object.layerGuids
+          threeObj._id = object._id
+          threeObj.properties = object.properties
 
-            let color = null
-            try {
-              color = pair.object.properties.spkColor
-            } catch( e ) { }
-
-            if ( color ) {
-              // override material
-              let color = pair.object.properties.spkColor
-              if ( threeObj instanceof THREE.Mesh ) {
-                threeObj.material = new THREE.MeshPhongMaterial( {
-                  color: new THREE.Color( color.hex ),
-                  specular: new THREE.Color( '#FFECB3' ),
-                  shininess: 30,
-                  side: THREE.DoubleSide,
-                  transparent: true,
-                  wireframe: false,
-                  opacity: color.a
-                } )
-              }
-              if ( threeObj instanceof THREE.Line ) {
-                threeObj.material = new THREE.LineBasicMaterial( {
-                  color: new THREE.Color( color.hex ),
-                  linewidth: 1,
-                  opacity: color.a
-                } )
-              }
-              if ( threeObj instanceof THREE.Points ) {
-                threeObj.material = new THREE.PointsMaterial( {
-                  color: new THREE.Color( color.hex ),
-                  sizeAttenuation: false,
-                  transparent: true,
-                  size: 3,
-                  opacity: color.a
-                } )
-              }
-            }
-            this.scene.add( threeObj )
-            if ( convertedCount >= filledBatch.length ) {
-              this.needsBoundsRefresh = true
-              this.computeSceneBoundingSphere( geometry => {
-                this.needsBoundsRefresh = false
-                this.sceneBoundingSphere = geometry.boundingSphere
-                this.zoomExtents( )
-                bus.$emit( 'stream-load-progress', `All ready.` )
-              } )
-            }
-          } )
+          let color = null
+          try { color = object.properties.spkColor } catch ( e ) {}
+          if ( color ) {
+            if ( threeObj instanceof THREE.Mesh ) threeObj.material = this.getMeshMaterial( color )
+            if ( threeObj instanceof THREE.Line ) threeObj.material = this.getLineMaterial( color )
+            if ( threeObj instanceof THREE.Points ) threeObj.material = this.getPointsMaterial( color )
+          }
+          this.scene.add( threeObj )
+          this.$store.state.inRenderObjects.push( object._id )
+          if ( convertedCount >= filledBatch.length ) {
+            this.computeSceneBoundingSphereAndZoomExt( zExt )
+            bus.$emit( 'stream-load-progress', `All ready.` )
+          }
+        } )
       } )
     },
 
+    // 2. updates object tracking (streams and layers)
+    updateObjectProps( toUp ) {
+      toUp.forEach( newObj => {
+        let found = this.scene.children.filter( obj => obj.hasOwnProperty( '_id' ) ).find( obj => obj._id === newObj._id )
+        found.streams = [ ...newObj.streams, ...found.streams ]
+        found.layerGuids = [ ...newObj.layerGuids, ...found.layerGuids ]
+      } )
+    },
+
+    // 3. unloads objects
+    unloadObjects( args ) {
+      let removedIds = [ ]
+      let objectIds = args.objs,
+        streamId = args.streamId
+
+      this.scene.children = this.scene.children.filter( object => {
+        // probably a scene object
+        if ( !object.hasOwnProperty( '_id' ) )
+          return true
+        if ( objectIds.indexOf( object._id ) !== -1 ) {
+          object.streams = object.streams.filter( x => x !== streamId )
+          if ( object.streams.length === 0 ) {
+            removedIds.push( object._id )
+            return false
+          }
+          return true
+        }
+        return true
+      } )
+
+      this.$store.commit( 'REMOVE_INRENDER_OBJS', removedIds )
+      this.computeSceneBoundingSphere( geometry => this.sceneBoundingSphere = geometry.boundingSphere )
+    },
+
+    // visibility methods
+    toggleLayer( args ) {
+      this.scene.traverse( obj => {
+        if ( !obj.hasOwnProperty( 'layerGuids' ) ) return
+        if ( obj.layerGuids.indexOf( args.layerGuid ) >= 0 )
+          obj.visible = args.state
+      } )
+    },
+
+    ghostObjects( objIds ) {
+      this.scene.traverse( obj => {
+        if ( !obj.hasOwnProperty( '_id' ) ) return
+        if ( obj.hasOwnProperty( 'ghostMaterial' ) ) return // means it's already ghosted
+        if ( objIds.indexOf( obj._id ) !== -1 ) {
+          obj.ghostMaterial = obj.material // keep old ref
+          obj.material = obj.material.clone( ) // break ref
+          obj.material.opacity = 0.1 // change opacity
+          obj.premultipliedAlpha = true
+          obj.renderOrder = 1
+          // obj.material.wireframe = true
+        }
+      } )
+    },
+
+    unghostObjects( objIds ) {
+      this.scene.traverse( obj => {
+        if ( !obj.hasOwnProperty( '_id' ) || !obj.hasOwnProperty( 'ghostMaterial' ) ) return
+        if ( objIds.indexOf( obj._id ) !== -1 ) {
+          obj.material.dispose( ) // only leaky bladders, no leaky memory please
+          obj.material = obj.ghostMaterial // go back
+          obj.renderOrder = 0
+          delete obj.ghostMaterial
+        }
+      } )
+    },
+
+    // Custom color material generators
+    getMeshMaterial( color ) {
+      return new THREE.MeshPhongMaterial( {
+        color: new THREE.Color( color.hex ),
+        specular: new THREE.Color( '#FFECB3' ),
+        shininess: 30,
+        side: THREE.DoubleSide,
+        transparent: true,
+        wireframe: false,
+        opacity: color.a
+      } )
+    },
+    getLineMaterial( color ) {
+      return new THREE.LineBasicMaterial( {
+        color: new THREE.Color( color.hex ),
+        linewidth: 1,
+        opacity: color.a
+      } )
+    },
+    getPointsMaterial( color ) {
+      return new THREE.PointsMaterial( {
+        color: new THREE.Color( color.hex ),
+        sizeAttenuation: false,
+        transparent: true,
+        size: 3,
+        opacity: color.a
+      } )
+    },
+
+    // Base Render Methods
     render( ) {
       TWEEN.update( )
 
@@ -187,10 +231,10 @@ export default {
       this.renderer.setSize( window.innerWidth, window.innerHeight )
     },
 
+    // Selection methods
     deselectObjects( ) {
       this.hoveredObjects.forEach( myObject => {
         let layer = this.layerMaterials.find( lmat => { return lmat.guid === myObject.layerGuid && lmat.streamId === myObject.streamId } )
-
         myObject.material = myObject.originalMaterial
       } )
       this.hoveredObjects = [ ]
@@ -200,6 +244,7 @@ export default {
       if ( this.$store.getters.selectedObjects != null )
         this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
     },
+
     selectObject( selectedObject ) {
       selectedObject.originalMaterial = selectedObject.material
       selectedObject.material = this.hoverMaterial
@@ -210,11 +255,14 @@ export default {
       this.selectedObjectsProperties = {
         hash: selectedObject.hash,
         streamId: selectedObject.streamId,
-        properties: selectedObject.spkProperties
+        properties: selectedObject.properties,
+        streams: selectedObject.streams,
+        layers: selectedObject.layerGuids
       }
       let selectedObjectProperties = this.selectedObjectsProperties
       this.$store.commit( 'SET_SELECTED_OBJECTS', { selectedObjectProperties } )
     },
+
     canvasClickedEvent( event ) {
       if ( event.which === 3 ) {
         this.deselectObjects( )
@@ -226,41 +274,21 @@ export default {
       // preselect object
       let mouse = new THREE.Vector2( ( event.clientX / window.innerWidth ) * 2 - 1, -( event.clientY / window.innerHeight ) * 2 + 1 )
       this.raycaster.setFromCamera( mouse, this.camera )
-
       let intersects = this.raycaster.intersectObjects( scene.children )
       if ( intersects.length <= 0 ) {
         return
       }
-
       let selectedObject = null
       intersects.reverse( ).forEach( obj => {
         if ( obj.object.material.visible ) selectedObject = obj.object
       } )
-
       if ( !selectedObject ) {
         return
       }
       this.selectObject( selectedObject )
     },
-    selectBus( objectId ) {
-      this.deselectObjects( )
-      let selectedObject = this.scene.children.find( child => { return child.name.includes( objectId ) } )
-      let hash = this.getHash( objectId )
-      this.zoomToObject( hash )
-      this.selectObject( selectedObject )
-    },
-    getHash( objectId ) {
-      let child = this.scene.children.find( child => { return child.name.includes( objectId ) } )
-      return child.hash
-    },
-    dropStream( streamId ) {
-      this.scene.children = this.scene.children.filter( child => !child.name.includes( streamId ) )
-      this.computeSceneBoundingSphere( geometry => {
-        this.needsBoundsRefresh = false
-        this.sceneBoundingSphere = geometry.boundingSphere
-        this.zoomExtents( )
-      } )
-    },
+
+    // Renderer Camera Methods
     zoomToObject( hash ) {
       if ( this.hoveredObject ) {
         hash = this.hoveredObject
@@ -288,6 +316,14 @@ export default {
         target: [ bsphere.center.x, bsphere.center.y, bsphere.center.z ]
       }, 100 )
     },
+
+    computeSceneBoundingSphereAndZoomExt( zExt ) {
+      this.computeSceneBoundingSphere( geometry => {
+        this.sceneBoundingSphere = geometry.boundingSphere
+        if ( zExt ) this.zoomExtents( )
+      } )
+    },
+
     computeSceneBoundingSphere( cb ) {
       let minX, minY, minZ, maxX, maxY, maxZ
 
@@ -300,6 +336,7 @@ export default {
       geometry.computeBoundingSphere( )
       cb( geometry )
     },
+
     zoomExtents( duration ) {
       let offset = this.sceneBoundingSphere.radius / Math.tan( Math.PI / 180.0 * this.controls.object.fov * 0.5 )
       let vector = new THREE.Vector3( 0, 0, 1 )
@@ -313,11 +350,13 @@ export default {
         target: [ this.sceneBoundingSphere.center.x, this.sceneBoundingSphere.center.y, this.sceneBoundingSphere.center.z ]
       }, 250 )
     },
+
     setFar_t( ) {
       let camDistance = this.camera.position.distanceTo( this.sceneBoundingSphere.center )
       this.camera.far = 2 * this.sceneBoundingSphere.radius + camDistance
       this.camera.updateProjectionMatrix( )
     },
+
     setCamera( where, time ) {
       let self = this
       let duration = time ? time : 350
@@ -341,7 +380,6 @@ export default {
     this.selectionBoxes = [ ]
     this.hoveredObjects = [ ]
 
-    this.needsBoundsRefresh = false
     this.loadFinishedPromise = null
 
     this.updateInProgress = false
@@ -401,28 +439,23 @@ export default {
     window.THREE = THREE
     window.scene = this.scene
 
-    bus.$on( 'renderer-update', debounce( this.update, 300 ) )
-    bus.$on( 'renderer-setview', this.setCamera )
-    bus.$on( 'renderer-load-stream', this.loadStream )
-    bus.$on( 'zext', this.zoomExtents )
+    bus.$on( 'r-load-objects', this.loadObjects )
+    bus.$on( 'r-unload-objects', this.unloadObjects )
+    bus.$on( 'r-update-props', this.updateObjectProps )
 
-    bus.$on( 'renderer-pop', ( ) => {
-      console.log( "POP" )
-      this.$refs.mycanvas.classList.toggle( 'pop' )
-    } )
-    bus.$on( 'renderer-unpop', ( ) => {
-      console.log( "UNPOP" )
-      this.$refs.mycanvas.classList.toggle( 'pop' )
-    } )
-    bus.$on( 'select-bus', ( objectId ) => {
-      this.selectBus( objectId )
-    } )
-    bus.$on( 'zoomToObject', ( ) => {
-      this.zoomToObject( )
-    } )
-    bus.$on( 'renderer-drop-stream', ( streamId ) => {
-      this.dropStream( streamId )
-    } )
+    bus.$on( 'r-ghost-objects', this.ghostObjects )
+    bus.$on( 'r-unghost-objects', this.unghostObjects )
+    bus.$on( 'r-zoom-to-object', this.zoomToObject )
+    bus.$on( 'r-zoom-ext', this.zoomExtents )
+
+    bus.$on( 'r-deselect-objects', this.deselectObjects )
+
+
+
+    bus.$on( 'select-bus', this.selectBus )
+    bus.$on( 'r-toggle-layer', this.toggleLayer )
+
+
     document.addEventListener( 'keydown', ( event ) => {
       const keyName = event.key;
       if ( keyName == ' ' ) this.zoomExtents( )
@@ -441,63 +474,6 @@ export default {
   /*z-index: 10;*/
   transition: all .2s ease;
   background-color: aliceblue;
-}
-
-#render-window.pop {
-  top: -15%;
-}
-
-.object-info {
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  z-index: 10;
-  user-select: none;
-}
-
-.expand-button {
-  z-index: 42;
-  margin: 0px !important;
-}
-
-
-.expanded-info-box {
-  border-color: grey;
-  position: absolute;
-  top: 0;
-  left: 35px;
-  /*max-width: 400px;*/
-  max-height: 300px;
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
-  border-top-right-radius: 12px;
-  border-bottom-right-radius: 12px;
-  user-select: auto;
-  z-index: 40;
-  box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-
-@media (max-width: 768px) {
-  .expanded-info-box {
-    position: fixed;
-    top: auto;
-    bottom: 50px;
-    left: 2%;
-    width: 96%;
-    max-width: 96%;
-    height: 30%;
-    background-color: white;
-    z-index: 44;
-    overflow-x: auto;
-  }
-}
-
-.tree-view-wrapper {
-  font-family: auto;
-  overflow: hidden !important;
 }
 
 </style>

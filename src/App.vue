@@ -15,14 +15,13 @@
       </md-dialog>
     </div>
     <md-app>
-      <md-app-toolbar class="md-primary md-dense" style='z-index: 10'>
+      <md-app-toolbar class="md-transparent xxx-md-dense md-elevation-0 no-shadow" style='z-index: 10'>
         <div class="md-toolbar-row">
           <div class="md-toolbar-section-start">
-            <md-button class='md-icon-button md-raised' @click.native='showAccounts=!showAccounts'>
-              <md-icon style='color: black'>
-                {{ showAccounts ? "close" : "menu"}}
+            <md-button class='md-icon-button' @click.native='showAccounts=!showAccounts'>
+              <md-icon xxx-style='color: black'>
+                {{ showAccounts ? "arrow_left" : "menu"}}
               </md-icon>
-              <md-tooltip v-if="!isIOS" md-direction="bottom">Menu</md-tooltip>
             </md-button>
             <md-button class='md-icon-button' @click.native='showAddStreamDialog=true'>
               <md-icon>add</md-icon>
@@ -36,7 +35,6 @@
               <md-icon>list</md-icon>
               <md-tooltip v-if="!isIOS" md-direction="top">Show details for selected objects</md-tooltip>
             </md-button>
-            <p class="md-caption" style="color:white" v-show='selectedObjects!=null'>{{selectedObjects ? selectedObjects.hash : ''}}</p>
             <!-- <md-button class='md-icon-button' @click.native='showViewSelect = !showViewSelect'> -->
             <!--   <md-icon>videocam</md-icon> -->
             <!--   <md-tooltip md-direction="top">Set camera view</md-tooltip> -->
@@ -65,8 +63,8 @@
           </div>
         </div>
       </md-app-toolbar>
-      <md-app-drawer :md-active.sync="showAccounts" style='z-index:100' class='md-elevation-4' md-persistent="full">
-        <sidebar-menu v-on:add="addReceiver"></sidebar-menu>
+      <md-app-drawer :md-active.sync="showAccounts" style='padding:14px; box-sizing:border-box; background-color:#448aff;' class='md-scrollbar md-elevation-4 md-primary' md-persistent="full">
+        <sidebar-menu v-on:addreceiver="addReceiver"></sidebar-menu>
       </md-app-drawer>
       <md-app-content>
         <speckle-renderer></speckle-renderer>
@@ -124,7 +122,7 @@ export default {
       showAddStreamDialog: false,
       addStreamString: null,
       showStreamList: false,
-      showAccounts: false,
+      showAccounts: true,
       showViewSelect: false,
       showSettings: false,
       showObjectDetails: false,
@@ -134,96 +132,12 @@ export default {
       progressMessage: 'All is ready.'
     }
   },
-  methods: {
-    zoomExt( ) {
-      if ( !this.selectedObjects )
-        bus.$emit( 'zext' )
-      else
-        bus.$emit( 'zoomToObject' )
-    },
-    zoomToObject( ) {
-      bus.$emit( 'zoomToObject' )
-    },
-    createReceivers( ) {
-      if ( this.receiversCreated ) return
-      if ( this.$store.state.initStreams.length != 0 ) {
-        let receivers = this.$store.state.initStreams
-          .filter( id => id != "" )
-          .map( id => {
-            return {
-              serverUrl: this.$store.state.server,
-              streamId: id,
-              token: this.$store.getters.user.apitoken,
-              objects: [ ],
-              layers: [ ],
-              history: [ ],
-              name: 'Loading ' + id + '...',
-              layerMaterials: [ ]
-            }
-          } )
-        this.$store.commit( 'ADD_RECEIVERS', { receivers } )
-      }
-    },
-    addReceiver( streamId ) {
-      if ( !streamId ) {
-        this.snackbarMessage = 'Invalid streamId'
-        return this.showSnackbar = true
-      }
-      console.log( 'Adding a receiver', streamId )
-      if ( this.$store.getters.receiverById( streamId ) ) {
-        this.snackbarMessage = 'That stream is already loaded'
-        return this.showSnackbar = true
-      }
-      let receiver = {
-        serverUrl: this.$store.state.server,
-        streamId: streamId,
-        token: this.$store.getters.user.apitoken,
-        objects: [ ],
-        layers: [ ],
-        history: [ ],
-        name: 'Loading ' + streamId + '...',
-        layerMaterials: [ ]
-      }
-      this.$store.commit( 'ADD_RECEIVER', { receiver } )
-    },
-    saveSettings( settings ) {
-      window.localStorage.setItem( 'viewerSettings', JSON.stringify( settings ) )
-      this.$store.commit( 'SET_VIEWER_SETTINGS', { settings } )
-    },
-    snackbarUpdate( message ) {
-      this.snackbarMessage = message
-      this.showSnackbar = true
-    },
-    toggleObjectDetails( ) {
-      if ( !this.selectedObjects ) {
-        return this.snackbarUpdate( "No objects selected" )
-      }
-      this.snackbarUpdate( "You can drag the info panel around the screen" )
-      this.showObjectDetails = true
-    }
-  },
-  created( ) {
-    this.createReceivers( )
-
-    if ( window.localStorage.getItem( 'viewerSettings' ) !== null ) {
-      this.$store.commit( 'SET_VIEWER_SETTINGS', { settings: JSON.parse( window.localStorage.getItem( 'viewerSettings' ) ) } )
-    }
-    this.viewerSettings = this.$store.getters.viewerSettings
-  },
   computed: {
-    searchobjects( ) {
-      let objects = this.$store.getters.allObjects
-      if ( objects.length === 0 ) return [ ]
-      let objectIds = objects.map( ( obj ) => {
-        return obj.type + ' ' + obj._id
-      } )
-      return objectIds
-    },
     isMobileView( ) {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|BB|PlayBook|IEMobile|Windows Phone|Kindle|Silk|Opera Mini/i.test( navigator.userAgent ) && window.innerWidth < 768
     },
-    isIOS ( ) {
-      return (typeof window.orientation !== "undefined") && (navigator.userAgent.indexOf('OS X') !== -1)
+    isIOS( ) {
+      return ( typeof window.orientation !== "undefined" ) && ( navigator.userAgent.indexOf( 'OS X' ) !== -1 )
     },
     receivers( ) {
       return this.$store.getters.allReceivers
@@ -235,12 +149,85 @@ export default {
       return this.$store.getters.selectedObjects
     }
   },
-  mounted( ) {
+  methods: {
+    zoomExt( ) {
+      if ( !this.selectedObjects )
+        bus.$emit( 'r-zoom-ext' )
+      else
+        bus.$emit( 'r-zoom-to-object' )
+    },
+
+    zoomToObject( ) {
+      bus.$emit( 'r-zoom-to-object' )
+    },
+
+    addReceiver( streamId ) {
+      if ( !streamId || streamId === '' ) {
+        this.snackbarMessage = 'Invalid streamId.'
+        return this.showSnackbar = true
+      }
+      if ( this.$store.getters.receiverById( streamId ) ) {
+        this.snackbarMessage = 'That stream is already loaded'
+        return this.showSnackbar = true
+      }
+      let receiver = {
+        serverUrl: this.$store.state.server,
+        streamId: streamId,
+        token: this.$store.getters.user.apitoken,
+        objects: [ ],
+        layers: [ ],
+        children: [ ],
+        parent: null,
+        createdAt: null,
+        updatedAt: null,
+        baseProperties: {
+          units: null
+        },
+        owner: {
+          name: null,
+          surname: null,
+        },
+        comments: null,
+        name: 'Loading ' + streamId + '...'
+      }
+      this.$store.commit( 'ADD_RECEIVER', { receiver } )
+    },
+
+    saveSettings( settings ) {
+      window.localStorage.setItem( 'viewerSettings', JSON.stringify( settings ) )
+      this.$store.commit( 'SET_VIEWER_SETTINGS', { settings } )
+    },
+
+    snackbarUpdate( message ) {
+      this.snackbarMessage = message
+      this.showSnackbar = true
+    },
+
+    toggleObjectDetails( ) {
+      if ( !this.selectedObjects ) {
+        return this.snackbarUpdate( "No objects selected" )
+      }
+      this.snackbarUpdate( "You can drag the info panel around the screen" )
+      this.showObjectDetails = true
+    }
+  },
+  created( ) {
+    if ( window.localStorage.getItem( 'viewerSettings' ) !== null ) {
+      this.$store.commit( 'SET_VIEWER_SETTINGS', { settings: JSON.parse( window.localStorage.getItem( 'viewerSettings' ) ) } )
+    }
+
+    this.viewerSettings = this.$store.getters.viewerSettings
+
+    this.$store.state.initStreams.forEach( streamId => {
+      this.addReceiver( streamId )
+    } )
+
     bus.$on( 'snackbar-update', this.snackbarUpdate )
     bus.$on( 'stream-load-progress', message => {
       this.progressMessage = message
     } )
-  }
+  },
+  mounted( ) {}
 }
 
 </script>
@@ -248,14 +235,6 @@ export default {
 .md-app {
   height: 100vh;
   border: 1px solid rgba(#000, .12);
-}
-
-.view-field {
-  width: auto;
-}
-
-.md-menu-content {
-  max-height: none;
 }
 
 #app {
@@ -266,6 +245,16 @@ export default {
   height: 100%;
 }
 
-#main {}
+.no-shadow {
+  box-shadow: none !important;
+}
+
+.no-margin {
+  margin: 0 !important;
+}
+
+.md-card.md-with-hover {
+  cursor: default;
+}
 
 </style>

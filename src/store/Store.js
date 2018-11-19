@@ -9,16 +9,15 @@ Vue.use( Vuex )
 export default new Vuex.Store( {
   state: {
     server: null,
-    auth: false,
-    token: null,
+    jwtToken: '',
+    user: {},
     mobile: false,
     initStreams: [ ],
     receivers: [ ],
     comments: [ ],
-    user: {},
-    jwtToken: '',
-    viewerSettings: {},
-    selectedObjects: []
+    viewerSettings: { },
+    selectedObjects: [ ],
+    inRenderObjects: [ ]
   },
   getters: {
     isMobile: state => state.mobile,
@@ -63,6 +62,10 @@ export default new Vuex.Store( {
   },
   actions: {},
   mutations: {
+    ADD_INRENDER_OBJS( state, objects ) { },
+    REMOVE_INRENDER_OBJS( state, objects ) {
+      state.inRenderObjects = state.inRenderObjects.filter( id => objects.indexOf(id) === -1 )
+    },
     SET_VIEWER_SETTINGS( state, { settings } ) {
       state.viewerSettings = settings
     },
@@ -80,7 +83,7 @@ export default new Vuex.Store( {
       state.receivers = receivers
     },
     ADD_RECEIVER( state, { receiver } ) {
-      state.receivers.push( receiver )
+      state.receivers.unshift( receiver )
     },
 
     ADD_COMMENT( state, { payload } ) {
@@ -104,12 +107,28 @@ export default new Vuex.Store( {
       l.threeMeshMaterial.opacity = payload.a
       l.threeLineMaterial.opacity = payload.a
       l.threePointMaterial.opacity = payload.a
-
     },
 
     INIT_RECEIVER_DATA( state, { payload } ) {
+
       let target = state.receivers.find( rec => rec.streamId === payload.streamId )
+
       target.name = payload.name
+      target.children = payload.children
+      target.createdAt = payload.createdAt
+      target.updatedAt = payload.updatedAt
+      target.comments = payload.comments
+      target.baseProperties = payload.baseProperties
+      target.owner = payload.owner
+
+      // check if object table matches layer table
+      let objCountLayers = 0
+      payload.layers.forEach( l => objCountLayers += l.objectCount )
+      if ( objCountLayers != payload.objects.length ) {
+        console.warn( `Malformed layer table in stream ${payload.streamId}: ${payload.objects.length} objs out of which ${objCountLayers}  accounted for by layers.\nWill replace with one layer only that contains all objects.` )
+        payload.layers = [ ]
+        payload.layers.push( { guid: "gen-" + Date.now, name: "Default Layer", objectCount: payload.objects.length, orderIndex: 0, startIndex: 0, topology: "" } )
+      }
 
       // set objects
       target.objects = payload.objects.map( ( obj, index ) => {
@@ -121,6 +140,8 @@ export default new Vuex.Store( {
           _id: obj._id
         }
       } )
+
+      // create layers magic
       target.layers = payload.layers.map( layer => {
         if ( layer.properties === undefined || layer.properties.threeMeshMaterial === undefined ) {
           layer.properties = new LMat( { guid: layer.guid, streamId: target.streamId, color: layer.properties ? layer.properties.color.hex : null } )

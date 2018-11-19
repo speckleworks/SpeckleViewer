@@ -24,7 +24,7 @@ window.camLoc = {}
 
 // if we provide a server url, use that.
 // if not, assume the plugin is online and live, and
-// default to `window.location.origin + '/api/v1'` 
+// default to `window.location.origin + '/api/v1'`
 
 if ( window.location.href.includes( '?' ) ) {
   let query = qp.toObject( window.location.href.split( '?' )[ 1 ] )
@@ -34,7 +34,7 @@ if ( window.location.href.includes( '?' ) ) {
     Store.state.server = window.location.origin + '/api/v1'
 
   if( query.streams )
-    Store.state.initStreams = query.streams.split(',')
+    Store.state.initStreams = query.streams.split(',').filter( s => s !== '')
 } else {
   Store.state.server = window.location.origin + '/api/v1'
 }
