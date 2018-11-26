@@ -41,6 +41,7 @@ export default class SpeckleReceiver extends EventEmitter {
     axios.delete( `${this.baseUrl}/clients/${this.clientId}` )
       .then( response => {
         this.clientId = null
+        clearInterval( this.wsConnectionChecker )
         this.ws.close( )
       } )
       .catch( err => {
@@ -58,7 +59,9 @@ export default class SpeckleReceiver extends EventEmitter {
     }
 
     this.ws.onmessage = message => {
-      if ( message.data === 'ping' ) return this.ws.send( 'alive' )
+      if ( message.data === 'ping' ) {
+        return this.ws.send( 'alive' )
+      }
       let parsedMessage = JSON.parse( message.data )
       switch ( parsedMessage.args.eventType ) {
         case 'update-global':

@@ -116,6 +116,7 @@ export default {
         this.$store.commit( 'SET_USER', { account } )
         this.showLogin = false
       }
+      bus.$emit( 'login-flow-finalised' )
     },
     getStreams( ) {
       var jwtToken = localStorage.getItem( 'token' )
