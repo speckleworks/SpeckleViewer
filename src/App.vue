@@ -218,10 +218,11 @@ export default {
 
     this.viewerSettings = this.$store.getters.viewerSettings
 
-    this.$store.state.initStreams.forEach( streamId => {
-      this.addReceiver( streamId )
+    bus.$on( 'login-flow-finalised', ( ) => {
+      this.$store.state.initStreams.forEach( streamId => {
+        this.addReceiver( streamId )
+      } )
     } )
-
     bus.$on( 'snackbar-update', this.snackbarUpdate )
     bus.$on( 'stream-load-progress', message => {
       this.progressMessage = message
