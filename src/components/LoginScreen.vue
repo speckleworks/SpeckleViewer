@@ -12,6 +12,7 @@
           <md-input type='password' v-model='password'></md-input>
         </md-field>
         <md-button class='md-primary md-raised' @click.native='login'>Login</md-button>
+        <md-button class='md-primary xxx-md-raised' @click.native='continueAsGuest'>Continue as guest</md-button>
         <div v-show='loginError' class='login-error'>
           <br>
           <md-icon>warning</md-icon>
@@ -22,14 +23,13 @@
   </div>
 </template>
 <script>
-
 export default {
   name: 'LoginScreen',
   computed: {
     logoUrl( ) { return window.SpkAppConfig.logoUrl },
     serverUrl( ) { return this.$store.state.server },
-    isIOS ( ) {
-      return (typeof window.orientation !== "undefined") && (navigator.userAgent.indexOf('OS X') !== -1)
+    isIOS( ) {
+      return ( typeof window.orientation !== "undefined" ) && ( navigator.userAgent.indexOf( 'OS X' ) !== -1 )
     },
   },
   data( ) {
@@ -40,6 +40,9 @@ export default {
     }
   },
   methods: {
+    continueAsGuest( ) {
+      this.$emit( 'success', { guest: true } )
+    },
     login( ) {
       if ( this.email === '' ) return
       if ( this.password === '' ) return
@@ -64,23 +67,7 @@ export default {
 </script>
 <style scoped>
 .login-card {
-  /*width: 400px;*/
-  /*text-align: center;*/
   pointer-events: auto;
-}
-
-.login-screen {
-/*  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1000;
-  pointer-events: none;
-  background-color: rgba(0, 0, 255, 0.5)*/
 }
 
 .login-error {
