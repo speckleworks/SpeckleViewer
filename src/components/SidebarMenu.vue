@@ -23,15 +23,15 @@
           </md-button>
           <md-menu-content>
             <md-menu-item @click='logOut'>
-              <span>Logout</span>
+              <span>{{isGuest ? "Login" : "Logout"}}</span>
             </md-menu-item>
-            <md-menu-item>
+            <md-menu-item v-if='!isGuest'>
               <a :href="linkToAdmin" target="_blank">Admin</a>
             </md-menu-item>
           </md-menu-content>
         </md-menu>
       </md-card-header>
-      <md-card-content style='background: white;'>
+      <md-card-content style='background: white;' v-if='!isGuest'>
         <div class='md-layout md-alignment-center-left'>
           <md-button class='md-layout-item md-size-10 md-icon-button md-dense md-primary no-margin' @click.native='getStreams'>
             <md-icon>refresh</md-icon>
@@ -83,7 +83,8 @@ export default {
   data( ) {
     return {
       showLogin: false,
-      user: { name: 'Not initialised' },
+      isGuest: true,
+      user: { name: 'Anonymous 🐸 ' },
       streams: [ ],
       searchFilter: null,
       itemsPerPage: 10,
@@ -92,7 +93,8 @@ export default {
   },
   methods: {
     logOut( ) {
-      this.$store.commit( 'SET_USER', {} )
+      let account = { apitoken: '', name: 'Anonymous', guest: true }
+      this.$store.commit( 'SET_USER', account )
       window.localStorage.setItem( 'userAccount', null )
       window.localStorage.setItem( 'token', null )
       this.user = null
@@ -109,12 +111,14 @@ export default {
         this.$store.commit( 'SET_USER', { account } )
         this.$http.defaults.headers.common[ 'Authorization' ] = jwtToken
         this.user = args.account
+        this.isGuest = false
         this.getStreams( )
-
       } else if ( args.guest === true ) {
+        console.log('asdf')
         let account = { apitoken: '', name: 'Anonymous', guest: true }
         this.$store.commit( 'SET_USER', { account } )
         this.showLogin = false
+        this.isGuest = true
       }
       bus.$emit( 'login-flow-finalised' )
     },
