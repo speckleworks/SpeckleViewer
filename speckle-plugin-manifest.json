@@ -5,5 +5,6 @@
   "serveFrom": "/view",
   "author": "Speckle Project Contributors",
   "contact":"hello@speckle.works",
-  "homepage":"https://speckle.works"
+  "homepage":"https://speckle.works",
+  "git":"https://github.com/speckleworks/SpeckleViewer"
 }
