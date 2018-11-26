@@ -250,6 +250,7 @@ export default {
       if ( this.currentComputeResponse !== null )
         bus.$emit( 'r-unload-objects', { objs: this.currentComputeResponse.objects.map( o => o._id ), streamId: this.currentComputeResponse.streamId } )
 
+      this.myClientReceiver.disposeClient( )
       this.$store.commit( 'DROP_RECEIVER', { streamId } )
       this.updateUrl( )
     },
@@ -265,7 +266,7 @@ export default {
 
     getControllers( ) {
       console.log( 'Getting controllers for ' + this.spkreceiver.streamId )
-      this.mySpkReceiver.broadcast( { eventType: 'get-definition-io' } )
+      this.myClientReceiver.broadcast( { eventType: 'get-definition-io' } )
     },
 
     addControllers( wsMessage ) {
@@ -277,7 +278,7 @@ export default {
     controllersChanged( ) {
       console.log( 'controllers changed', this.controllers )
       this.showComputeProgressBar = true
-      let args = { controllers: this.controllers, layers: this.spkreceiver.layers, client: this.mySpkReceiver, senderId: this.senderId }
+      let args = { controllers: this.controllers, layers: this.spkreceiver.layers, client: this.myClientReceiver, senderId: this.senderId }
       this.computeInProgress = true
       this.sendComputeRequest( args )
     },
@@ -360,7 +361,7 @@ export default {
           newQuery += 'streams=' + streams
         // 3. get that in the url bar
         history.replaceState( { spk: 'changed history' }, "Speckle Viewer Rocks", newQuery )
-      // if no query, just barge in and add the streams list, but do check if we have any streams to actually add
+        // if no query, just barge in and add the streams list, but do check if we have any streams to actually add
       } else if ( this.$store.getters.allReceivers.length !== 0 ) {
         history.replaceState( { spk: 'changed history' }, "Speckle Viewer Rocks", '?streams=' + streams )
       }
@@ -371,18 +372,18 @@ export default {
     console.log( 'Stream receiver mounted for streamid: ' + this.spkreceiver.streamId )
     this.name = 'loading ' + this.spkreceiver.streamId
 
-    this.mySpkReceiver = new ClientReceiver( {
+    this.myClientReceiver = new ClientReceiver( {
       baseUrl: this.spkreceiver.serverUrl,
       streamId: this.spkreceiver.streamId,
-      token: this.spkreceiver.token
+      token: this.$store.state.jwtToken
     } )
 
-    this.mySpkReceiver.on( 'error', this.receiverError )
-    this.mySpkReceiver.on( 'ready', this.receiverReady )
-    this.mySpkReceiver.on( 'update-meta', this.updateMeta )
-    this.mySpkReceiver.on( 'update-global', this.updateGlobal )
-    this.mySpkReceiver.on( 'get-def-io-response', this.addControllers )
-    this.mySpkReceiver.on( 'compute-response', this.computeResponse )
+    this.myClientReceiver.on( 'error', this.receiverError )
+    this.myClientReceiver.on( 'ready', this.receiverReady )
+    this.myClientReceiver.on( 'update-meta', this.updateMeta )
+    this.myClientReceiver.on( 'update-global', this.updateGlobal )
+    this.myClientReceiver.on( 'get-def-io-response', this.addControllers )
+    this.myClientReceiver.on( 'compute-response', this.computeResponse )
   }
 }
 

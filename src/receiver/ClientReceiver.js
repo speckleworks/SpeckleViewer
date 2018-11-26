@@ -10,7 +10,7 @@ export default class SpeckleReceiver extends EventEmitter {
     if ( !args.baseUrl ) throw new Error( 'No stream id provided' )
 
     this.baseUrl = args.baseUrl
-    this.auth = args.auth
+    this.token = args.token
     this.streamId = args.streamId
 
     this.wsUrl = this.baseUrl.replace( 'http', 'ws' )
@@ -27,7 +27,7 @@ export default class SpeckleReceiver extends EventEmitter {
 
   // registers an anonymous client
   setupClient( cb ) {
-    axios.post( this.baseUrl + '/clients', { client: { documentName: 'Online Viewer' } }, { headers: { 'Auth': this.auth } } )
+    axios.post( this.baseUrl + '/clients', { client: { documentName: 'Online Viewer' } }, { headers: { 'Authorization': this.token } } )
       .then( response => {
         this.clientId = response.data.resource._id
         cb( )
@@ -37,9 +37,20 @@ export default class SpeckleReceiver extends EventEmitter {
       } )
   }
 
+  disposeClient( cb ) {
+    axios.delete( `${this.baseUrl}/clients/${this.clientId}` )
+      .then( response => {
+        this.clientId = null
+        this.ws.close( )
+      } )
+      .catch( err => {
+        console.log( err )
+      } )
+  }
+
   // sets up websockets & ws events
   setupWebsockets( cb ) {
-    this.ws = new WebSocket( this.wsUrl + '/?access_token=' + this.auth + '&stream_id=' + this.streamId + '&client_id=' + this.clientId )
+    this.ws = new WebSocket( this.wsUrl + '/?access_token=' + this.token + '&stream_id=' + this.streamId + '&client_id=' + this.clientId )
 
     this.ws.onopen = ( ) => {
       console.log( 'Websocket connection opened for', this.streamId )
