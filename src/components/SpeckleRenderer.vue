@@ -83,7 +83,11 @@ export default {
       // convert the objects and add them to the scene
       let convertedCount = 0
       filledBatch.forEach( object => {
-        if ( !Converter.hasOwnProperty( object.type ) ) {
+        let splitType = object.type.split("/")
+        let convertType = splitType.pop()
+        while (splitType.length > 0 & !Converter.hasOwnProperty( convertType ))
+          convertType = splitType.pop()
+        if ( !Converter.hasOwnProperty( convertType ) ) {
           convertedCount++
           if ( convertedCount >= filledBatch.length ) {
             this.computeSceneBoundingSphereAndZoomExt( zExt )
@@ -93,7 +97,7 @@ export default {
         }
         let layer = this.$store.getters.allLayerMaterials.find( l => object.layerGuids.indexOf( l.guid ) > -1 )
         if ( !layer ) layer = this.defaultLayerMaterial
-        Converter[ object.type ]( { obj: object, layer: layer }, ( err, threeObj ) => {
+        Converter[ convertType ]( { obj: object, layer: layer }, ( err, threeObj ) => {
           convertedCount++
           threeObj.hash = object.hash
           threeObj.streams = object.streams
