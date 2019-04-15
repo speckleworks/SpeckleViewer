@@ -13,9 +13,17 @@ More info to come.
 # install dependencies
 npm install
 
-# serve with hot reload at localhost:8888 (8080 is taken by the local speckle server instance 💯)
+# serve with hot reload at localhost:8080.
 npm run dev
 
 # build for production with minification
 npm run build
 ```
+
+## Running the client
+
+After running `npm run dev`, the client will start on localhost:8080.
+By default, the client will try to connect to the server on localhost:8080/api. However, this can be overridden using
+query parameters. For instance, to use the Speckle test server, go to:
+
+`localhost:8080?server=https://hestia.speckle.works`
