@@ -1,11 +1,6 @@
-<a href="url"><img src="https://speckle.works/img/logos/2xlogo-white.png" align="left" height="128" ></a>
-# speckle-viewer
+### Please note, this little piece of speckle is no longer maintained. The viewer has been integrated in [the admin interface](https://github.com/speckleworks/SpeckleAdmin). 
 
-> A simple Speckle.Works stream viewer, built with [VueJS](https://vuejs.org/). For more, check [speckle.works](https://speckle.works/doc/onlineviewer/).
-
-![Image of Speckle Viewer](https://speckle.works/img/onlineviewer/headerimg4c.png)
-
-More info to come. 
+This repository is archived, and will not be supported going forward. 
 
 ## Build Setup
 
